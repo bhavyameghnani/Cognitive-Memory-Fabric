@@ -1,0 +1,3132 @@
+{
+ "note": "Generator-side QC manifest. Never feed to the CMF ingestion pipeline.",
+ "seed": 20260101,
+ "interactions": [
+  {
+   "interaction_id": "INT-001",
+   "client_id": "CLIENT-001",
+   "step": 1,
+   "scenario_tags": [
+    "document_request",
+    "procedure",
+    "stated_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "retirement at 65 on about fifteen thousand a month after tax, with the mortgage cleared by 2032"
+    ],
+    [
+     "c_action",
+     "send over the plan summary for your Northgate deferred compensation account"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-002",
+   "client_id": "CLIENT-002",
+   "step": 1,
+   "scenario_tags": [
+    "document_request",
+    "procedure",
+    "stated_intention",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "whether to sell Holloway Precision Packaging"
+    ],
+    [
+     "plan",
+     "preparing financially for a possible sale without committing to one"
+    ],
+    [
+     "c_action",
+     "send over the last three years of company financial statements and any valuation work your accountant has done"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-003",
+   "client_id": "CLIENT-006",
+   "step": 1,
+   "scenario_tags": [
+    "family_context",
+    "risk_preference_baseline",
+    "stated_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "preserving capital while covering the gap between about six thousand three hundred in pension and Social Security and spending of about eight thousand nine hundred a month"
+    ],
+    [
+     "plan",
+     "keeping equities at about 35 percent of the portfolio"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-004",
+   "client_id": "CLIENT-002",
+   "step": 2,
+   "scenario_tags": [
+    "advisor_recommendation",
+    "deferred_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "any change to the personal portfolio's 60 percent equity level until it is clear whether you will sell the company"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-005",
+   "client_id": "CLIENT-004",
+   "step": 1,
+   "scenario_tags": [
+    "advisor_procedure",
+    "life_event"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "taking no large irreversible financial decisions for the first six to twelve months unless something forces them"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-006",
+   "client_id": "CLIENT-005",
+   "step": 1,
+   "scenario_tags": [
+    "risk_preference_baseline",
+    "stated_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "an aggressive, concentrated approach with conviction in Vantora Systems"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-007",
+   "client_id": "CLIENT-004",
+   "step": 2,
+   "scenario_tags": [
+    "advisor_commitment",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over five certified copies of Samuel's death certificate and the letter from his employer about the pension survivor election"
+    ],
+    [
+     "a_action",
+     "ask Samuel's employer for a plain summary of the pension survivor options"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-008",
+   "client_id": "CLIENT-005",
+   "step": 2,
+   "scenario_tags": [
+    "concept_explained",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your 2025 profit and loss statement and your estimated tax payment records"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-009",
+   "client_id": "CLIENT-006",
+   "step": 2,
+   "scenario_tags": [
+    "concept_explained",
+    "family_context",
+    "unresolved"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "treating the survivor amount of Frank's pension as unconfirmed, with you believing it is about half"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-010",
+   "client_id": "CLIENT-001",
+   "step": 2,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "risk_preference_baseline"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the plan summary for your Northgate deferred compensation account"
+    ],
+    [
+     "decision",
+     "to proceed with the agreed portfolio review"
+    ],
+    [
+     "plan",
+     "a growth-oriented portfolio at about 75 percent equities"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-011",
+   "client_id": "CLIENT-003",
+   "step": 1,
+   "scenario_tags": [
+    "risk_preference_baseline",
+    "stated_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "an aggressive, growth-focused portfolio at about 90 percent equities"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-012",
+   "client_id": "CLIENT-001",
+   "step": 3,
+   "scenario_tags": [
+    "advisor_commitment",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "retiring at 60"
+    ],
+    [
+     "a_action",
+     "run the retirement-age scenarios for 60, 63 and 65"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-013",
+   "client_id": "CLIENT-003",
+   "step": 2,
+   "scenario_tags": [
+    "concept_explained",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your restricted stock grant agreements and the latest 401(k) statement"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-014",
+   "client_id": "CLIENT-005",
+   "step": 3,
+   "scenario_tags": [
+    "advisor_caution",
+    "deferred_decision",
+    "procedure",
+    "suitability",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "adding fifty thousand dollars to the Vantora position until there is spare cash beyond the reserve"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-015",
+   "client_id": "CLIENT-002",
+   "step": 3,
+   "scenario_tags": [
+    "family_context",
+    "rationale_seed"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "treating your mother's care, about six thousand dollars a month from you, as a fixed obligation in all projections"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-016",
+   "client_id": "CLIENT-005",
+   "step": 4,
+   "scenario_tags": [
+    "advisor_disagreement",
+    "confirmed_decision",
+    "rationale",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to base each quarterly estimated tax payment on the safe-harbor amount from last year's return, and not on a guess about this year's income"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-017",
+   "client_id": "CLIENT-003",
+   "step": 3,
+   "scenario_tags": [
+    "stated_intention",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "buying a home in about two years"
+    ],
+    [
+     "plan",
+     "keeping any down-payment savings separate from retirement investments"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-018",
+   "client_id": "CLIENT-006",
+   "step": 3,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "contact your accountant Dennis Hall about giving to the church through a qualified charitable distribution"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-019",
+   "client_id": "CLIENT-003",
+   "step": 4,
+   "scenario_tags": [
+    "advisor_commitment"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "compare extra student loan payments of three hundred dollars a month against investing that money"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-020",
+   "client_id": "CLIENT-004",
+   "step": 3,
+   "scenario_tags": [
+    "confirmed_decision",
+    "risk_preference_baseline"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep the insurance payout in safe, accessible investments for now"
+    ],
+    [
+     "plan",
+     "a very conservative portfolio, about 15 percent equities"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-021",
+   "client_id": "CLIENT-006",
+   "step": 4,
+   "scenario_tags": [
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the latest statements for Frank's Medicare supplement policy and the home care invoices"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-022",
+   "client_id": "CLIENT-001",
+   "step": 4,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "rationale",
+    "scenario_discussion"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "a working assumption of six months of base salary as severance for liquidity planning, to be replaced if the real terms become known"
+    ],
+    [
+     "decision",
+     "to keep the mortgage as it is and hold the cash as a cushion, rather than pay the mortgage down early"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-023",
+   "client_id": "CLIENT-003",
+   "step": 5,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "rationale",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep minimum payments on the student loan and invest the extra money, because flexibility matters with a baby coming"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-024",
+   "client_id": "CLIENT-005",
+   "step": 5,
+   "scenario_tags": [
+    "advisor_disagreement",
+    "concept_explained",
+    "confirmed_decision",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your 2025 profit and loss statement and your estimated tax payment records"
+    ],
+    [
+     "decision",
+     "to keep the cash reserve at about five months for now, against the advisor's recommendation of nine"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-025",
+   "client_id": "CLIENT-003",
+   "step": 6,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to redirect new brokerage contributions to cash until reserves reach fifty thousand dollars, ahead of parental leave"
+    ],
+    [
+     "a_action",
+     "redirect your brokerage contributions to cash"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-026",
+   "client_id": "CLIENT-003",
+   "step": 7,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "estimate the life and disability coverage you and Mateo need and refer you to a licensed broker"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-027",
+   "client_id": "CLIENT-001",
+   "step": 5,
+   "scenario_tags": [
+    "advisor_commitment",
+    "scenario_result",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "leaning toward retiring at 60 while 65 stays the formal planning date"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-028",
+   "client_id": "CLIENT-006",
+   "step": 5,
+   "scenario_tags": [
+    "advisor_commitment",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "model Frank's care costs at several levels and show how long the money lasts"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-029",
+   "client_id": "CLIENT-004",
+   "step": 4,
+   "scenario_tags": [
+    "concept_explained",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over five certified copies of Samuel's death certificate and the letter from his employer about the pension survivor election"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-030",
+   "client_id": "CLIENT-004",
+   "step": 5,
+   "scenario_tags": [
+    "advisor_advice_delay",
+    "deferred_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "paying off the mortgage until the estate is settled, to be revisited in April"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-031",
+   "client_id": "CLIENT-001",
+   "step": 6,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to rebalance back to the 75 percent equity target, with no increase in overall risk"
+    ],
+    [
+     "a_action",
+     "move about ninety thousand dollars from bonds into the equity index funds and send you confirmation"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-032",
+   "client_id": "CLIENT-002",
+   "step": 4,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained",
+    "follow_up",
+    "scenario_calculation"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "calculate what a sale at twenty and twenty-four million would leave you after tax, fees and escrow"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-033",
+   "client_id": "CLIENT-006",
+   "step": 6,
+   "scenario_tags": [
+    "advisor_procedure",
+    "confirmed_decision",
+    "family_context",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to pay the nineteen hundred dollar physical therapy bill from the cash account instead of appealing the denial, to avoid the time and stress"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-034",
+   "client_id": "CLIENT-005",
+   "step": 6,
+   "scenario_tags": [
+    "advisor_commitment",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "selling some Moreau Labs founder shares in the secondary offer"
+    ],
+    [
+     "a_action",
+     "compare selling none, half or all of the offered founder shares, including the tax"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-035",
+   "client_id": "CLIENT-002",
+   "step": 5,
+   "scenario_tags": [
+    "scenario_result",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "selling the company, while keeping employee protection as a condition"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-036",
+   "client_id": "CLIENT-004",
+   "step": 6,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to set up a dedicated tuition bucket of about eighty thousand dollars in short-term bonds for Folake"
+    ],
+    [
+     "a_action",
+     "set up the tuition bucket for Folake"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-037",
+   "client_id": "CLIENT-006",
+   "step": 7,
+   "scenario_tags": [
+    "family_context",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "lending Brian eighty thousand dollars for a franchise"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-038",
+   "client_id": "CLIENT-002",
+   "step": 6,
+   "scenario_tags": [
+    "family_context",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "how to fund Ethan's college costs beyond the existing college account"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-039",
+   "client_id": "CLIENT-005",
+   "step": 7,
+   "scenario_tags": [
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "investing sixty thousand dollars in Hugo's restaurant"
+    ],
+    [
+     "c_action",
+     "ask Hugo for the business plan and a written agreement"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-040",
+   "client_id": "CLIENT-004",
+   "step": 7,
+   "scenario_tags": [
+    "concept_explained",
+    "deferred_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "claiming the Social Security survivor benefit while you are still working"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-041",
+   "client_id": "CLIENT-006",
+   "step": 8,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to use the full-time-care stress case, and not the expected case, to judge large decisions such as lending money or buying into a retirement community"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-042",
+   "client_id": "CLIENT-005",
+   "step": 8,
+   "scenario_tags": [
+    "advisor_caution",
+    "follow_up",
+    "new_information",
+    "tax",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "covering a tax shortfall of about twenty to twenty-five thousand dollars in April from outstanding invoices, with the cash account as a fallback and without selling Vantora"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-043",
+   "client_id": "CLIENT-001",
+   "step": 7,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained",
+    "family_context",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "how much to contribute if Yuki goes ahead with graduate school"
+    ],
+    [
+     "a_action",
+     "model funding Yuki's graduate studies in full, capped at thirty thousand dollars a year, or partly through loans"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-044",
+   "client_id": "CLIENT-003",
+   "step": 8,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to leave the cash reserve alone and keep investing for retirement as planned"
+    ],
+    [
+     "a_action",
+     "finish the work to estimate the life and disability coverage you and Mateo need and refer you to a licensed broker and bring it to our next meeting"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-045",
+   "client_id": "CLIENT-003",
+   "step": 9,
+   "scenario_tags": [
+    "confirmed_decision",
+    "life_event",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep contributing the six percent that earns the full employer match through parental leave"
+    ],
+    [
+     "tentative",
+     "a four-day work week after leave, which would cut your salary by about twenty percent"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-046",
+   "client_id": "CLIENT-001",
+   "step": 8,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained",
+    "deferred_decision",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "selling part of the vested Northgate shares until the tax estimate is in"
+    ],
+    [
+     "a_action",
+     "send your accountant a summary of the vesting"
+    ],
+    [
+     "c_action",
+     "ask your accountant for the estimated-tax figure"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-047",
+   "client_id": "CLIENT-004",
+   "step": 8,
+   "scenario_tags": [
+    "advisor_commitment",
+    "family_context",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "lending Tobi forty thousand dollars for his food-delivery business"
+    ],
+    [
+     "a_action",
+     "prepare a note on how much you could lend Tobi without touching the tuition bucket or emergency reserve"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-048",
+   "client_id": "CLIENT-003",
+   "step": 10,
+   "scenario_tags": [
+    "changing_preference",
+    "life_event",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "whether a 90 percent equity portfolio still suits you"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-049",
+   "client_id": "CLIENT-001",
+   "step": 9,
+   "scenario_tags": [
+    "contradiction",
+    "correction",
+    "follow_up",
+    "misunderstanding"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my earlier note that you wanted to retire at 60 was too strong; you are exploring it, and 65 remains the planning date"
+    ],
+    [
+     "c_action",
+     "get the estimated-tax figure from Hannah Park"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-050",
+   "client_id": "CLIENT-004",
+   "step": 9,
+   "scenario_tags": [
+    "advisor_caution",
+    "correction",
+    "outdated_assumption",
+    "pension",
+    "procedure",
+    "suitability",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my February summary that the survivor payment was about half of Samuel's pension was imprecise; the form says sixty percent for life, with a lump-sum alternative not yet evaluated"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-051",
+   "client_id": "CLIENT-005",
+   "step": 9,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to build the cash reserve to nine months of expenses after losing the largest customer"
+    ],
+    [
+     "a_action",
+     "set a plan for building the reserve to nine months"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-052",
+   "client_id": "CLIENT-002",
+   "step": 7,
+   "scenario_tags": [
+    "advisor_commitment",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "accepting Lakeshore's letter of intent"
+    ],
+    [
+     "a_action",
+     "model the cash at closing alone under the Lakeshore offer"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-053",
+   "client_id": "CLIENT-003",
+   "step": 11,
+   "scenario_tags": [
+    "document_request",
+    "procedure",
+    "suitability"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the name of the attorney you'd like to use for a will and guardianship documents"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-054",
+   "client_id": "CLIENT-005",
+   "step": 10,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "rationale",
+    "rejected_option"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "not to invest in Hugo's restaurant, because you need the cash for the reserve and taxes and cannot lock it in a business you don't control"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-055",
+   "client_id": "CLIENT-001",
+   "step": 10,
+   "scenario_tags": [
+    "advisor_commitment",
+    "changing_preference",
+    "procedure",
+    "suitability",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "reducing equity exposure from about 75 percent to around 60"
+    ],
+    [
+     "a_action",
+     "prepare a comparison of 60 and 70 percent equity portfolios against your retirement scenarios"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-056",
+   "client_id": "CLIENT-005",
+   "step": 11,
+   "scenario_tags": [
+    "changing_preference",
+    "follow_up",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "selling part of the Vantora position in stages"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-057",
+   "client_id": "CLIENT-006",
+   "step": 9,
+   "scenario_tags": [
+    "changing_preference",
+    "life_event",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "reducing equities from 35 percent to about 25 percent after Frank's hospitalisation"
+    ],
+    [
+     "a_action",
+     "update your suitability profile before changing the allocation"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-058",
+   "client_id": "CLIENT-002",
+   "step": 8,
+   "scenario_tags": [
+    "correction",
+    "follow_up",
+    "misunderstanding",
+    "procedure",
+    "suitability"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my earlier note that you had accepted the Lakeshore offer was wrong; you are inclined to accept and have not signed"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-059",
+   "client_id": "CLIENT-004",
+   "step": 10,
+   "scenario_tags": [
+    "confirmed_decision",
+    "rationale",
+    "rejected_option"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "not to buy the annuity, because you need access to the money for Folake's tuition and family needs"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-060",
+   "client_id": "CLIENT-006",
+   "step": 10,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "explicit_instruction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to cut the equity allocation from 35 percent to 25 percent after Frank's hospitalisation, with proceeds going to the short-term bond ladder"
+    ],
+    [
+     "a_action",
+     "sell part of the dividend fund and add the proceeds to the short-term bond ladder"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-061",
+   "client_id": "CLIENT-002",
+   "step": 9,
+   "scenario_tags": [
+    "confirmed_decision",
+    "rationale",
+    "rejected_option"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to decline the employee-ownership route, because a ten-year seller note would not give the certain cash needed for your mother's care"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-062",
+   "client_id": "CLIENT-005",
+   "step": 12,
+   "scenario_tags": [
+    "correction",
+    "follow_up",
+    "misunderstanding"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my note that you intended to sell shares in the tender offer was wrong; you were considering it and had not decided"
+    ],
+    [
+     "a_action",
+     "finish the work to compare selling none, half or all of the offered founder shares, including the tax and bring it to our next meeting"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-063",
+   "client_id": "CLIENT-006",
+   "step": 11,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context",
+    "rationale",
+    "rejected_option"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "not to lend Brian eighty thousand dollars, because you need the money for Frank's care"
+    ],
+    [
+     "tentative",
+     "offering Brian a few hundred dollars toward equipment"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-064",
+   "client_id": "CLIENT-001",
+   "step": 11,
+   "scenario_tags": [
+    "concept_explained",
+    "confirmed_decision",
+    "explicit_instruction",
+    "follow_up",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell about a third of the vested Northgate shares, including enough to cover the estimated tax, to reduce exposure to your employer"
+    ],
+    [
+     "a_action",
+     "sell about a third of the vested Northgate shares and confirm the trade"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-065",
+   "client_id": "CLIENT-003",
+   "step": 12,
+   "scenario_tags": [
+    "concept_explained",
+    "follow_up",
+    "procedure",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "whether one and a half million dollars of term life cover is more than you need"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-066",
+   "client_id": "CLIENT-002",
+   "step": 10,
+   "scenario_tags": [
+    "advisor_advice_delay",
+    "deferred_decision",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "repositioning your personal portfolio until the deal terms are final"
+    ],
+    [
+     "c_action",
+     "send over the signed exclusivity agreement and your lawyer's summary of the key terms"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-067",
+   "client_id": "CLIENT-001",
+   "step": 12,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "explicit_instruction",
+    "follow_up",
+    "procedure",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to reduce the equity allocation from about 75 percent to 60 percent because the March decline showed a lower tolerance for volatility"
+    ],
+    [
+     "a_action",
+     "implement the move to 60 percent equities, using the retirement accounts first"
+    ],
+    [
+     "c_action",
+     "sign the updated investment policy statement"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-068",
+   "client_id": "CLIENT-001",
+   "step": 13,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "rationale",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "sign the updated investment policy statement"
+    ],
+    [
+     "decision",
+     "to contribute up to thirty thousand dollars a year if Yuki attends graduate school, to protect your retirement date and Ren's remaining tuition"
+    ],
+    [
+     "a_action",
+     "resend the investment policy statement for signature"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-069",
+   "client_id": "CLIENT-004",
+   "step": 11,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction",
+    "follow_up",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to roll Samuel's retirement account into an account in your own name"
+    ],
+    [
+     "a_action",
+     "start the spousal rollover into your own account"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-070",
+   "client_id": "CLIENT-002",
+   "step": 11,
+   "scenario_tags": [
+    "advisor_commitment",
+    "follow_up",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "arrange a call with your accountant Mei Lin Chu about the tax structure of the sale"
+    ],
+    [
+     "c_action",
+     "send over the signed exclusivity agreement and your lawyer's summary of the key terms"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-071",
+   "client_id": "CLIENT-003",
+   "step": 13,
+   "scenario_tags": [
+    "confirmed_decision",
+    "correction",
+    "misunderstanding",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my earlier note that you had decided to buy a house within two years was too strong; you were only considering it"
+    ],
+    [
+     "decision",
+     "to postpone any house search until the autumn, because childcare costs and income are uncertain"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-072",
+   "client_id": "CLIENT-006",
+   "step": 12,
+   "scenario_tags": [
+    "concept_explained",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "moving to Maplewood Commons, with a three hundred eighty thousand dollar entrance fee"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-073",
+   "client_id": "CLIENT-005",
+   "step": 13,
+   "scenario_tags": [
+    "confirmed_decision",
+    "rationale",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell half, about seventy-five thousand dollars, of the offered founder shares to raise liquidity while keeping most of your ownership"
+    ],
+    [
+     "c_action",
+     "sign and return the secondary sale paperwork before the deadline"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-074",
+   "client_id": "CLIENT-001",
+   "step": 14,
+   "scenario_tags": [
+    "advisor_commitment",
+    "contradiction",
+    "document_request",
+    "procedure",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "retiring at 63 instead of 60"
+    ],
+    [
+     "a_action",
+     "update the retirement scenarios to include the retention bonus and a retirement age of 63"
+    ],
+    [
+     "c_action",
+     "send over the retention bonus agreement from Northgate HR"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-075",
+   "client_id": "CLIENT-003",
+   "step": 14,
+   "scenario_tags": [
+    "pending_action",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "compare staying where you are with Mateo's possible move"
+    ],
+    [
+     "c_action",
+     "send Mateo's offer details"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-076",
+   "client_id": "CLIENT-005",
+   "step": 14,
+   "scenario_tags": [
+    "advisor_disagreement",
+    "confirmed_decision",
+    "follow_up",
+    "rationale",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account"
+    ],
+    [
+     "decision",
+     "to set aside about a quarter of the secondary-sale proceeds for tax, fill the cash reserve to nine months, and put anything left into the index fund and not into Vantora"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-077",
+   "client_id": "CLIENT-002",
+   "step": 12,
+   "scenario_tags": [
+    "advisor_caution",
+    "scenario_discussion",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "walking away from the sale if the price falls below about twenty-two million dollars"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-078",
+   "client_id": "CLIENT-002",
+   "step": 13,
+   "scenario_tags": [
+    "contradiction",
+    "follow_up",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "waiting two years before selling"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-079",
+   "client_id": "CLIENT-003",
+   "step": 15,
+   "scenario_tags": [
+    "confirmed_decision",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to apply for a one and a half million dollar twenty-year term policy for you and a one million dollar policy for Mateo"
+    ],
+    [
+     "c_action",
+     "start the term life application with the broker"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-080",
+   "client_id": "CLIENT-005",
+   "step": 15,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "contradiction",
+    "explicit_instruction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell forty percent of the Vantora position in three steps and move the proceeds to the index fund, because a business and a stock in the same sector is too much concentration"
+    ],
+    [
+     "a_action",
+     "sell the Vantora shares in three equal steps and send confirmations"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-081",
+   "client_id": "CLIENT-006",
+   "step": 13,
+   "scenario_tags": [
+    "advisor_commitment",
+    "changing_preference"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "model keeping equities at 25 percent versus adding inflation-protected bonds or raising equities modestly"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-082",
+   "client_id": "CLIENT-001",
+   "step": 15,
+   "scenario_tags": [
+    "follow_up",
+    "scenario_result",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "retiring at 63, pending a conversation with Mariko"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-083",
+   "client_id": "CLIENT-002",
+   "step": 14,
+   "scenario_tags": [
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell to Lakeshore with the rollover cut to ten percent and two years of written staff protections, because certainty for your mother's care mattered more than waiting for a higher price"
+    ],
+    [
+     "a_action",
+     "tell Mei Lin Chu about your decision"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-084",
+   "client_id": "CLIENT-004",
+   "step": 12,
+   "scenario_tags": [
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep the mortgage rather than pay it off, because the three point one percent rate is low and you want flexibility for Folake"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-085",
+   "client_id": "CLIENT-006",
+   "step": 14,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to send six thousand dollars directly from your IRA to your church as a qualified charitable distribution, counted toward this year's required distribution"
+    ],
+    [
+     "a_action",
+     "arrange the direct gift to your church with the IRA custodian"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-086",
+   "client_id": "CLIENT-004",
+   "step": 13,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context",
+    "follow_up",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "not to lend Tobi forty thousand dollars, but to offer up to fifteen thousand as a gift if he provides a written business plan"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-087",
+   "client_id": "CLIENT-006",
+   "step": 15,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to raise equities from 25 percent to 30 percent and add inflation-protected bonds, because inflation could erode a very conservative portfolio over a long retirement"
+    ],
+    [
+     "a_action",
+     "make the shift to 30 percent equities and add inflation-protected bonds"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-088",
+   "client_id": "CLIENT-004",
+   "step": 14,
+   "scenario_tags": [
+    "stated_intention",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "retiring at 62 rather than 65"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-089",
+   "client_id": "CLIENT-003",
+   "step": 16,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "procedure",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to move the house fund into cash and short-term bonds and cut retirement equities from about 90 percent to 75 percent, because having Lucia changed your comfort with risk"
+    ],
+    [
+     "a_action",
+     "send the updated investment policy statement"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-090",
+   "client_id": "CLIENT-001",
+   "step": 16,
+   "scenario_tags": [
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to retire at 63, replacing the earlier plan of 65, because the role changed and Mariko wants to teach until 62"
+    ],
+    [
+     "plan",
+     "a formal retirement date of 63, to be revisited if your health changes or Northgate is sold"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-091",
+   "client_id": "CLIENT-001",
+   "step": 17,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to set aside fourteen thousand dollars in cash for Ren's possible semester in Seoul"
+    ],
+    [
+     "a_action",
+     "earmark fourteen thousand dollars of your cash for the Seoul program"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-092",
+   "client_id": "CLIENT-006",
+   "step": 16,
+   "scenario_tags": [
+    "document_request",
+    "pending_action"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send the Maplewood Commons contract"
+    ],
+    [
+     "a_action",
+     "request the community's financial statements"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-093",
+   "client_id": "CLIENT-002",
+   "step": 15,
+   "scenario_tags": [
+    "document_request",
+    "follow_up",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the last two years of personal tax returns"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-094",
+   "client_id": "CLIENT-004",
+   "step": 15,
+   "scenario_tags": [
+    "changing_preference",
+    "procedure",
+    "suitability",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "raising stock exposure to about a quarter of the portfolio"
+    ],
+    [
+     "a_action",
+     "prepare a gradual plan to raise stock exposure"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-095",
+   "client_id": "CLIENT-001",
+   "step": 18,
+   "scenario_tags": [
+    "advisor_commitment",
+    "concept_explained"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "model Social Security claiming at 63, 67 and 70 using both your records"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-096",
+   "client_id": "CLIENT-005",
+   "step": 16,
+   "scenario_tags": [
+    "family_context",
+    "rationale",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "relocating to Lisbon in about two years, which depends on Camille's employer allowing remote work and on Moreau Labs running without you on site"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-097",
+   "client_id": "CLIENT-004",
+   "step": 16,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "explicit_instruction"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to raise stock exposure to about 25 percent in six monthly steps, leaving the tuition bucket and cash reserve untouched"
+    ],
+    [
+     "a_action",
+     "carry out the first monthly step toward the 25 percent target"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-098",
+   "client_id": "CLIENT-006",
+   "step": 17,
+   "scenario_tags": [
+    "correction",
+    "family_context",
+    "misunderstanding"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my note that you would help Brian with a few hundred dollars toward equipment was too strong; it was only a thought and nothing has been offered"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-099",
+   "client_id": "CLIENT-002",
+   "step": 16,
+   "scenario_tags": [
+    "confirmed_decision",
+    "family_context"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to set aside six hundred thousand dollars of the proceeds at closing as a care reserve for your mother, invested conservatively and reviewed yearly"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-100",
+   "client_id": "CLIENT-003",
+   "step": 17,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send Mateo's offer details"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-101",
+   "client_id": "CLIENT-005",
+   "step": 17,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "explicit_instruction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell the entire crypto holding and put the money into the cash reserve, because after the customer loss you want simpler, steadier assets"
+    ],
+    [
+     "a_action",
+     "sell the crypto holding and move the proceeds to the cash reserve"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-102",
+   "client_id": "CLIENT-004",
+   "step": 17,
+   "scenario_tags": [
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your will and the beneficiary designations on your own accounts"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-103",
+   "client_id": "CLIENT-002",
+   "step": 17,
+   "scenario_tags": [
+    "deferred_decision",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "any charitable gift until the sale numbers are firm"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-104",
+   "client_id": "CLIENT-003",
+   "step": 18,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to sell enough vested shares to move forty thousand dollars into the house fund"
+    ],
+    [
+     "a_action",
+     "sell the vested shares and move forty thousand dollars into the house fund"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-105",
+   "client_id": "CLIENT-006",
+   "step": 18,
+   "scenario_tags": [
+    "document_request",
+    "follow_up",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your power of attorney and health care proxy documents"
+    ],
+    [
+     "c_action",
+     "send the Maplewood Commons contract"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-106",
+   "client_id": "CLIENT-002",
+   "step": 18,
+   "scenario_tags": [
+    "changing_preference",
+    "procedure",
+    "suitability"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "a more conservative portfolio for the sale proceeds"
+    ],
+    [
+     "a_action",
+     "draft an investment policy statement for the sale proceeds at about forty percent equities"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-107",
+   "client_id": "CLIENT-001",
+   "step": 19,
+   "scenario_tags": [
+    "deferred_decision",
+    "pending_action",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "the deferred compensation payout election until the tax comparison is ready"
+    ],
+    [
+     "c_action",
+     "ask Hannah Park to estimate the tax on the three payout options"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-108",
+   "client_id": "CLIENT-003",
+   "step": 19,
+   "scenario_tags": [
+    "concept_explained",
+    "deferred_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "opening a 529 college savings plan for Lucia until childcare costs are clear"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-109",
+   "client_id": "CLIENT-005",
+   "step": 18,
+   "scenario_tags": [
+    "concept_explained",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your current health and disability insurance policy summaries"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-110",
+   "client_id": "CLIENT-004",
+   "step": 18,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep the plan as agreed, with the first step into stocks on June 1 and the right to pause before any later step"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-111",
+   "client_id": "CLIENT-004",
+   "step": 19,
+   "scenario_tags": [
+    "concept_explained",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your will and the beneficiary designations on your own accounts"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-112",
+   "client_id": "CLIENT-002",
+   "step": 19,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the last two years of personal tax returns"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-113",
+   "client_id": "CLIENT-003",
+   "step": 20,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the name of the attorney you'd like to use for a will and guardianship documents"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-114",
+   "client_id": "CLIENT-001",
+   "step": 20,
+   "scenario_tags": [
+    "correction",
+    "document_request",
+    "misunderstanding",
+    "procedure",
+    "use_of_funds"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your current will and the beneficiary designations on your retirement accounts"
+    ],
+    [
+     "correction",
+     "my note that the fourteen thousand dollars for Ren was extra tuition was wrong; it covers the Seoul program fee, flights and housing, and his tuition is already in the cash-flow plan"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-115",
+   "client_id": "CLIENT-005",
+   "step": 19,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your current health and disability insurance policy summaries"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-116",
+   "client_id": "CLIENT-006",
+   "step": 19,
+   "scenario_tags": [
+    "deferred_decision",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "any decision on Maplewood Commons until you've talked to Frank and an elder-law attorney has reviewed the contract"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-117",
+   "client_id": "CLIENT-004",
+   "step": 20,
+   "scenario_tags": [
+    "confirmed_decision",
+    "contradiction",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to work until 63, rather than 62 or 65, to strengthen the numbers and finish a hospital project"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-118",
+   "client_id": "CLIENT-005",
+   "step": 20,
+   "scenario_tags": [
+    "confirmed_decision",
+    "deferred_decision",
+    "rationale",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to pay the second-quarter estimate at the safe-harbor amount"
+    ],
+    [
+     "deferred",
+     "the annualized-installment method for estimated taxes until the third quarter's income is clearer"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-119",
+   "client_id": "CLIENT-006",
+   "step": 20,
+   "scenario_tags": [
+    "correction",
+    "family_context",
+    "outdated_assumption",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my model's assumption of the aide four days a week at about fifty-two hundred dollars a month was out of date; since Frank's fall the aide comes five days, at about sixty-four hundred a month"
+    ],
+    [
+     "plan",
+     "monthly spending of about ten thousand one hundred dollars, with the portfolio covering about thirty-eight hundred"
+    ],
+    [
+     "plan",
+     "using your own estimate of about half for the survivor income from Frank's pension in the stress case, until you have checked the booklet"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-120",
+   "client_id": "CLIENT-001",
+   "step": 21,
+   "scenario_tags": [
+    "confirmed_decision",
+    "follow_up",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to elect five annual deferred compensation installments starting at 63, rather than a lump sum or ten installments, to limit exposure to Northgate"
+    ],
+    [
+     "c_action",
+     "submit the election form to the plan administrator before the end of June"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-121",
+   "client_id": "CLIENT-002",
+   "step": 20,
+   "scenario_tags": [
+    "personal_stress",
+    "rationale",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "funding a retention pool of up to roughly one point two million dollars for Luis and six supervisors out of the sale proceeds"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-122",
+   "client_id": "CLIENT-004",
+   "step": 21,
+   "scenario_tags": [
+    "correction",
+    "explainer",
+    "misunderstanding",
+    "use_of_funds"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my note labelling the insurance payout as reserved for the mortgage was wrong; your February comment about wanting the house paid off was a wish, and the money is for Folake's tuition, your safety reserve and the gift allowance for Tobi"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-123",
+   "client_id": "CLIENT-006",
+   "step": 21,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your power of attorney and health care proxy documents"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-124",
+   "client_id": "CLIENT-004",
+   "step": 22,
+   "scenario_tags": [
+    "concept_explained",
+    "family_context",
+    "follow_up",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "holding Folake's share in a trust until she is older"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-125",
+   "client_id": "CLIENT-006",
+   "step": 22,
+   "scenario_tags": [
+    "confirmed_decision",
+    "rationale",
+    "rejected_option"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "not to pursue Maplewood Commons for now, because Frank wants to stay at home, with the option to revisit if his needs change"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-126",
+   "client_id": "CLIENT-002",
+   "step": 21,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction",
+    "follow_up",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to pay the lawyer's retainer and the accountant's advance, about fifty-five thousand dollars, from cash and not from investments"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-127",
+   "client_id": "CLIENT-005",
+   "step": 21,
+   "scenario_tags": [
+    "advisor_recommendation",
+    "confirmed_decision",
+    "deferred_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to complete the third Vantora sale as planned and keep the remaining position"
+    ],
+    [
+     "deferred",
+     "any further reduction of the Vantora position until after third-quarter earnings"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-128",
+   "client_id": "CLIENT-004",
+   "step": 23,
+   "scenario_tags": [
+    "advisor_commitment",
+    "changing_preference",
+    "confirmed_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to continue with the second investing step on July 1"
+    ],
+    [
+     "a_action",
+     "call you before the July 1 purchase if the stock holding is down more than ten percent since the first purchase"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-129",
+   "client_id": "CLIENT-006",
+   "step": 23,
+   "scenario_tags": [
+    "confirmed_decision",
+    "explicit_instruction",
+    "follow_up",
+    "tax"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to take the remaining required distribution of about twenty-five thousand dollars in monthly installments from July through December, with twelve percent withheld for federal tax"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-130",
+   "client_id": "CLIENT-002",
+   "step": 22,
+   "scenario_tags": [
+    "advisor_commitment",
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "set up the care reserve and a monthly spending account so they are ready on the day of closing"
+    ],
+    [
+     "c_action",
+     "send over the final purchase agreement draft"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-131",
+   "client_id": "CLIENT-003",
+   "step": 21,
+   "scenario_tags": [
+    "advisor_commitment"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "rebuild your cash-flow plan with two thousand eight hundred dollars a month of childcare"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-132",
+   "client_id": "CLIENT-005",
+   "step": 22,
+   "scenario_tags": [
+    "concept_explained",
+    "deferred_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "a college savings plan for Am\u00e9lie until the reserve is full and income is steadier"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-133",
+   "client_id": "CLIENT-001",
+   "step": 22,
+   "scenario_tags": [
+    "pending_action",
+    "scenario_result"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "get Mariko's Social Security statement to complete the survivor analysis"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-134",
+   "client_id": "CLIENT-003",
+   "step": 22,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send Mateo's offer details"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-135",
+   "client_id": "CLIENT-004",
+   "step": 24,
+   "scenario_tags": [
+    "deferred_decision",
+    "family_context",
+    "rationale",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "selling the house and downsizing in a few years"
+    ],
+    [
+     "deferred",
+     "any decision about selling the house until at least November, a year after Samuel's death"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-136",
+   "client_id": "CLIENT-005",
+   "step": 23,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your current health and disability insurance policy summaries"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-137",
+   "client_id": "CLIENT-006",
+   "step": 24,
+   "scenario_tags": [
+    "concept_explained",
+    "confirmed_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to reinvest the maturing bond at the far end of the short-term ladder instead of adding to stocks"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-138",
+   "client_id": "CLIENT-002",
+   "step": 23,
+   "scenario_tags": [
+    "document_request",
+    "procedure"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over your current will and trust documents"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-139",
+   "client_id": "CLIENT-003",
+   "step": 23,
+   "scenario_tags": [
+    "confirmed_decision",
+    "correction",
+    "misunderstanding",
+    "use_of_funds"
+   ],
+   "authored_outcomes": [
+    [
+     "correction",
+     "my note treating the forty thousand dollars in the house fund as a childcare cushion was wrong; it remains house money"
+    ],
+    [
+     "decision",
+     "to cover the childcare gap by cutting brokerage contributions by about eight hundred dollars a month and leave the house fund and the 401(k) match untouched"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-140",
+   "client_id": "CLIENT-005",
+   "step": 24,
+   "scenario_tags": [
+    "confirmed_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep nine months of expenses as the minimum cash reserve despite the new client, and to invest anything above it in the index fund"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-141",
+   "client_id": "CLIENT-001",
+   "step": 23,
+   "scenario_tags": [
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "get Mariko's Social Security statement to complete the survivor analysis"
+    ],
+    [
+     "c_action",
+     "send over your current will and the beneficiary designations on your retirement accounts"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-142",
+   "client_id": "CLIENT-002",
+   "step": 24,
+   "scenario_tags": [
+    "correction",
+    "follow_up",
+    "income",
+    "outdated_assumption"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "send over the final purchase agreement draft"
+    ],
+    [
+     "correction",
+     "my assumption that your salary would stop at closing was wrong; the draft agreement keeps you on as a paid consultant for twelve months after closing"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-143",
+   "client_id": "CLIENT-003",
+   "step": 24,
+   "scenario_tags": [
+    "changing_preference",
+    "confirmed_decision",
+    "rationale"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "to keep retirement equities at 75 percent rather than go back to 90 percent after the recovery, because the March swings were harder to live with than you first admitted"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-144",
+   "client_id": "CLIENT-001",
+   "step": 24,
+   "scenario_tags": [
+    "deferred_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "any Roth conversion until the second-half review"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-145",
+   "client_id": "CLIENT-006",
+   "step": 25,
+   "scenario_tags": [
+    "changing_preference",
+    "family_context",
+    "history_recall",
+    "summary",
+    "uncertain_intention",
+    "unresolved"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "moving to a retirement community such as Maplewood Commons at some point, if Frank's needs change"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-146",
+   "client_id": "CLIENT-004",
+   "step": 25,
+   "scenario_tags": [
+    "changing_preference",
+    "family_context",
+    "history_recall",
+    "summary",
+    "uncertain_intention",
+    "unresolved"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "giving Tobi the fifteen thousand dollar gift, once you have asked him about his customers and what happens if the business fails"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-147",
+   "client_id": "CLIENT-003",
+   "step": 25,
+   "scenario_tags": [
+    "changing_preference",
+    "deferred_decision",
+    "history_recall",
+    "summary"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "asking for a four-day work week until next year"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-148",
+   "client_id": "CLIENT-005",
+   "step": 25,
+   "scenario_tags": [
+    "advisor_recommendation",
+    "changing_preference",
+    "follow_up",
+    "history_recall",
+    "pending_follow_up",
+    "summary",
+    "unresolved"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "check in with your broker so he has what he needs for the disability insurance quotes"
+    ],
+    [
+     "tentative",
+     "buying disability cover once the broker's quotes arrive"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-149",
+   "client_id": "CLIENT-001",
+   "step": 25,
+   "scenario_tags": [
+    "contradiction",
+    "family_context",
+    "history_recall",
+    "summary",
+    "uncertain_intention",
+    "unresolved"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "whether Yuki takes up her graduate place or the nonprofit job, with the thirty thousand dollar a year cap standing if she goes"
+    ]
+   ]
+  },
+  {
+   "interaction_id": "INT-150",
+   "client_id": "CLIENT-002",
+   "step": 25,
+   "scenario_tags": [
+    "deferred_decision",
+    "history_recall",
+    "summary",
+    "uncertain_intention"
+   ],
+   "authored_outcomes": [
+    [
+     "deferred",
+     "any charitable gift until the sale numbers are final"
+    ],
+    [
+     "tentative",
+     "relocating to the Maine coast in a couple of years"
+    ]
+   ]
+  }
+ ],
+ "action_ledger": {
+  "CLIENT-001": {
+   "k_defcomp": {
+    "owner": "C",
+    "description": "send over the plan summary for your Northgate deferred compensation account",
+    "opened": "2026-01-02",
+    "status": "done",
+    "closed": "2026-02-03",
+    "deferrals": 1
+   },
+   "k_scen": {
+    "owner": "A",
+    "description": "run the retirement-age scenarios for 60, 63 and 65",
+    "opened": "2026-01-16",
+    "status": "done",
+    "closed": "2026-02-09",
+    "deferrals": 0
+   },
+   "k_edu": {
+    "owner": "A",
+    "description": "model funding Yuki's graduate studies in full, capped at thirty thousand dollars a year, or partly through loans",
+    "opened": "2026-02-26",
+    "status": "done",
+    "closed": "2026-04-08",
+    "deferrals": 0
+   },
+   "k_cpa_note": {
+    "owner": "A",
+    "description": "send Hannah Park a summary of the vesting",
+    "opened": "2026-03-02",
+    "status": "done",
+    "closed": "2026-03-04",
+    "deferrals": 0
+   },
+   "k_cpa_est": {
+    "owner": "C",
+    "description": "get the estimated-tax figure from Hannah Park",
+    "opened": "2026-03-02",
+    "status": "done",
+    "closed": "2026-03-31",
+    "deferrals": 1
+   },
+   "k_alloc": {
+    "owner": "A",
+    "description": "prepare a comparison of 60 and 70 percent equity portfolios against your retirement scenarios",
+    "opened": "2026-03-19",
+    "status": "done",
+    "closed": "2026-04-03",
+    "deferrals": 0
+   },
+   "k_rsu_sale": {
+    "owner": "A",
+    "description": "sell about a third of the vested Northgate shares and confirm the trade",
+    "opened": "2026-03-31",
+    "status": "done",
+    "closed": "2026-04-03",
+    "deferrals": 0
+   },
+   "k_ips": {
+    "owner": "C",
+    "description": "sign the updated investment policy statement",
+    "opened": "2026-04-03",
+    "status": "done",
+    "closed": "2026-04-22",
+    "deferrals": 1
+   },
+   "k_63": {
+    "owner": "A",
+    "description": "update the retirement scenarios to include the retention bonus and a retirement age of 63",
+    "opened": "2026-04-16",
+    "status": "done",
+    "closed": "2026-04-22",
+    "deferrals": 0
+   },
+   "k_ret": {
+    "owner": "C",
+    "description": "send over the retention bonus agreement from Northgate HR",
+    "opened": "2026-04-16",
+    "status": "done",
+    "closed": "2026-04-22",
+    "deferrals": 0
+   },
+   "k_ss": {
+    "owner": "A",
+    "description": "model Social Security claiming at 63, 67 and 70 using both your records",
+    "opened": "2026-05-07",
+    "status": "done",
+    "closed": "2026-06-17",
+    "deferrals": 0
+   },
+   "k_dc_tax": {
+    "owner": "C",
+    "description": "ask Hannah Park to estimate the tax on the three payout options",
+    "opened": "2026-05-19",
+    "status": "done",
+    "closed": "2026-06-03",
+    "deferrals": 0
+   },
+   "k_estate": {
+    "owner": "C",
+    "description": "send over your current will and the beneficiary designations on your retirement accounts",
+    "opened": "2026-05-29",
+    "status": "open",
+    "closed": null,
+    "deferrals": 1
+   },
+   "k_election": {
+    "owner": "C",
+    "description": "submit the election form to the plan administrator before the end of June",
+    "opened": "2026-06-03",
+    "status": "done",
+    "closed": "2026-06-23",
+    "deferrals": 0
+   },
+   "k_spouse_ss": {
+    "owner": "C",
+    "description": "get Mariko's Social Security statement to complete the survivor analysis",
+    "opened": "2026-06-17",
+    "status": "open",
+    "closed": null,
+    "deferrals": 1
+   }
+  },
+  "CLIENT-002": {
+   "r_fin": {
+    "owner": "C",
+    "description": "send over the last three years of company financial statements and any valuation work your accountant has done",
+    "opened": "2026-01-02",
+    "status": "done",
+    "closed": "2026-02-12",
+    "deferrals": 0
+   },
+   "r_net": {
+    "owner": "A",
+    "description": "calculate what a sale at twenty and twenty-four million would leave you after tax, fees and escrow",
+    "opened": "2026-02-12",
+    "status": "done",
+    "closed": "2026-02-17",
+    "deferrals": 0
+   },
+   "r_cash": {
+    "owner": "A",
+    "description": "model the cash at closing alone under the Lakeshore offer",
+    "opened": "2026-03-11",
+    "status": "done",
+    "closed": "2026-03-24",
+    "deferrals": 0
+   },
+   "r_lawyer": {
+    "owner": "C",
+    "description": "send over the signed exclusivity agreement and your lawyer's summary of the key terms",
+    "opened": "2026-04-02",
+    "status": "done",
+    "closed": "2026-05-04",
+    "deferrals": 1
+   },
+   "r_tax": {
+    "owner": "A",
+    "description": "arrange a call with your accountant Mei Lin Chu about the tax structure of the sale",
+    "opened": "2026-04-09",
+    "status": "done",
+    "closed": "2026-04-20",
+    "deferrals": 0
+   },
+   "r_returns": {
+    "owner": "C",
+    "description": "send over the last two years of personal tax returns",
+    "opened": "2026-05-04",
+    "status": "done",
+    "closed": "2026-06-08",
+    "deferrals": 1
+   },
+   "r_ips": {
+    "owner": "A",
+    "description": "draft an investment policy statement for the sale proceeds at about forty percent equities",
+    "opened": "2026-05-18",
+    "status": "done",
+    "closed": "2026-05-21",
+    "deferrals": 0
+   },
+   "r_spa": {
+    "owner": "C",
+    "description": "send over the final purchase agreement draft",
+    "opened": "2026-06-11",
+    "status": "open",
+    "closed": null,
+    "deferrals": 1
+   },
+   "r_estate": {
+    "owner": "C",
+    "description": "send over your current will and trust documents",
+    "opened": "2026-06-18",
+    "status": "open",
+    "closed": null,
+    "deferrals": 0
+   }
+  },
+  "CLIENT-003": {
+   "s_grants": {
+    "owner": "C",
+    "description": "send over your restricted stock grant agreements and the latest 401(k) statement",
+    "opened": "2026-01-20",
+    "status": "done",
+    "closed": "2026-02-03",
+    "deferrals": 0
+   },
+   "s_loan": {
+    "owner": "A",
+    "description": "compare extra student loan payments of three hundred dollars a month against investing that money",
+    "opened": "2026-01-30",
+    "status": "done",
+    "closed": "2026-02-03",
+    "deferrals": 0
+   },
+   "s_ins": {
+    "owner": "A",
+    "description": "estimate the life and disability coverage you and Mateo need and refer you to a licensed broker",
+    "opened": "2026-02-09",
+    "status": "done",
+    "closed": "2026-04-02",
+    "deferrals": 1
+   },
+   "s_will": {
+    "owner": "C",
+    "description": "send over the name of the attorney you'd like to use for a will and guardianship documents",
+    "opened": "2026-03-16",
+    "status": "open",
+    "closed": null,
+    "deferrals": 1
+   },
+   "s_offer": {
+    "owner": "C",
+    "description": "send Mateo's offer details",
+    "opened": "2026-04-16",
+    "status": "open",
+    "closed": null,
+    "deferrals": 2
+   },
+   "s_app": {
+    "owner": "C",
+    "description": "start the term life application with the broker",
+    "opened": "2026-04-21",
+    "status": "done",
+    "closed": "2026-05-11",
+    "deferrals": 0
+   },
+   "s_ips": {
+    "owner": "A",
+    "description": "send the updated investment policy statement",
+    "opened": "2026-05-01",
+    "status": "done",
+    "closed": "2026-05-11",
+    "deferrals": 0
+   }
+  },
+  "CLIENT-004": {
+   "g_estate": {
+    "owner": "C",
+    "description": "send over five certified copies of Samuel's death certificate and the letter from his employer about the pension survivor election",
+    "opened": "2026-01-12",
+    "status": "done",
+    "closed": "2026-04-08",
+    "deferrals": 1
+   },
+   "g_pension": {
+    "owner": "A",
+    "description": "ask Samuel's employer for a plain summary of the pension survivor options",
+    "opened": "2026-01-12",
+    "status": "done",
+    "closed": "2026-02-09",
+    "deferrals": 0
+   },
+   "g_loan": {
+    "owner": "A",
+    "description": "prepare a note on how much you could lend Tobi without touching the tuition bucket or emergency reserve",
+    "opened": "2026-03-03",
+    "status": "done",
+    "closed": "2026-04-27",
+    "deferrals": 0
+   },
+   "g_grow": {
+    "owner": "A",
+    "description": "prepare a gradual plan to raise stock exposure",
+    "opened": "2026-05-06",
+    "status": "done",
+    "closed": "2026-05-08",
+    "deferrals": 0
+   },
+   "g_benef": {
+    "owner": "C",
+    "description": "send over your will and the beneficiary designations on your own accounts",
+    "opened": "2026-05-11",
+    "status": "done",
+    "closed": "2026-06-08",
+    "deferrals": 1
+   }
+  },
+  "CLIENT-005": {
+   "l_pl": {
+    "owner": "C",
+    "description": "send over your 2025 profit and loss statement and your estimated tax payment records",
+    "opened": "2026-01-12",
+    "status": "done",
+    "closed": "2026-02-25",
+    "deferrals": 1
+   },
+   "l_sec": {
+    "owner": "A",
+    "description": "compare selling none, half or all of the offered founder shares, including the tax",
+    "opened": "2026-02-17",
+    "status": "done",
+    "closed": "2026-04-14",
+    "deferrals": 1
+   },
+   "l_hugo": {
+    "owner": "C",
+    "description": "ask Hugo for the business plan and a written agreement",
+    "opened": "2026-02-23",
+    "status": "done",
+    "closed": "2026-03-16",
+    "deferrals": 0
+   },
+   "l_res": {
+    "owner": "A",
+    "description": "set a plan for building the reserve to nine months",
+    "opened": "2026-03-11",
+    "status": "done",
+    "closed": "2026-03-19",
+    "deferrals": 0
+   },
+   "l_sale": {
+    "owner": "C",
+    "description": "sign and return the secondary sale paperwork before the deadline",
+    "opened": "2026-04-14",
+    "status": "done",
+    "closed": "2026-04-16",
+    "deferrals": 0
+   },
+   "l_ins": {
+    "owner": "C",
+    "description": "send over your current health and disability insurance policy summaries",
+    "opened": "2026-05-19",
+    "status": "open",
+    "closed": null,
+    "deferrals": 2
+   }
+  },
+  "CLIENT-006": {
+   "p_qcd": {
+    "owner": "A",
+    "description": "contact your accountant Dennis Hall about giving to the church through a qualified charitable distribution",
+    "opened": "2026-01-26",
+    "status": "done",
+    "closed": "2026-02-09",
+    "deferrals": 0
+   },
+   "p_care": {
+    "owner": "C",
+    "description": "send over the latest statements for Frank's Medicare supplement policy and the home care invoices",
+    "opened": "2026-01-30",
+    "status": "done",
+    "closed": "2026-02-09",
+    "deferrals": 0
+   },
+   "p_model": {
+    "owner": "A",
+    "description": "model Frank's care costs at several levels and show how long the money lasts",
+    "opened": "2026-02-09",
+    "status": "done",
+    "closed": "2026-02-24",
+    "deferrals": 0
+   },
+   "p_infl": {
+    "owner": "A",
+    "description": "model keeping equities at 25 percent versus adding inflation-protected bonds or raising equities modestly",
+    "opened": "2026-04-21",
+    "status": "done",
+    "closed": "2026-04-29",
+    "deferrals": 0
+   },
+   "p_contract": {
+    "owner": "C",
+    "description": "send the Maplewood Commons contract",
+    "opened": "2026-05-04",
+    "status": "done",
+    "closed": "2026-05-29",
+    "deferrals": 1
+   },
+   "p_poa": {
+    "owner": "C",
+    "description": "send over your power of attorney and health care proxy documents",
+    "opened": "2026-05-13",
+    "status": "open",
+    "closed": null,
+    "deferrals": 1
+   }
+  }
+ },
+ "commitments_beyond_observation_window": [
+  {
+   "id": "g_jul1_call",
+   "owner_role": "advisor",
+   "owner_id": "ADVISOR-001",
+   "description": "call Grace before the July 1 purchase if the stock holding is down more than ten percent since the first purchase",
+   "condition": "only if the holding is down more than 10 percent since the 1 June purchase",
+   "due": "2026-07-01",
+   "status": "outstanding_beyond_observation_window",
+   "counted_in_action_ledger": false,
+   "client_id": "CLIENT-004",
+   "made_in": "INT-128"
+  }
+ ],
+ "ledger_annotations": {
+  "CLIENT-005:l_ins": "Open client item. The original request (send current health and disability policy summaries) evolved in dialogue: on 2026-05-29 Lucas said he may only have health cover, and on 2026-06-18 he said the broker needed about three weeks to produce quotes. The underlying need (evidence of, or quotes for, disability cover) is still open at 2026-06-29 (INT-148). No advisor commitment is attached to it.",
+  "CLIENT-003:s_offer": "Counted as outstanding in the v1 ledger and kept so that counts stay 48/40/8. The dialogue has since made it moot: on the last check Sofia said Mateo decided not to interview, so there are no offer details to send. It should be read as withdrawn-by-circumstance, not as a live obligation."
+ }
+}

@@ -1,0 +1,820 @@
+{
+  "generated_by": "src/compare_quality.py",
+  "definitions": {
+    "exact_unique_utterance_count": "number of distinct utterance strings (case- and punctuation-sensitive) in the whole CSV",
+    "pct_turns_with_repeated_exact_utterance": "share of ALL turns whose exact utterance string occurs more than once anywhere in the CSV (the headline 58.5% figure for v1)",
+    "pct_long_turns_with_repeated_exact_utterance": "same, restricted to turns of >=12 words",
+    "normalized_utterance": "lower-cased; client/advisor first names -> <name>; month-day dates -> <date>; $amounts and digits -> #; punctuation removed; whitespace collapsed",
+    "pct_turns_with_repeated_normalized_utterance": "share of turns whose NORMALISED string occurs more than once; always >= the exact figure; catches template lines that differ only by name, date or number",
+    "semantic_uniqueness": "NOT COMPUTED. Embedding-based measures are out of scope for this phase; no semantic claim is made.",
+    "short_turns": "turns of <=3 words",
+    "substantive_unique_turn": "turn of >=15 words whose exact string occurs exactly once in the corpus (a proxy for hand-authored or state-specific content)",
+    "meetings_with_no_substantive_new_information_proxy": "meetings with fewer than 4 substantive unique turns. A proxy only: it can mislabel a short but important scripted meeting, and cannot see meaning",
+    "meetings_without_scripted_outcome_authoring": "meetings whose authoring manifest records no decision, plan, tentative idea, deferral, correction or action item. Authoring-side metadata, not derived from the text"
+  },
+  "automated": {
+    "v1": {
+      "total_interactions": 150,
+      "total_turns": 3292,
+      "turns_per_interaction": {
+        "mean": 21.95,
+        "min": 17,
+        "max": 29,
+        "interactions_below_15": 0
+      },
+      "avg_words_per_utterance": 19.3,
+      "total_words": 63414,
+      "exact_unique_utterance_count": 1773,
+      "exact_strings_occurring_once": 1366,
+      "pct_turns_with_repeated_exact_utterance": 0.5851,
+      "pct_long_turns_with_repeated_exact_utterance": 0.4683,
+      "normalized_unique_utterance_count": 1540,
+      "pct_turns_with_repeated_normalized_utterance": 0.6449,
+      "short_turns_3_words_or_fewer": 217,
+      "most_frequently_repeated_utterances": [
+        {
+          "count": 34,
+          "utterance": "Sure, go on."
+        },
+        {
+          "count": 33,
+          "utterance": "Alright, go ahead."
+        },
+        {
+          "count": 33,
+          "utterance": "Okay."
+        },
+        {
+          "count": 33,
+          "utterance": "Understood. What's next?"
+        },
+        {
+          "count": 33,
+          "utterance": "Fine, please continue."
+        },
+        {
+          "count": 28,
+          "utterance": "Noted. Let's see what else is on the list."
+        },
+        {
+          "count": 28,
+          "utterance": "Thank you for explaining that. Was there anything else you wanted to raise?"
+        },
+        {
+          "count": 28,
+          "utterance": "Understood. Is there anything else on your mind before we move on?"
+        },
+        {
+          "count": 25,
+          "utterance": "Sounds good. I'll watch for the summary."
+        },
+        {
+          "count": 24,
+          "utterance": "That date is fine with me. I'll read the summary when it arrives."
+        }
+      ],
+      "meetings_with_no_substantive_new_information_proxy": {
+        "count": 1,
+        "ids": [
+          "INT-119"
+        ]
+      },
+      "meetings_without_scripted_outcome_authoring": {
+        "count": 36,
+        "ids": [
+          "INT-004",
+          "INT-009",
+          "INT-016",
+          "INT-022",
+          "INT-033",
+          "INT-038",
+          "INT-041",
+          "INT-042",
+          "INT-045",
+          "INT-050",
+          "INT-065",
+          "INT-076",
+          "INT-077",
+          "INT-085",
+          "INT-096",
+          "INT-098",
+          "INT-110",
+          "INT-118",
+          "INT-119",
+          "INT-121",
+          "INT-122",
+          "INT-124",
+          "INT-126",
+          "INT-127",
+          "INT-128",
+          "INT-129",
+          "INT-135",
+          "INT-137",
+          "INT-139",
+          "INT-143",
+          "INT-145",
+          "INT-146",
+          "INT-147",
+          "INT-148",
+          "INT-149",
+          "INT-150"
+        ]
+      },
+      "correction_scenarios_by_client": {
+        "CLIENT-001": {
+          "count": 1,
+          "interactions": [
+            "INT-049"
+          ]
+        },
+        "CLIENT-002": {
+          "count": 1,
+          "interactions": [
+            "INT-058"
+          ]
+        },
+        "CLIENT-003": {
+          "count": 1,
+          "interactions": [
+            "INT-071"
+          ]
+        },
+        "CLIENT-005": {
+          "count": 1,
+          "interactions": [
+            "INT-062"
+          ]
+        }
+      },
+      "correction_meetings_total": 4,
+      "action_items": {
+        "opened": 48,
+        "completed": 40,
+        "outstanding": 8,
+        "outstanding_ids": [
+          "CLIENT-001:k_estate",
+          "CLIENT-001:k_spouse_ss",
+          "CLIENT-002:r_estate",
+          "CLIENT-002:r_spa",
+          "CLIENT-003:s_offer",
+          "CLIENT-003:s_will",
+          "CLIENT-005:l_ins",
+          "CLIENT-006:p_poa"
+        ]
+      },
+      "interactions_per_client": {
+        "CLIENT-001": 25,
+        "CLIENT-002": 25,
+        "CLIENT-003": 25,
+        "CLIENT-004": 25,
+        "CLIENT-005": 25,
+        "CLIENT-006": 25
+      },
+      "interactions_per_month": {
+        "2026-01": 21,
+        "2026-02": 23,
+        "2026-03": 20,
+        "2026-04": 24,
+        "2026-05": 28,
+        "2026-06": 34
+      },
+      "date_consistency_audit": {
+        "issues": 10,
+        "examples": [
+          {
+            "id": "INT-012",
+            "rule": "last week",
+            "gap": 2,
+            "text": "There's something I wanted to raise. Northgate announced a reorganisation last week and my division is being merged. Nobody has said my job "
+          },
+          {
+            "id": "INT-040",
+            "rule": "last week",
+            "gap": 4,
+            "text": "Samuel's birthday was last week. I made his jollof rice and we told stories."
+          },
+          {
+            "id": "INT-046",
+            "rule": "last week",
+            "gap": 4,
+            "text": "A large block of Northgate stock vested last week. The tax withholding looked low to me."
+          },
+          {
+            "id": "INT-048",
+            "rule": "last week",
+            "gap": 2,
+            "text": "Lucia was born last week. Mother and baby are doing well. But I'm exhausted, and honestly, looking at my account has become painful. I'm dow"
+          },
+          {
+            "id": "INT-049",
+            "rule": "last week",
+            "gap": 2,
+            "text": "Let me close out an item from our last conversation first. I had taken the action to send Hannah Park a summary of the vesting. I sent Hanna"
+          },
+          {
+            "id": "INT-078",
+            "rule": "last month",
+            "gap": 2,
+            "text": "That's possible, and it's a different position from where you were last month, when you were inclined to accept."
+          },
+          {
+            "id": "INT-078",
+            "rule": "weekday_before_previous_meeting",
+            "gap": 2,
+            "text": "Before we go further, I owe you something from last time. I said I would arrange a call with your accountant Mei Lin Chu about the tax struc"
+          },
+          {
+            "id": "INT-083",
+            "rule": "last month",
+            "gap": 2,
+            "text": "Thank you for the reasoning. That reverses your thinking from last month. I'll record that you considered waiting and chose not to, and why."
+          }
+        ]
+      }
+    },
+    "v2": {
+      "total_interactions": 150,
+      "total_turns": 2199,
+      "turns_per_interaction": {
+        "mean": 14.66,
+        "min": 12,
+        "max": 24,
+        "interactions_below_15": 92
+      },
+      "avg_words_per_utterance": 23.2,
+      "total_words": 51106,
+      "exact_unique_utterance_count": 1800,
+      "exact_strings_occurring_once": 1571,
+      "pct_turns_with_repeated_exact_utterance": 0.2856,
+      "pct_long_turns_with_repeated_exact_utterance": 0.1748,
+      "normalized_unique_utterance_count": 1744,
+      "pct_turns_with_repeated_normalized_utterance": 0.3165,
+      "short_turns_3_words_or_fewer": 77,
+      "most_frequently_repeated_utterances": [
+        {
+          "count": 7,
+          "utterance": "Perfect. That matches what I remember."
+        },
+        {
+          "count": 6,
+          "utterance": "Yes, that's what we said."
+        },
+        {
+          "count": 6,
+          "utterance": "I believe so. You'll send it to me in writing?"
+        },
+        {
+          "count": 6,
+          "utterance": "Yes. Thank you, that helps."
+        },
+        {
+          "count": 6,
+          "utterance": "For you, given the baby, a possible home purchase and the drop in income during parental leave, I'd want closer to 9 months, so that you're "
+        },
+        {
+          "count": 5,
+          "utterance": "Correct."
+        },
+        {
+          "count": 5,
+          "utterance": "Correct. Maybes are maybes."
+        },
+        {
+          "count": 5,
+          "utterance": "That's fine. I wrote down what I wanted to ask so I don't forget."
+        },
+        {
+          "count": 5,
+          "utterance": "Sure, but I reserve the right to disagree with half of it."
+        },
+        {
+          "count": 5,
+          "utterance": "Yes. You'll put it in writing?"
+        }
+      ],
+      "meetings_with_no_substantive_new_information_proxy": {
+        "count": 2,
+        "ids": [
+          "INT-040",
+          "INT-108"
+        ]
+      },
+      "meetings_without_scripted_outcome_authoring": {
+        "count": 0,
+        "ids": []
+      },
+      "correction_scenarios_by_client": {
+        "CLIENT-001": {
+          "count": 2,
+          "interactions": [
+            "INT-049",
+            "INT-114"
+          ]
+        },
+        "CLIENT-002": {
+          "count": 2,
+          "interactions": [
+            "INT-058",
+            "INT-142"
+          ]
+        },
+        "CLIENT-003": {
+          "count": 2,
+          "interactions": [
+            "INT-071",
+            "INT-139"
+          ]
+        },
+        "CLIENT-004": {
+          "count": 2,
+          "interactions": [
+            "INT-050",
+            "INT-122"
+          ]
+        },
+        "CLIENT-005": {
+          "count": 1,
+          "interactions": [
+            "INT-062"
+          ]
+        },
+        "CLIENT-006": {
+          "count": 2,
+          "interactions": [
+            "INT-098",
+            "INT-119"
+          ]
+        }
+      },
+      "correction_meetings_total": 11,
+      "action_items": {
+        "opened": 48,
+        "completed": 40,
+        "outstanding": 8,
+        "outstanding_ids": [
+          "CLIENT-001:k_estate",
+          "CLIENT-001:k_spouse_ss",
+          "CLIENT-002:r_estate",
+          "CLIENT-002:r_spa",
+          "CLIENT-003:s_offer",
+          "CLIENT-003:s_will",
+          "CLIENT-005:l_ins",
+          "CLIENT-006:p_poa"
+        ]
+      },
+      "interactions_per_client": {
+        "CLIENT-001": 25,
+        "CLIENT-002": 25,
+        "CLIENT-003": 25,
+        "CLIENT-004": 25,
+        "CLIENT-005": 25,
+        "CLIENT-006": 25
+      },
+      "interactions_per_month": {
+        "2026-01": 21,
+        "2026-02": 23,
+        "2026-03": 20,
+        "2026-04": 24,
+        "2026-05": 28,
+        "2026-06": 34
+      },
+      "date_consistency_audit": {
+        "issues": 0,
+        "examples": []
+      }
+    },
+    "preservation": {
+      "interaction_ids_clients_advisors_datetimes_channels_identical": true,
+      "interactions": 150,
+      "clients": 6,
+      "advisors": 3,
+      "columns_identical": true,
+      "meeting_context_labels_changed": [
+        "INT-004",
+        "INT-009",
+        "INT-016",
+        "INT-022",
+        "INT-033",
+        "INT-038",
+        "INT-042",
+        "INT-045",
+        "INT-065",
+        "INT-076",
+        "INT-077",
+        "INT-098",
+        "INT-110",
+        "INT-118",
+        "INT-121",
+        "INT-122",
+        "INT-124",
+        "INT-127",
+        "INT-128",
+        "INT-129",
+        "INT-135",
+        "INT-137",
+        "INT-139",
+        "INT-143"
+      ],
+      "action_ledger_identical_to_v1": true,
+      "v1_utterances_of_20plus_words_still_present_as_whole_turns": {
+        "kept": 331,
+        "of": 1014,
+        "pct": 0.326
+      },
+      "v1_utterances_of_20plus_words_found_as_substring_within_same_interaction": {
+        "kept": 370,
+        "of": 1295,
+        "pct": 0.286
+      },
+      "hand_written_script_lines_preserved": {
+        "hand_written_v1_script_lines": 500,
+        "still_present_verbatim": 479,
+        "pct": 0.958,
+        "changed_lines_by_step": {
+          "c1.step3": 1,
+          "c1.step4": 2,
+          "c1.step8": 1,
+          "c2.step13": 1,
+          "c2.step14": 1,
+          "c2.step20": 4,
+          "c3.step10": 1,
+          "c4.step24": 4,
+          "c5.step16": 3,
+          "c6.step15": 1,
+          "c6.step25": 2
+        },
+        "reasons_for_change": "c1.step3/step8, c2.step13/14, c3.step10, c6.step15: relative dates made accurate; c1.step4, c2.step20, c4.step24, c5.step16: thin meetings rewritten; c6.step25: recap updated after the Maplewood decision. No decision, reversal or rationale was removed."
+      },
+      "v1_scripted_content_note": "a whole-turn match understates continuity because adjacent same-speaker turns are now merged and filler turns were removed",
+      "interactions_whose_turn_sequence_is_unchanged": 0,
+      "pre_classification_columns_present": false,
+      "manifest_kept_out_of_csv": true
+    },
+    "structural_validation": {
+      "v1_all_passed": true,
+      "v1_checks": 30,
+      "v2_all_passed": true,
+      "v2_checks": 33,
+      "v2_failed": [],
+      "checks_carried_over_from_v1": [
+        "all_required_fields_populated",
+        "approx_25_per_client",
+        "at_least_40pct_of_turns_are_unique_utterances",
+        "at_least_60_meetings_recall_specific_earlier_decisions_or_commitments",
+        "both_speakers_in_every_interaction",
+        "client_histories_chronological_distinct_days",
+        "coverage_each_scenario_in_5plus_interactions_and_4plus_clients",
+        "dates_within_2026_01_01_to_06_30",
+        "datetimes_valid",
+        "each_client_has_one_stable_advisor",
+        "every_later_meeting_refers_to_previous_meeting",
+        "exactly_six_clients",
+        "interaction_count_100_to_200",
+        "interaction_count_equals_target_150",
+        "interaction_ids_unique_contiguous_chronological",
+        "meeting_spacing_not_uniform",
+        "multiple_turns_per_interaction",
+        "no_duplicate_turn_rows",
+        "no_empty_utterances",
+        "no_long_utterance_repeated_more_than_30_times",
+        "no_placeholder_dialogue",
+        "no_preclassification_columns",
+        "no_repeated_long_utterance_within_interaction",
+        "one_client_one_advisor_per_interaction",
+        "required_columns_present",
+        "single_datetime_per_interaction",
+        "spans_six_months",
+        "turn_indices_sequential",
+        "two_to_three_advisors"
+      ],
+      "checks_changed_or_removed": [
+        "turns_within_15_to_32"
+      ],
+      "checks_added_in_v2": [
+        "exact_repeated_turn_rate_at_most_40pct",
+        "no_known_standalone_filler_turns",
+        "relative_and_cross_reference_dates_consistent",
+        "turns_within_12_to_32"
+      ],
+      "note": "turns_within_15_to_32 became turns_within_12_to_32 because removing filler turns shortened meetings (mean 21.95 -> 14.6); every_later_meeting_refers_to_previous_meeting is unchanged in meaning but its regex now also accepts 'since <date>' phrasing"
+    }
+  },
+  "manual_review": {
+    "statement": "Manual review is qualitative and was performed by reading transcripts, not by keyword matching. It was done by the assistant that made the revision, so it is not an independent review. A human research reviewer should spot-check the entries marked adequate or still_thin.",
+    "previously_thin_meetings_all_read": true,
+    "rating_scale": {
+      "substantive": "contains client reasoning, advisor follow-up questions and a decision, an explicit uncertainty, a correction, or new information with a stated outcome",
+      "adequate": "contains real content and a clear outcome, but mostly an advisor explanation with little client reasoning",
+      "still_thin": "largely a recap or routine review; added content is short and has no logged outcome"
+    },
+    "previously_thin_meetings": {
+      "INT-004": {
+        "client": "CLIENT-002",
+        "was": "generic concentration explainer plus portfolio snapshot",
+        "now": "Rebecca challenges whether her brokerage account should offset business risk; advisor recommends a more cautious mix; she decides to wait until she knows whether she will sell",
+        "outcome": "deferred decision with rationale",
+        "rating": "substantive"
+      },
+      "INT-009": {
+        "client": "CLIENT-006",
+        "was": "sequence-risk explainer plus portfolio snapshot",
+        "now": "Peg does not understand how the bond ladder pays withdrawals; asks what happens to income if Frank dies first; survivor pension amount left unconfirmed; final QA pass: monthly portfolio withdrawal restated as about 2,600 to match the 8,900 spending and 6,300 income stated on 5 January",
+        "outcome": "unresolved item recorded",
+        "rating": "adequate",
+        "remaining_weakness": "advisor-explanation heavy; client asks questions but makes no decision"
+      },
+      "INT-016": {
+        "client": "CLIENT-005",
+        "was": "cash-flow snapshot and liquidity check",
+        "now": "Lucas resists a formula for estimated taxes; advisor explains the safe harbor and the risk of guessing low; Lucas agrees reluctantly",
+        "outcome": "decision after pushback",
+        "rating": "substantive",
+        "remaining_weakness": "ends with a generic liquidity segment"
+      },
+      "INT-022": {
+        "client": "CLIENT-001",
+        "was": "cash flow, liquidity and a three-line mortgage remark",
+        "now": "stress-tests cash against a layoff; Kenji will not ask HR about severance; working six-month assumption; keeps the mortgage as insurance logic",
+        "outcome": "working assumption plus decision",
+        "rating": "substantive"
+      },
+      "INT-033": {
+        "client": "CLIENT-006",
+        "was": "liquidity check only",
+        "now": "Peg pays a 1,900 dollar denied therapy bill rather than appeal; advisor sets out the appeal option and respects the choice",
+        "outcome": "decision with rationale",
+        "rating": "substantive",
+        "remaining_weakness": "modest stakes; liquidity segment appended"
+      },
+      "INT-038": {
+        "client": "CLIENT-002",
+        "was": "education explainer and market commentary",
+        "now": "college cost, existing college account, whether sale timing affects aid; Rebecca refuses to time the sale around forms; funding gap left open",
+        "outcome": "unresolved item recorded",
+        "rating": "substantive"
+      },
+      "INT-041": {
+        "client": "CLIENT-006",
+        "was": "care-model result with no discussion",
+        "now": "Peg asks what happens after fourteen years; advisor distinguishes stress case from expected case; decision to use the stress case for large irreversible choices",
+        "outcome": "decision (decision rule)",
+        "rating": "substantive"
+      },
+      "INT-042": {
+        "client": "CLIENT-005",
+        "was": "P&L receipt plus market commentary",
+        "now": "Lucas learns he is about 20-25 thousand short for April; resists selling Vantora; plan A invoices, plan B cash",
+        "outcome": "tentative plan with new information",
+        "rating": "substantive",
+        "remaining_weakness": "market commentary segment still appended"
+      },
+      "INT-045": {
+        "client": "CLIENT-003",
+        "was": "portfolio check-in, no outcome",
+        "now": "week before the birth: keep 6 percent 401(k) match through leave; possible four-day week left as an idea",
+        "outcome": "decision plus uncertain intention",
+        "rating": "substantive"
+      },
+      "INT-050": {
+        "client": "CLIENT-004",
+        "was": "annuity discussion without outcome",
+        "now": "annuity discussion kept; advisor corrects her own February statement of the pension survivor percentage after reading the actual form",
+        "outcome": "correction",
+        "rating": "substantive"
+      },
+      "INT-065": {
+        "client": "CLIENT-003",
+        "was": "insurance referral, portfolio, market",
+        "now": "Sofia questions whether 1.5 million of cover is too much, asks what an elimination period is, wants to discuss with Mateo",
+        "outcome": "unresolved item (decided at a later meeting)",
+        "rating": "substantive",
+        "remaining_weakness": "market segment appended after the main content"
+      },
+      "INT-076": {
+        "client": "CLIENT-005",
+        "was": "liquidity and cash-flow templates",
+        "now": "April tax shortfall acknowledged as paid; Lucas wants to put sale proceeds into Vantora; advisor pushes back; agrees reserve first, index fund second",
+        "outcome": "decision after pushback",
+        "rating": "substantive"
+      },
+      "INT-077": {
+        "client": "CLIENT-002",
+        "was": "market commentary",
+        "now": "fear of a re-trade in due diligence; Rebecca states a walk-away price of 22 million but says it is where she is today",
+        "outcome": "tentative position",
+        "rating": "substantive"
+      },
+      "INT-085": {
+        "client": "CLIENT-006",
+        "was": "cash flow and portfolio snapshot",
+        "now": "qualified charitable distribution for the church gift: explanation, tax effect, explicit instruction",
+        "outcome": "decision",
+        "rating": "substantive"
+      },
+      "INT-096": {
+        "client": "CLIENT-005",
+        "was": "four-turn Lisbon remark",
+        "now": "Lisbon relocation explored with tax-residency questions and conditions that would turn it into a plan",
+        "outcome": "possibility, not a plan",
+        "rating": "substantive"
+      },
+      "INT-098": {
+        "client": "CLIENT-006",
+        "was": "market check",
+        "now": "advisor note about helping Brian is corrected: it was only a thought, nothing offered",
+        "outcome": "correction",
+        "rating": "substantive"
+      },
+      "INT-110": {
+        "client": "CLIENT-004",
+        "was": "market check dated before the investing plan began (timeline error in v1)",
+        "now": "Grace wants to call off the first investing step; advisor quantifies the worst case; she reaffirms the plan with the right to pause",
+        "outcome": "reaffirmed decision",
+        "rating": "substantive"
+      },
+      "INT-118": {
+        "client": "CLIENT-005",
+        "was": "cash flow and market templates",
+        "now": "Q2 estimated tax with lower income: annualized method explained; pays the safe harbor again; reconsiders in Q3",
+        "outcome": "decision plus deferral",
+        "rating": "substantive"
+      },
+      "INT-119": {
+        "client": "CLIENT-006",
+        "was": "cash flow and liquidity templates",
+        "now": "advisor's model of the aide's days is out of date (four to five days after Frank's fall); spending and portfolio gap restated; final QA pass: portfolio gap corrected to 3,800 a month and the January question about Frank's pension survivor amount is carried forward as unconfirmed",
+        "outcome": "correction of an outdated assumption",
+        "rating": "substantive"
+      },
+      "INT-121": {
+        "client": "CLIENT-002",
+        "was": "staff announcement worry and sleep remark",
+        "now": "retention pool for seven key staff discussed with after-tax cost; not decided",
+        "outcome": "tentative idea",
+        "rating": "substantive"
+      },
+      "INT-122": {
+        "client": "CLIENT-004",
+        "was": "generic portfolio review",
+        "now": "reading the first statement; advisor's note that the insurance money was reserved for the mortgage is corrected",
+        "outcome": "correction of intended use of funds",
+        "rating": "substantive"
+      },
+      "INT-124": {
+        "client": "CLIENT-004",
+        "was": "beneficiary form check only",
+        "now": "Grace worries a 19-year-old would inherit outright; trust idea; deliberately left undecided",
+        "outcome": "unresolved item",
+        "rating": "substantive"
+      },
+      "INT-126": {
+        "client": "CLIENT-002",
+        "was": "liquidity and market templates",
+        "now": "pre-signing costs of 55 thousand; pay from cash, not investments",
+        "outcome": "decision",
+        "rating": "substantive"
+      },
+      "INT-127": {
+        "client": "CLIENT-005",
+        "was": "market and cash-flow templates",
+        "now": "wants to stop selling Vantora after a rebound; advisor restates why; completes the third sale, defers anything further to after Q3 earnings",
+        "outcome": "decision plus deferral",
+        "rating": "substantive"
+      },
+      "INT-128": {
+        "client": "CLIENT-004",
+        "was": "dated before the first investing step could have happened (timeline error in v1)",
+        "now": "after a down day Grace asks whether to stop; continues, with a conditional call before the July step",
+        "outcome": "decision",
+        "rating": "substantive"
+      },
+      "INT-129": {
+        "client": "CLIENT-006",
+        "was": "repeat of the April church-gift discussion",
+        "now": "church gift confirmed as received; Peg chooses monthly required distributions with 12 percent withholding",
+        "outcome": "decision",
+        "rating": "substantive"
+      },
+      "INT-135": {
+        "client": "CLIENT-004",
+        "was": "reflective chat, no content",
+        "now": "whether to keep the house; annual cost; advisor ties the question back to her own twelve-month rule",
+        "outcome": "tentative idea plus deferral",
+        "rating": "substantive"
+      },
+      "INT-137": {
+        "client": "CLIENT-006",
+        "was": "bond-ladder explainer",
+        "now": "Peg thinks 'matures' means she loses it; reinvest in the ladder or add to stocks; she picks the safe option",
+        "outcome": "decision",
+        "rating": "adequate",
+        "remaining_weakness": "advisor-led explanation; client reasoning is brief"
+      },
+      "INT-139": {
+        "client": "CLIENT-003",
+        "was": "template cash-flow and market segments",
+        "now": "advisor assumed the house fund was a childcare cushion; Sofia corrects; childcare gap covered by trimming brokerage contributions",
+        "outcome": "correction plus decision",
+        "rating": "substantive"
+      },
+      "INT-143": {
+        "client": "CLIENT-003",
+        "was": "suitability template",
+        "now": "tempted to return to 90 percent after the rally; advisor separates market from temperament; keeps 75 percent",
+        "outcome": "decision with rationale",
+        "rating": "substantive"
+      },
+      "INT-145": {
+        "client": "CLIENT-006",
+        "was": "half-year recap",
+        "now": "recap kept (and corrected for Maplewood); adds aide hours and a 'someday' status for Maplewood",
+        "outcome": "tentative idea",
+        "rating": "still_thin",
+        "remaining_weakness": "recap-driven; added content is short"
+      },
+      "INT-146": {
+        "client": "CLIENT-004",
+        "was": "half-year recap",
+        "now": "recap kept; adds Tobi's business plan and the conditions on the gift",
+        "outcome": "tentative idea",
+        "rating": "still_thin",
+        "remaining_weakness": "recap-driven"
+      },
+      "INT-147": {
+        "client": "CLIENT-003",
+        "was": "half-year recap",
+        "now": "recap kept; the four-day-week idea is closed as 'not now'",
+        "outcome": "deferral",
+        "rating": "still_thin",
+        "remaining_weakness": "recap-driven"
+      },
+      "INT-148": {
+        "client": "CLIENT-005",
+        "was": "half-year recap",
+        "now": "recap kept; disability-insurance follow-up now has an explicit pending status: broker quotes not yet due (three weeks stated on 18 June), Lucas still wants the cover, nothing is bought until quotes are seen",
+        "outcome": "unresolved: follow-up pending (client action and an unconfirmed intention are logged; no decision manufactured)",
+        "rating": "still_thin",
+        "remaining_weakness": "recap-driven; the portfolio segment is still templated"
+      },
+      "INT-149": {
+        "client": "CLIENT-001",
+        "was": "half-year recap",
+        "now": "recap kept; adds Yuki's undecided choice and the standing 30 thousand cap",
+        "outcome": "unresolved item",
+        "rating": "adequate"
+      },
+      "INT-150": {
+        "client": "CLIENT-002",
+        "was": "half-year recap",
+        "now": "recap kept; charitable gift remains parked, Maine remains a maybe",
+        "outcome": "deferral and possibility",
+        "rating": "adequate",
+        "remaining_weakness": "the two added items restate earlier positions"
+      }
+    },
+    "other_meetings_read_in_full": {
+      "INT-001": "first meeting; opening no longer asks about changes since a previous meeting. Reads naturally.",
+      "INT-005": "Grace's first meeting; an earlier version appended a 'since we last met' check to it, which made no sense. Fixed by never using that check on a client's first meeting.",
+      "INT-051": "Lucas loses a customer; decisive scripted exchange; ends with a generic circumstances check that adds little.",
+      "INT-060": "Peg cuts equities; content good; template cash-flow segment appended.",
+      "INT-061": "Rebecca declines employee ownership; rationale clear; template segments follow the scripted core.",
+      "INT-067": "Kenji decides on 60 percent equities; strong core; portfolio snapshot afterwards is routine.",
+      "INT-069": "Grace retitles the rollover; fine; padding segments mildly bolted on.",
+      "INT-089": "Sofia asks for a conservative approach; strong core; the circumstances check plus cash-flow segment are padding.",
+      "INT-114": "Kenji, with the added Ren correction; the correction reads naturally; market segment before it is padding.",
+      "INT-142": "Rebecca, with the added income-assumption correction; reads naturally."
+    },
+    "flaws_found_in_review_and_fixed": [
+      "bridging filler turns (Okay. / Sure, go on.) removed entirely; adjacent same-speaker segments are merged with a topic-naming transition",
+      "casual remarks were reused 2-3 times per client and could precede the event they depend on (nursery painting after the birth); each is now used once inside a date or step window",
+      "relative dates that contradicted the real gap between meetings (born last week after a meeting two days earlier; stock vested last week; spoke on Tuesday after a Friday meeting) replaced by explicit dates or accurate wording",
+      "v1 timeline error: Grace's 'first investing step' meetings were dated before the plan's start month; the first step is now 1 June and the second 1 July",
+      "stale holdings text (Lucas still discussed crypto after selling it; Kenji's employer shares; Grace's 'inherited' account after the rollover)",
+      "a padding segment (generic market commentary) was being appended to short meetings, producing the same market conversation in three consecutive meetings for one client; padding now uses portfolio, cash-flow or a circumstances check, and none on a first meeting",
+      "'Moving on. Before we move on', 'Let me bring up liquidity' after a transition, '?.' and '..' punctuation, lowercased proper names in topic phrases"
+    ],
+    "new_facts_introduced_by_revision": [
+      "CLIENT-002: Ethan has an existing college account of about 85 thousand; walk-away price 22 million; retention-pool idea of up to about 1.2 million; 55 thousand of pre-signing legal and accounting costs paid from cash; 12-month paid consulting role after closing",
+      "CLIENT-003: Lucia was born on 3 March (the meeting two days later is a telephone call from hospital); manager hinted at a four-day week; Sofia's student loans are federal",
+      "CLIENT-004: survivor pension is 60 percent of Samuel's pension (corrects 'about half'); first investing step 1 June of about 24 thousand dollars; annual house cost of about 15 thousand",
+      "CLIENT-005: April tax shortfall of 20-25 thousand (about 22 thousand later covered from invoices); estimated payments use the safe-harbor method; Vantora remaining position about a sixth of liquid assets after the third sale (corrected in the final QA pass from \"a fifth\")",
+      "CLIENT-006: required distribution about 31 thousand; aide five days a week at about 6,400 a month from spring (spending 10,100; portfolio-funded gap 3,800, corrected in the final QA pass from 4,200); monthly distributions with 12 percent withholding; the bond rung maturing is about 50 thousand",
+      "CLIENT-001: working assumption of six months' base salary as severance; Ren's 14 thousand covers program fee, flights and housing"
+    ],
+    "remaining_weaknesses": [
+      "pivotal v1 scripts were intentionally preserved verbatim, so the uniformly polite, articulate register persists in them; distinct voices are strongest in routine scaffolding and in the 30 rewritten meetings",
+      "routine segments (portfolio snapshot, cash flow, circumstances check, market commentary) remain templates; about 29 percent of turns are still exact repeats and more are repeats after normalisation",
+      "meetings are shorter: mean 14.7 turns, 92 below 15, the shortest 12; filler removal exposed how brief the scripted cores are",
+      "every meeting still ends with the same recap-plus-next-date structure",
+      "half-year reviews remain recap-driven and do not list every unresolved thread",
+      "this review was done by the assistant that wrote the revision and has not been independently audited",
+      "Priya's conditional 1 July call is recorded in the manifest as a commitment beyond the observation window (outside the 48/40/8 ledger)"
+    ],
+    "final_qa_corrections": [
+      "INT-009: 'about three thousand' -> 'about twenty-six hundred' (8,900 - 6,300 = 2,600)",
+      "INT-119: gap 'four thousand two hundred' -> 'thirty-eight hundred' (10,100 - 6,300 = 3,800); added the carried-forward question about Frank's pension survivor amount (promised in INT-009)",
+      "INT-115 and INT-148: Vantora holding text no longer cites a decision made on 9 June before it happens, and 'a fifth' became 'a sixth' after the three sales",
+      "INT-148: explicit pending status for the disability-insurance follow-up; broker timing made consistent with the 18 June statement"
+    ]
+  }
+}

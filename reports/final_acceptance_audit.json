@@ -1,0 +1,951 @@
+{
+  "generated_by": "src/final_audit.py",
+  "csv": "conversations.csv",
+  "csv_md5": "03d14ce01d5f053bd843a1d9ec559f8f",
+  "manifest_md5": "955c616b2515c92bb361289b90b403b2",
+  "v1_csv_md5": "ee199516894c8111e6903ce40ea68d9e",
+  "pre_final_v2_csv_md5": "9a30a8ab0c4b7dccdb49c00c62522a98",
+  "dry_run": false,
+  "verdict": {
+    "fit_to_freeze": true,
+    "statement": "Fit to freeze as the final Phase 1 source dataset. All automated checks pass, 4 genuine inconsistencies found in this pass were corrected with a deterministic regeneration that changed only 4 interactions, and no confirmed inconsistency remains open. The items listed under human_review_required are recommended confirmations, not blockers."
+  },
+  "automated_checks": [
+    {
+      "name": "150_interactions",
+      "passed": true,
+      "detail": "150"
+    },
+    {
+      "name": "six_clients_25_each",
+      "passed": true,
+      "detail": "{'CLIENT-001': 25, 'CLIENT-002': 25, 'CLIENT-006': 25, 'CLIENT-004': 25, 'CLIENT-005': 25, 'CLIENT-003': 25}"
+    },
+    {
+      "name": "three_advisors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "eleven_columns_unchanged",
+      "passed": true,
+      "detail": "['interaction_id', 'client_id', 'advisor_id', 'interaction_datetime', 'channel', 'turn_index', 'speaker', 'utterance', 'meeting_context', 'source_type', 'consent_status']"
+    },
+    {
+      "name": "ids_clients_advisors_timestamps_channels_identical_to_v1",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "meeting_context_labels_identical_to_pre_final_v2",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "turn_indices_sequential",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_manifest_ids_or_annotation_terms_in_csv",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "source_type_and_consent_constant",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "only_the_four_audited_interactions_changed_text",
+      "passed": true,
+      "detail": "['INT-009', 'INT-115', 'INT-119', 'INT-148']"
+    },
+    {
+      "name": "unchanged_interactions_byte_identical_rows",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "ledger_48_opened_40_completed_8_outstanding",
+      "passed": true,
+      "detail": "48/40/8"
+    },
+    {
+      "name": "ledger_identical_to_v1",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "july_1_commitment_recorded_outside_ledger_counts",
+      "passed": true,
+      "detail": "[{\"id\": \"g_jul1_call\", \"owner_role\": \"advisor\", \"owner_id\": \"ADVISOR-001\", \"description\": \"call Grace before the July 1 purchase if the stock holding is down more than ten percent since the first purchase\", \"condition\": \"only if the holding is down more than 10 percent since the 1 June purchase\", \"d"
+    },
+    {
+      "name": "relative_date_and_cross_reference_audit_clean",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "INT-148_has_explicit_pending_status",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "INT-148_closing_no_longer_says_nothing_requires_action",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "INT-148_logs_follow_up_and_unconfirmed_intention",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "INT-148_broker_timing_consistent_with_18_June",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "gap_arithmetic_consistent_CLIENT-006",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "vantora_text_not_ahead_of_decision",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "generator_deterministic_two_runs_identical",
+      "passed": true,
+      "detail": "[(0, '03d14ce01d5f053bd843a1d9ec559f8f', '955c616b2515c92bb361289b90b403b2'), (0, '03d14ce01d5f053bd843a1d9ec559f8f', '955c616b2515c92bb361289b90b403b2')]"
+    },
+    {
+      "name": "generated_output_equals_delivered_csv_and_manifest",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "validator_all_33_checks_pass",
+      "passed": true,
+      "detail": "exit 0, 33 checks, failed=[]"
+    },
+    {
+      "name": "v1_backup_csv_md5_matches_value_recorded_at_backup_time",
+      "passed": true,
+      "detail": "ee199516894c8111e6903ce40ea68d9e"
+    },
+    {
+      "name": "v1_backup_files_share_one_copy_timestamp_no_later_edits",
+      "passed": true,
+      "detail": "spread 0.26s over 18 files"
+    },
+    {
+      "name": "v1_backup_ledger_48_40_8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "quality_comparison_runs_and_preservation_flags_true",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "every_new_fact_located_in_the_csv",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "all_half_year_recap_claims_traceable_to_earlier_dialogue",
+      "passed": true,
+      "detail": "{}"
+    },
+    {
+      "name": "half_year_reviews_reference_ledger_items_that_are_open",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "corrections_made_in_this_pass": [
+    {
+      "interaction": "INT-009",
+      "problem": "portfolio withdrawal stated as 'about three thousand' while the 5 January figures (8,900 spending - 6,300 income) give 2,600",
+      "fix": "'about twenty-six hundred'"
+    },
+    {
+      "interaction": "INT-119",
+      "problem": "portfolio-funded gap stated as 4,200; 10,100 - 6,300 = 3,800. The INT-009 promise to revisit Frank's pension survivor amount 'when we look at the care costs' had not been kept",
+      "fix": "3,800 (and 2,600 as the prior gap); the unconfirmed survivor amount is carried forward without inventing an answer"
+    },
+    {
+      "interaction": "INT-115",
+      "problem": "Vantora holding text said 'you've chosen to hold the rest until after the third-quarter earnings' on 29 May, but that decision is made on 9 June (INT-127)",
+      "fix": "step-aware wording: starting-size description until the third sale"
+    },
+    {
+      "interaction": "INT-148",
+      "problem": "disability-insurance follow-up had no status: the closing said 'nothing we saw requires action' and logged no outcome; the dialogue also implied the broker was overdue although 'three weeks' was said on 18 June",
+      "fix": "explicit pending status ('quotes not back, nothing bought until seen'), logged as one client action and one unconfirmed intention; timing made consistent. No decision was manufactured"
+    }
+  ],
+  "new_fact_trace": [
+    {
+      "client": "CLIENT-002",
+      "fact": "Ethan has an existing college account of about $85k",
+      "first_interaction": "INT-038",
+      "date": "2026-02-19",
+      "speaker": "Client",
+      "supporting_dialogue": "David started a college account when Ethan was born. There's about eighty-five in it. The rest comes out of income. I don't want Ethan choosing a school on price.",
+      "related_interactions": [],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Single mention; Ethan is 17 (profile) and applying this autumn; nothing contradicts it."
+    },
+    {
+      "client": "CLIENT-002",
+      "fact": "Walk-away price of $22M against the $24M letter of intent",
+      "first_interaction": "INT-077",
+      "date": "2026-04-17",
+      "speaker": "Client",
+      "supporting_dialogue": "Twenty-two. Below twenty-two I walk.",
+      "related_interactions": [
+        "INT-077"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Arithmetic checked: 2M price drop x ~0.6 after tax = 1.2M; 13.5M cash at closing (INT-058) -> 12.3M as stated in INT-077. Recorded as a floor 'where I am today', not a decision, and not restated after the INT-083 decision to sell; no contradiction."
+    },
+    {
+      "client": "CLIENT-002",
+      "fact": "Retention pool of up to ~$1.2M, ~$700k after tax",
+      "first_interaction": "INT-121",
+      "date": "2026-06-03",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Out of your proceeds, you mean. After tax that's roughly seven hundred thousand less in your pocket. Can you live with that?",
+      "related_interactions": [],
+      "consistency_result": "consistent, tax figure unverified",
+      "required_action": "human tax plausibility check (optional)",
+      "notes": "Tentative idea, never decided; stays tentative in the manifest. The 700k after-tax cost implies roughly a 40% tax effect, stated by the advisor as 'roughly'."
+    },
+    {
+      "client": "CLIENT-002",
+      "fact": "$55k pre-signing costs ($40k retainer + $15k advance) paid from cash",
+      "first_interaction": "INT-126",
+      "date": "2026-06-08",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Fifty-five thousand out of your own pocket before the deal pays for itself. Where's it coming from?",
+      "related_interactions": [],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "40k + 15k = 55k. Cash 220k -> 165k afterwards; no later meeting quotes a Rebecca cash balance, so nothing contradicts the new level."
+    },
+    {
+      "client": "CLIENT-002",
+      "fact": "12-month paid consulting role after closing (corrects 'salary stops at closing')",
+      "first_interaction": "INT-142",
+      "date": "2026-06-23",
+      "speaker": "Client",
+      "supporting_dialogue": "No, and I should have said so. The draft keeps me on as a paid consultant for twelve months after closing, at my current salary. Lakeshore wants me for the handover. It's in section six.",
+      "related_interactions": [
+        "INT-142"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "The earlier assumption is preserved in INT-130 (advisor says income stops at closing) and explicitly superseded in INT-142 (later). Correction wording attributes the error to the advisor's assumption."
+    },
+    {
+      "client": "CLIENT-003",
+      "fact": "Lucia born Tuesday 3 March; the 4 March meeting is a call from hospital",
+      "first_interaction": "INT-048",
+      "date": "2026-03-04",
+      "speaker": "Client",
+      "supporting_dialogue": "Lucia was born on Tuesday, March 3. Mother and baby are doing well, and yes, I'm still in the hospital. I didn't want to cancel",
+      "related_interactions": [
+        "INT-045",
+        "INT-071"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "INT-045 (2 March) has her at 39 weeks, 'any day now'; January said baby due in March; 5 weeks later (10 April) Lucia smiles for the first time. Token date resolves to Tuesday, March 3 (a Tuesday)."
+    },
+    {
+      "client": "CLIENT-003",
+      "fact": "Manager hinted at a four-day week (about -20% salary)",
+      "first_interaction": "INT-045",
+      "date": "2026-03-02",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Good. You also mentioned your manager might let you move to four days after leave?",
+      "related_interactions": [
+        "INT-147"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Tentative in INT-045; closed as 'not now' in INT-147; no intermediate contradiction."
+    },
+    {
+      "client": "CLIENT-003",
+      "fact": "Sofia's student loans are federal",
+      "first_interaction": "INT-065",
+      "date": "2026-04-02",
+      "speaker": "Client",
+      "supporting_dialogue": "Federal. And what's an elimination period? The broker used that on the disability quote and I nodded like I knew.",
+      "related_interactions": [],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "INT-019 gives $48k at 5.2% without a type; nothing contradicts federal."
+    },
+    {
+      "client": "CLIENT-004",
+      "fact": "Survivor pension is 60% of Samuel's pension (corrects 'about half')",
+      "first_interaction": "INT-050",
+      "date": "2026-03-09",
+      "speaker": "Advisor",
+      "supporting_dialogue": "More. The form says sixty percent for life, or a lump-sum alternative that we haven't evaluated yet. I had read the company's summary too loosely.",
+      "related_interactions": [
+        "INT-029",
+        "INT-050"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Original 'about half' statement is in INT-029 (9 Feb); INT-050 (9 Mar) explicitly corrects it and keeps the original. No later mention uses 'half' for Grace."
+    },
+    {
+      "client": "CLIENT-004",
+      "fact": "First investing step on 1 June of ~$24k (one of six)",
+      "first_interaction": "INT-110",
+      "date": "2026-05-19",
+      "speaker": "Advisor",
+      "supporting_dialogue": "It isn't silly. Let me be concrete. The first step is one sixth of the amount heading into stocks, about twenty-four thousand dollars. If that fell twenty percent, you'd be down about forty-eight hundred.",
+      "related_interactions": [
+        "INT-122",
+        "INT-128"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Arithmetic: 6 x 24k = 144k = 10 points of $1.45M, i.e. 15% -> 25% as agreed in INT-097; a 20% fall of 24k = 4.8k as stated. INT-097 says only 'starting next month'; the date 1 June (a Monday) first appears in INT-110 and is confirmed by the advisor. v1 had the investing-step meetings dated before this; fixed in revision 2."
+    },
+    {
+      "client": "CLIENT-004",
+      "fact": "Annual house cost of 'fifteen thousand or more'",
+      "first_interaction": "INT-135",
+      "date": "2026-06-17",
+      "speaker": "Advisor",
+      "supporting_dialogue": "So fifteen thousand or more. But I'd rather you not decide this in the first year. In January you said no large irreversible decisions fo",
+      "related_interactions": [],
+      "consistency_result": "partly supported",
+      "required_action": "none; accepted",
+      "notes": "Client states property tax ~9k and insurance 2k (=11k) plus unquantified upkeep; the 15k is the advisor's estimate. Not contradicted anywhere."
+    },
+    {
+      "client": "CLIENT-005",
+      "fact": "April tax shortfall of $20-25k, covered ~22k from invoices and ~3k from cash",
+      "first_interaction": "INT-042",
+      "date": "2026-02-25",
+      "speaker": "Advisor",
+      "supporting_dialogue": "twenty-seven thousand, plus federal income tax, plus state. I'd expect fifty-five to sixty all in. So you're short by twenty to twenty-five, due in April.",
+      "related_interactions": [
+        "INT-076"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Feb 25 -> Apr 15 is seven weeks as stated. INT-076 closes the loop (22k of 25k from invoices, rest from cash). Estimates paid for 2025 (35k) were his own guess (INT-016), consistent with the shortfall being on the 2025 return."
+    },
+    {
+      "client": "CLIENT-005",
+      "fact": "Estimated taxes use the safe-harbor method (110% of last year's tax)",
+      "first_interaction": "INT-016",
+      "date": "2026-01-22",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Then we can't be precise today. There's a safe harbor: if you pay at least a hundred and ten percent of last year's total tax, in four equal installments, there's no underpayment penalty however big this year turns out.",
+      "related_interactions": [
+        "INT-016",
+        "INT-118"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "Decided INT-016, applied INT-118; 110% applies because net income (~190k) exceeds the 150k threshold."
+    },
+    {
+      "client": "CLIENT-005",
+      "fact": "Remaining Vantora position about a sixth of liquid assets after three sales",
+      "first_interaction": "INT-148",
+      "date": "2026-06-29",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Good question. After the three sales it's down to roughly a sixth of the liquid portfolio, and you've chosen to hold the rest until after the third-quarter earnings.",
+      "related_interactions": [
+        "INT-034",
+        "INT-115"
+      ],
+      "consistency_result": "inconsistency found and fixed",
+      "required_action": "fixed in this pass",
+      "notes": "v2 text said 'a fifth' and cited the hold-until-Q3 decision on 29 May, eleven days before it was made (9 June). Arithmetic: ~33% start, -30% fall, 40% trimmed => ~14-17%. Text is now step-aware: starting-size wording until the third sale, 'about a sixth' only after it."
+    },
+    {
+      "client": "CLIENT-006",
+      "fact": "Required distribution about $31k; $6k of it via the church gift",
+      "first_interaction": "INT-085",
+      "date": "2026-04-24",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Dennis Hall has confirmed the numbers for the church gift. Your required distribution this year is about thirty-one thousand. A qualified charitable distribution of six thousand counts toward it, and it isn't added to your taxable inc",
+      "related_interactions": [
+        "INT-129"
+      ],
+      "consistency_result": "consistent, IRA balance never stated",
+      "required_action": "human check (optional)",
+      "notes": "31k - 6k = 25k as stated in INT-129. No IRA balance appears in any dialogue, so 31k cannot be tied to a balance; plausible for age 74 with a ~0.8M IRA."
+    },
+    {
+      "client": "CLIENT-006",
+      "fact": "Aide five days a week at ~$6,400 a month; spending $10,100; portfolio gap $3,800",
+      "first_interaction": "INT-119",
+      "date": "2026-06-02",
+      "speaker": "Client",
+      "supporting_dialogue": "No, it's five days now. Since Frank's fall in March the agency moved us up, and the invoice for May was sixty-four hundred.",
+      "related_interactions": [
+        "INT-119"
+      ],
+      "consistency_result": "inconsistency found and fixed",
+      "required_action": "fixed in this pass",
+      "notes": "5,200 -> 6,400 is +1,200 and 8,900 -> 10,100 as stated. But the gap was given as 4,200 (and 3,000 in INT-009) while January's own figures give 8,900 - 6,300 = 2,600, so the new gap is 10,100 - 6,300 = 3,800. INT-009 and INT-119 corrected; the January statements are untouched."
+    },
+    {
+      "client": "CLIENT-006",
+      "fact": "Remaining required amount taken monthly Jul-Dec with 12% withheld",
+      "first_interaction": "INT-129",
+      "date": "2026-06-11",
+      "speaker": "Advisor",
+      "supporting_dialogue": "Dennis said twelve percent. Is that what you want?",
+      "related_interactions": [],
+      "consistency_result": "weakly supported",
+      "required_action": "human check (optional)",
+      "notes": "The 12% is attributed to the accountant Dennis, who is mentioned earlier (INT-028, INT-085), but 12% appears first in the advisor's own turn in INT-129. Not contradicted. Left as is: it is the advisor reporting an accountant's figure."
+    },
+    {
+      "client": "CLIENT-006",
+      "fact": "Maturing bond rung of about $50k",
+      "first_interaction": "INT-137",
+      "date": "2026-06-18",
+      "speaker": "Advisor",
+      "supporting_dialogue": "No, the opposite. The bond pays back its face value in cash, about fifty thousand dollars. The question is what to do with the cash.",
+      "related_interactions": [],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "At the corrected 3,800 a month, one year of withdrawals is ~46k, so a ~50k rung fits. No earlier statement gives a rung size."
+    },
+    {
+      "client": "CLIENT-006",
+      "fact": "Frank's pension survivor amount unconfirmed (carried forward)",
+      "first_interaction": "INT-009",
+      "date": "2026-01-12",
+      "speaker": "Advisor",
+      "supporting_dialogue": "That's worth knowing, and it affects how much you can safely spend. For now I'll record that the survivor amount is unconfirmed, and we'll come back to it when we look at the care costs.",
+      "related_interactions": [
+        "INT-009",
+        "INT-119"
+      ],
+      "consistency_result": "loose end found and fixed",
+      "required_action": "fixed in this pass",
+      "notes": "INT-009 promised to return to it 'when we look at the care costs'; INT-041 and INT-119 did not. INT-119 now carries it forward as still unconfirmed with Peg's own estimate of about half used for the stress case. No answer is invented."
+    },
+    {
+      "client": "CLIENT-001",
+      "fact": "Working assumption of six months' base salary as severance",
+      "first_interaction": "INT-022",
+      "date": "2026-02-03",
+      "speaker": "Advisor",
+      "supporting_dialogue": "That's a reasonable instinct. I'll use a conservative working assumption of six months of base salary and replace it if you ever learn the real terms. On that basis, cash plus severance would cover well over a y",
+      "related_interactions": [],
+      "consistency_result": "consistent, salary never stated",
+      "required_action": "human check (optional)",
+      "notes": "'Well over a year' of cover depends on a base salary that is not stated in any dialogue; with 150k cash alone ~13 months, the claim holds for any plausible salary. Not contradicted."
+    },
+    {
+      "client": "CLIENT-001",
+      "fact": "Ren's 14k is the program fee, flights and housing, not extra tuition",
+      "first_interaction": "INT-091",
+      "date": "2026-05-04",
+      "speaker": "Client",
+      "supporting_dialogue": "Ren wants to spend a semester in Seoul next spring. The program would cost about fourteen thousand beyond normal tuition.",
+      "related_interactions": [
+        "INT-114"
+      ],
+      "consistency_result": "consistent",
+      "required_action": "none",
+      "notes": "INT-091 (client: 'beyond normal tuition') -> INT-114 (advisor note had it as extra tuition; client corrects). Original statements preserved."
+    }
+  ],
+  "INT_148": {
+    "transcript_read_in_full": true,
+    "status": "unresolved / follow-up pending",
+    "what_is_pending": "broker quotes for disability cover; Lucas wants the cover but has bought nothing and decided nothing",
+    "decision_made": false,
+    "advisor_commitment_in_dialogue": false,
+    "advisor_commitment_note": "The advisor recommends checking in with the broker and records the item as pending; no advisor task is promised.",
+    "client_action_logged": "check in with your broker so he has what he needs for the disability insurance quotes",
+    "ledger_item": {
+      "id": "CLIENT-005:l_ins",
+      "owner": "C",
+      "description": "send over your current health and disability insurance policy summaries",
+      "opened": "2026-05-19",
+      "status": "open",
+      "closed": null,
+      "deferrals": 2
+    },
+    "ledger_representation": "Represented as the open client item l_ins (2 deferrals). Its description is the original request (send policy summaries); the dialogue evolved to broker quotes. The drift is documented in the manifest's ledger_annotations, and counts are unchanged."
+  },
+  "july_1_commitment": {
+    "commitment": {
+      "id": "g_jul1_call",
+      "owner_role": "advisor",
+      "owner_id": "ADVISOR-001",
+      "description": "call Grace before the July 1 purchase if the stock holding is down more than ten percent since the first purchase",
+      "condition": "only if the holding is down more than 10 percent since the 1 June purchase",
+      "due": "2026-07-01",
+      "status": "outstanding_beyond_observation_window",
+      "counted_in_action_ledger": false,
+      "client_id": "CLIENT-004",
+      "made_in": "INT-128"
+    },
+    "representation": "Held in the manifest's commitments_beyond_observation_window, outside the 48/40/8 in-window ledger, with status 'outstanding_beyond_observation_window'. No meeting was added or extended.",
+    "dialogue_evidence": [
+      "INT-128",
+      "2026-06-10"
+    ]
+  },
+  "half_year_reviews": {
+    "INT-145": {
+      "client": "CLIENT-006",
+      "date": "2026-06-25",
+      "recap_claims": [
+        {
+          "claim": "35% equities in January",
+          "evidence_interaction": "INT-003",
+          "evidence_date": "2026-01-05",
+          "evidenced": true
+        },
+        {
+          "claim": "asked to cut to 25% after Frank's fall",
+          "evidence_interaction": "INT-057",
+          "evidence_date": "2026-03-24",
+          "evidenced": true
+        },
+        {
+          "claim": "moved to 30% after the inflation worry",
+          "evidence_interaction": "INT-087",
+          "evidence_date": "2026-04-29",
+          "evidenced": true
+        },
+        {
+          "claim": "declined Brian's $80k loan",
+          "evidence_interaction": "INT-063",
+          "evidence_date": "2026-03-30",
+          "evidenced": true
+        },
+        {
+          "claim": "decided against Maplewood for now",
+          "evidence_interaction": "INT-125",
+          "evidence_date": "2026-06-08",
+          "evidenced": true
+        },
+        {
+          "claim": "power of attorney document still open",
+          "evidence_interaction": "INT-105",
+          "evidence_date": "2026-05-13",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [
+        {
+          "ledger_id": "p_poa",
+          "status": "open",
+          "description": "send over your power of attorney and health care proxy documents"
+        }
+      ],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "Frank's pension survivor amount (unconfirmed since INT-009; carried forward in INT-119 only)"
+      ],
+      "states_explicit_open_items": true
+    },
+    "INT-146": {
+      "client": "CLIENT-004",
+      "date": "2026-06-25",
+      "recap_claims": [
+        {
+          "claim": "annuity declined for access reasons",
+          "evidence_interaction": "INT-059",
+          "evidence_date": "2026-03-26",
+          "evidenced": true
+        },
+        {
+          "claim": "rolled Samuel's account into her own",
+          "evidence_interaction": "INT-069",
+          "evidence_date": "2026-04-08",
+          "evidenced": true
+        },
+        {
+          "claim": "kept the mortgage after first wanting it paid off",
+          "evidence_interaction": "INT-084",
+          "evidence_date": "2026-04-24",
+          "evidenced": true
+        },
+        {
+          "claim": "gift of up to 15k for Tobi conditional on a plan",
+          "evidence_interaction": "INT-086",
+          "evidence_date": "2026-04-27",
+          "evidenced": true
+        },
+        {
+          "claim": "working until 63",
+          "evidence_interaction": "INT-117",
+          "evidence_date": "2026-06-01",
+          "evidenced": true
+        },
+        {
+          "claim": "survivor benefit postponed",
+          "evidence_interaction": "INT-040",
+          "evidence_date": "2026-02-23",
+          "evidenced": true
+        },
+        {
+          "claim": "six equal investing steps to ~25% stocks",
+          "evidence_interaction": "INT-097",
+          "evidence_date": "2026-05-08",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "whether Folake's share should be held in trust (INT-124)",
+        "downsizing the house, deferred to at least November (INT-135)",
+        "second investing step on 1 July with a conditional advisor call (INT-128; beyond the window)"
+      ],
+      "states_explicit_open_items": true
+    },
+    "INT-147": {
+      "client": "CLIENT-003",
+      "date": "2026-06-26",
+      "recap_claims": [
+        {
+          "claim": "90% equities, 'aggressive' in January",
+          "evidence_interaction": "INT-011",
+          "evidence_date": "2026-01-13",
+          "evidenced": true
+        },
+        {
+          "claim": "March swings were hard",
+          "evidence_interaction": "INT-089",
+          "evidence_date": "2026-05-01",
+          "evidenced": true
+        },
+        {
+          "claim": "75% for retirement decided in May",
+          "evidence_interaction": "INT-089",
+          "evidence_date": "2026-05-01",
+          "evidenced": true
+        },
+        {
+          "claim": "house purchase had been only a possibility",
+          "evidence_interaction": "INT-071",
+          "evidence_date": "2026-04-10",
+          "evidenced": true
+        },
+        {
+          "claim": "search postponed until the autumn",
+          "evidence_interaction": "INT-071",
+          "evidence_date": "2026-04-10",
+          "evidenced": true
+        },
+        {
+          "claim": "will/guardianship open",
+          "evidence_interaction": "INT-053",
+          "evidence_date": "2026-03-16",
+          "evidenced": true
+        },
+        {
+          "claim": "529 deferred",
+          "evidence_interaction": "INT-108",
+          "evidence_date": "2026-05-19",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [
+        {
+          "ledger_id": "s_will",
+          "status": "open",
+          "description": "send over the name of the attorney you'd like to use for a will and guardianship documents"
+        }
+      ],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "childcare gap covered by trimming brokerage contributions (decided, not open)",
+        "Mateo's job-offer details (ledger item s_offer, moot)"
+      ],
+      "states_explicit_open_items": true
+    },
+    "INT-148": {
+      "client": "CLIENT-005",
+      "date": "2026-06-29",
+      "recap_claims": [
+        {
+          "claim": "wanted to concentrate on Vantora",
+          "evidence_interaction": "INT-006",
+          "evidence_date": "2026-01-09",
+          "evidenced": true
+        },
+        {
+          "claim": "nine-month reserve",
+          "evidence_interaction": "INT-051",
+          "evidence_date": "2026-03-11",
+          "evidenced": true
+        },
+        {
+          "claim": "declined the restaurant",
+          "evidence_interaction": "INT-054",
+          "evidence_date": "2026-03-16",
+          "evidenced": true
+        },
+        {
+          "claim": "sold half of the secondary shares",
+          "evidence_interaction": "INT-073",
+          "evidence_date": "2026-04-14",
+          "evidenced": true
+        },
+        {
+          "claim": "Vantora trimmed 40% over three steps",
+          "evidence_interaction": "INT-080",
+          "evidence_date": "2026-04-21",
+          "evidenced": true
+        },
+        {
+          "claim": "third sale completed",
+          "evidence_interaction": "INT-140",
+          "evidence_date": "2026-06-22",
+          "evidenced": true
+        },
+        {
+          "claim": "sold the crypto",
+          "evidence_interaction": "INT-101",
+          "evidence_date": "2026-05-11",
+          "evidenced": true
+        },
+        {
+          "claim": "disability quotes pending",
+          "evidence_interaction": "INT-136",
+          "evidence_date": "2026-06-18",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [
+        {
+          "ledger_id": "l_ins",
+          "status": "open",
+          "description": "send over your current health and disability insurance policy summaries"
+        }
+      ],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "annualized-installment tax method, reconsidered for Q3 (INT-118)",
+        "any further Vantora reduction deferred to after Q3 earnings (carried in the snapshot line, not in the recap)"
+      ],
+      "states_explicit_open_items": true
+    },
+    "INT-149": {
+      "client": "CLIENT-001",
+      "date": "2026-06-30",
+      "recap_claims": [
+        {
+          "claim": "planned 65 in January",
+          "evidence_interaction": "INT-001",
+          "evidence_date": "2026-01-02",
+          "evidenced": true
+        },
+        {
+          "claim": "exploring 60 in February",
+          "evidence_interaction": "INT-027",
+          "evidence_date": "2026-02-09",
+          "evidenced": true
+        },
+        {
+          "claim": "March correction: only exploring",
+          "evidence_interaction": "INT-049",
+          "evidence_date": "2026-03-04",
+          "evidenced": true
+        },
+        {
+          "claim": "63 decided in May with Mariko",
+          "evidence_interaction": "INT-090",
+          "evidence_date": "2026-05-01",
+          "evidenced": true
+        },
+        {
+          "claim": "'sit tight' at 75% in January",
+          "evidence_interaction": "INT-010",
+          "evidence_date": "2026-01-13",
+          "evidenced": true
+        },
+        {
+          "claim": "60% decided in April",
+          "evidence_interaction": "INT-067",
+          "evidence_date": "2026-04-03",
+          "evidenced": true
+        },
+        {
+          "claim": "Mariko's SS statement open",
+          "evidence_interaction": "INT-095",
+          "evidence_date": "2026-05-07",
+          "evidenced": true
+        },
+        {
+          "claim": "estate/beneficiary forms open",
+          "evidence_interaction": "INT-141",
+          "evidence_date": "2026-06-23",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [
+        {
+          "ledger_id": "k_estate",
+          "status": "open",
+          "description": "send over your current will and the beneficiary designations on your retirement accounts"
+        },
+        {
+          "ledger_id": "k_spouse_ss",
+          "status": "open",
+          "description": "get Mariko's Social Security statement to complete the survivor analysis"
+        }
+      ],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "Roth conversion deferred to the second-half review (INT-141 neighbourhood)"
+      ],
+      "states_explicit_open_items": true
+    },
+    "INT-150": {
+      "client": "CLIENT-002",
+      "date": "2026-06-30",
+      "recap_claims": [
+        {
+          "claim": "curious but undecided in January",
+          "evidence_interaction": "INT-002",
+          "evidence_date": "2026-01-02",
+          "evidenced": true
+        },
+        {
+          "claim": "Lakeshore letter in March",
+          "evidence_interaction": "INT-032",
+          "evidence_date": "2026-02-12",
+          "evidenced": true
+        },
+        {
+          "claim": "corrected the 'accepted' note",
+          "evidence_interaction": "INT-058",
+          "evidence_date": "2026-03-24",
+          "evidenced": true
+        },
+        {
+          "claim": "declined employee ownership for certain cash",
+          "evidence_interaction": "INT-061",
+          "evidence_date": "2026-03-26",
+          "evidenced": true
+        },
+        {
+          "claim": "wavered about waiting in April",
+          "evidence_interaction": "INT-078",
+          "evidence_date": "2026-04-20",
+          "evidenced": true
+        },
+        {
+          "claim": "decided to sell with a 10% rollover",
+          "evidence_interaction": "INT-083",
+          "evidence_date": "2026-04-22",
+          "evidenced": true
+        },
+        {
+          "claim": "investment policy drafted for signature",
+          "evidence_interaction": "INT-112",
+          "evidence_date": "2026-05-21",
+          "evidenced": true
+        }
+      ],
+      "all_recap_claims_evidenced": true,
+      "ledger_items_referenced": [
+        {
+          "ledger_id": "r_spa",
+          "status": "open",
+          "description": "send over the final purchase agreement draft"
+        },
+        {
+          "ledger_id": "r_estate",
+          "status": "open",
+          "description": "send over your current will and trust documents"
+        }
+      ],
+      "ledger_items_still_open": true,
+      "unresolved_threads_not_carried_into_review": [
+        "Ethan's college funding gap (INT-038)",
+        "retention pool for key staff (INT-121)",
+        "22M walk-away floor (INT-077)"
+      ],
+      "states_explicit_open_items": true
+    }
+  },
+  "comparison_summary": {
+    "exit_code": 0,
+    "v1_repeat_pct": 0.5851,
+    "v2_repeat_pct": 0.2856,
+    "v2_turns": 2199,
+    "date_audit_issues": 0,
+    "ledger_identical_to_v1": true,
+    "ids_dates_channels_identical": true,
+    "script_lines_preserved": 0.958
+  },
+  "manual_checks_performed": [
+    "Read INT-148 and INT-145 in full before and after the correction; read INT-009, INT-115, INT-119, INT-148 in their revised form",
+    "Read the earlier and later mentions of every new fact (greps over the CSV by client) and compared them with the client profile and storyline",
+    "Recomputed the arithmetic behind each stated figure (see notes in the fact table)",
+    "Compared each half-year recap sentence with the earlier dialogue it summarises (automated phrase search plus reading)",
+    "Checked each outstanding ledger item against the last dialogue about it",
+    "Confirmed that the corrected text changed no other interaction by diffing the CSV against the pre-final snapshot"
+  ],
+  "human_review_required": [
+    "Tax plausibility of the retention-pool after-tax cost (INT-121) and of the 'safe harbor' explanation (INT-016); advisor figures are stated as approximate",
+    "Whether a 31k required distribution (INT-085) and a ~50k bond rung (INT-137) are acceptable without a stated IRA balance or ladder schedule",
+    "The 12% withholding attributed to the accountant (INT-129) first appears in the advisor's own turn",
+    "Whether 'a sixth' (INT-148) is acceptable as an approximation of the remaining Vantora position",
+    "Spot-check that the rewritten meetings still read as natural speech (this audit does not assess realism)",
+    "Independent confirmation of this audit: it was produced by the same assistant that wrote the revision"
+  ],
+  "confirmed_inconsistencies": {
+    "fixed_in_this_pass": [
+      "INT-009/INT-119 gap arithmetic",
+      "INT-115/INT-148 premature Vantora decision and share figure",
+      "INT-148 missing pending status and closing contradiction",
+      "INT-119 unkept advisor promise to revisit Frank's pension survivor amount"
+    ],
+    "still_open": [],
+    "ledger_note": "CLIENT-003:s_offer is counted as outstanding but the dialogue made it moot; kept to preserve 48/40/8 and annotated in the manifest."
+  },
+  "accepted_limitations": [
+    "Template-derived portfolio snapshot lines state allocations from generator state; for CLIENT-004 (15% then 17%) and CLIENT-005 (about 90%, 'matches your current target') the target was never stated in dialogue",
+    "The six half-year reviews do not list every unresolved thread (see unresolved_threads_not_carried_into_review per review); the manifest holds them",
+    "Priya's conditional 1 July call falls after 30 June and is outside the ledger by design",
+    "Advisor 'I'll call/arrange' statements logged as a_action in closings are not all in the ledger (the ledger tracks only structured items; v1 behaviour)",
+    "Meetings are shorter than v1 (mean 14.7 turns); routine segments remain templated (28.6% exact-repeat turns); voices are least differentiated in the preserved v1 scripts",
+    "'In January you said no large irreversible decisions for twelve months' (INT-135) slightly overstates the advisor's 'six to twelve months' that Grace agreed to in INT-005",
+    "The automated 'no substantive new information' proxy is not discriminating (see comparison report)"
+  ],
+  "reproduction": [
+    "python src/generate_dataset.py",
+    "python src/validate_dataset.py",
+    "python src/compare_quality.py",
+    "python src/final_audit.py"
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "all_hard_checks_passed": true,
+  "checks": {
+    "required_columns_present": {
+      "passed": true,
+      "detail": "header=['interaction_id', 'client_id', 'advisor_id', 'interaction_datetime', 'channel', 'turn_index', 'speaker', 'utterance', 'meeting_context', 'source_type', 'consent_status']"
+    },
+    "no_preclassification_columns": {
+      "passed": true,
+      "detail": ""
+    },
+    "all_required_fields_populated": {
+      "passed": true,
+      "detail": "empty cells: 0"
+    },
+    "interaction_count_100_to_200": {
+      "passed": true,
+      "detail": "150"
+    },
+    "interaction_count_equals_target_150": {
+      "passed": true,
+      "detail": "150"
+    },
+    "exactly_six_clients": {
+      "passed": true,
+      "detail": "['CLIENT-001', 'CLIENT-002', 'CLIENT-003', 'CLIENT-004', 'CLIENT-005', 'CLIENT-006']"
+    },
+    "two_to_three_advisors": {
+      "passed": true,
+      "detail": "['ADVISOR-001', 'ADVISOR-002', 'ADVISOR-003']"
+    },
+    "datetimes_valid": {
+      "passed": true,
+      "detail": "invalid: []"
+    },
+    "dates_within_2026_01_01_to_06_30": {
+      "passed": true,
+      "detail": "2026-01-02 08:00:00 .. 2026-06-30 11:30:00"
+    },
+    "spans_six_months": {
+      "passed": true,
+      "detail": "179 days between first and last"
+    },
+    "single_datetime_per_interaction": {
+      "passed": true,
+      "detail": ""
+    },
+    "multiple_turns_per_interaction": {
+      "passed": true,
+      "detail": "min=12"
+    },
+    "turns_within_12_to_32": {
+      "passed": true,
+      "detail": "outside range: []"
+    },
+    "both_speakers_in_every_interaction": {
+      "passed": true,
+      "detail": "[]"
+    },
+    "turn_indices_sequential": {
+      "passed": true,
+      "detail": "[]"
+    },
+    "one_client_one_advisor_per_interaction": {
+      "passed": true,
+      "detail": "[]"
+    },
+    "interaction_ids_unique_contiguous_chronological": {
+      "passed": true,
+      "detail": ""
+    },
+    "each_client_has_one_stable_advisor": {
+      "passed": true,
+      "detail": "{'CLIENT-001': {'ADVISOR-001'}, 'CLIENT-002': {'ADVISOR-002'}, 'CLIENT-006': {'ADVISOR-003'}, 'CLIENT-004': {'ADVISOR-001'}, 'CLIENT-005': {'ADVISOR-002'}, 'CLIENT-003': {'ADVISOR-003'}}"
+    },
+    "client_histories_chronological_distinct_days": {
+      "passed": true,
+      "detail": "same-day duplicates: []"
+    },
+    "meeting_spacing_not_uniform": {
+      "passed": true,
+      "detail": "distinct gap lengths per client: {'CLIENT-001': 12, 'CLIENT-002': 11, 'CLIENT-006': 12, 'CLIENT-004': 12, 'CLIENT-005': 12, 'CLIENT-003': 10}"
+    },
+    "approx_25_per_client": {
+      "passed": true,
+      "detail": "{'CLIENT-001': 25, 'CLIENT-002': 25, 'CLIENT-006': 25, 'CLIENT-004': 25, 'CLIENT-005': 25, 'CLIENT-003': 25}"
+    },
+    "no_duplicate_turn_rows": {
+      "passed": true,
+      "detail": ""
+    },
+    "no_repeated_long_utterance_within_interaction": {
+      "passed": true,
+      "detail": "[]"
+    },
+    "no_placeholder_dialogue": {
+      "passed": true,
+      "detail": "0 rows e.g. []"
+    },
+    "no_empty_utterances": {
+      "passed": true,
+      "detail": "0"
+    },
+    "at_least_40pct_of_turns_are_unique_utterances": {
+      "passed": true,
+      "detail": "71.4% unique"
+    },
+    "exact_repeated_turn_rate_at_most_40pct": {
+      "passed": true,
+      "detail": "28.6% of turns repeat an exact string"
+    },
+    "no_known_standalone_filler_turns": {
+      "passed": true,
+      "detail": "0 e.g. []"
+    },
+    "relative_and_cross_reference_dates_consistent": {
+      "passed": true,
+      "detail": "0 issues: []"
+    },
+    "no_long_utterance_repeated_more_than_30_times": {
+      "passed": true,
+      "detail": "max repeat 6"
+    },
+    "coverage_each_scenario_in_5plus_interactions_and_4plus_clients": {
+      "passed": true,
+      "detail": ""
+    },
+    "every_later_meeting_refers_to_previous_meeting": {
+      "passed": true,
+      "detail": "144/144"
+    },
+    "at_least_60_meetings_recall_specific_earlier_decisions_or_commitments": {
+      "passed": true,
+      "detail": "89 interactions"
+    }
+  },
+  "statistics": {
+    "unique_interactions": 150,
+    "unique_clients": 6,
+    "unique_advisors": 3,
+    "total_turns": 2199,
+    "avg_turns_per_interaction": 14.66,
+    "min_turns": 12,
+    "max_turns": 24,
+    "avg_words_per_utterance": 23.2,
+    "interactions_per_client": {
+      "CLIENT-001": 25,
+      "CLIENT-002": 25,
+      "CLIENT-003": 25,
+      "CLIENT-004": 25,
+      "CLIENT-005": 25,
+      "CLIENT-006": 25
+    },
+    "interactions_per_month": {
+      "2026-01": 21,
+      "2026-02": 23,
+      "2026-03": 20,
+      "2026-04": 24,
+      "2026-05": 28,
+      "2026-06": 34
+    },
+    "interactions_per_advisor": {
+      "ADVISOR-001": 50,
+      "ADVISOR-002": 50,
+      "ADVISOR-003": 50
+    },
+    "date_range": [
+      "2026-01-02T08:00:00",
+      "2026-06-30T11:30:00"
+    ],
+    "channel_distribution": {
+      "video": 61,
+      "in-person": 27,
+      "telephone": 62
+    },
+    "turn_speaker_counts": {
+      "Advisor": 1109,
+      "Client": 1090
+    },
+    "verbatim_repeated_rate_utterances_12plus_words": 0.1748,
+    "verbatim_repeated_rate_utterances_30plus_words": 0.0523,
+    "unique_turn_share": 0.7144,
+    "exact_repeated_turn_rate": 0.2856,
+    "interactions_below_15_turns": 92,
+    "max_repeat_of_any_long_utterance": 6,
+    "scenario_text_coverage": {
+      "A_changing_preferences": {
+        "interactions": 48,
+        "clients": 6
+      },
+      "B_contradictory_statements": {
+        "interactions": 11,
+        "clients": 5
+      },
+      "C_uncertain_vs_confirmed": {
+        "interactions": 53,
+        "clients": 6
+      },
+      "C2_explicit_decisions": {
+        "interactions": 32,
+        "clients": 6
+      },
+      "D_advisor_procedure": {
+        "interactions": 32,
+        "clients": 6
+      },
+      "E_rationale": {
+        "interactions": 63,
+        "clients": 6
+      },
+      "F_corrections": {
+        "interactions": 45,
+        "clients": 6
+      },
+      "G_casual_personal": {
+        "interactions": 52,
+        "clients": 6
+      },
+      "H_pending_actions": {
+        "interactions": 114,
+        "clients": 6
+      },
+      "H2_followup_on_earlier_commitment": {
+        "interactions": 39,
+        "clients": 6
+      }
+    },
+    "meetings_with_specific_back_reference": 89,
+    "distinct_gap_days_per_client": {
+      "CLIENT-001": 12,
+      "CLIENT-002": 11,
+      "CLIENT-006": 12,
+      "CLIENT-004": 12,
+      "CLIENT-005": 12,
+      "CLIENT-003": 10
+    }
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "rating_scale": {
+    "substantive": "contains client reasoning, advisor follow-up questions and a decision, an explicit uncertainty, a correction, or new information with a stated outcome",
+    "adequate": "contains real content and a clear outcome, but mostly an advisor explanation with little client reasoning",
+    "still_thin": "largely a recap or routine review; added content is short and has no logged outcome"
+  },
+  "previously_thin_meetings": {
+    "INT-004": {
+      "client": "CLIENT-002",
+      "was": "generic concentration explainer plus portfolio snapshot",
+      "now": "Rebecca challenges whether her brokerage account should offset business risk; advisor recommends a more cautious mix; she decides to wait until she knows whether she will sell",
+      "outcome": "deferred decision with rationale",
+      "rating": "substantive"
+    },
+    "INT-009": {
+      "client": "CLIENT-006",
+      "was": "sequence-risk explainer plus portfolio snapshot",
+      "now": "Peg does not understand how the bond ladder pays withdrawals; asks what happens to income if Frank dies first; survivor pension amount left unconfirmed; final QA pass: monthly portfolio withdrawal restated as about 2,600 to match the 8,900 spending and 6,300 income stated on 5 January",
+      "outcome": "unresolved item recorded",
+      "rating": "adequate",
+      "remaining_weakness": "advisor-explanation heavy; client asks questions but makes no decision"
+    },
+    "INT-016": {
+      "client": "CLIENT-005",
+      "was": "cash-flow snapshot and liquidity check",
+      "now": "Lucas resists a formula for estimated taxes; advisor explains the safe harbor and the risk of guessing low; Lucas agrees reluctantly",
+      "outcome": "decision after pushback",
+      "rating": "substantive",
+      "remaining_weakness": "ends with a generic liquidity segment"
+    },
+    "INT-022": {
+      "client": "CLIENT-001",
+      "was": "cash flow, liquidity and a three-line mortgage remark",
+      "now": "stress-tests cash against a layoff; Kenji will not ask HR about severance; working six-month assumption; keeps the mortgage as insurance logic",
+      "outcome": "working assumption plus decision",
+      "rating": "substantive"
+    },
+    "INT-033": {
+      "client": "CLIENT-006",
+      "was": "liquidity check only",
+      "now": "Peg pays a 1,900 dollar denied therapy bill rather than appeal; advisor sets out the appeal option and respects the choice",
+      "outcome": "decision with rationale",
+      "rating": "substantive",
+      "remaining_weakness": "modest stakes; liquidity segment appended"
+    },
+    "INT-038": {
+      "client": "CLIENT-002",
+      "was": "education explainer and market commentary",
+      "now": "college cost, existing college account, whether sale timing affects aid; Rebecca refuses to time the sale around forms; funding gap left open",
+      "outcome": "unresolved item recorded",
+      "rating": "substantive"
+    },
+    "INT-041": {
+      "client": "CLIENT-006",
+      "was": "care-model result with no discussion",
+      "now": "Peg asks what happens after fourteen years; advisor distinguishes stress case from expected case; decision to use the stress case for large irreversible choices",
+      "outcome": "decision (decision rule)",
+      "rating": "substantive"
+    },
+    "INT-042": {
+      "client": "CLIENT-005",
+      "was": "P&L receipt plus market commentary",
+      "now": "Lucas learns he is about 20-25 thousand short for April; resists selling Vantora; plan A invoices, plan B cash",
+      "outcome": "tentative plan with new information",
+      "rating": "substantive",
+      "remaining_weakness": "market commentary segment still appended"
+    },
+    "INT-045": {
+      "client": "CLIENT-003",
+      "was": "portfolio check-in, no outcome",
+      "now": "week before the birth: keep 6 percent 401(k) match through leave; possible four-day week left as an idea",
+      "outcome": "decision plus uncertain intention",
+      "rating": "substantive"
+    },
+    "INT-050": {
+      "client": "CLIENT-004",
+      "was": "annuity discussion without outcome",
+      "now": "annuity discussion kept; advisor corrects her own February statement of the pension survivor percentage after reading the actual form",
+      "outcome": "correction",
+      "rating": "substantive"
+    },
+    "INT-065": {
+      "client": "CLIENT-003",
+      "was": "insurance referral, portfolio, market",
+      "now": "Sofia questions whether 1.5 million of cover is too much, asks what an elimination period is, wants to discuss with Mateo",
+      "outcome": "unresolved item (decided at a later meeting)",
+      "rating": "substantive",
+      "remaining_weakness": "market segment appended after the main content"
+    },
+    "INT-076": {
+      "client": "CLIENT-005",
+      "was": "liquidity and cash-flow templates",
+      "now": "April tax shortfall acknowledged as paid; Lucas wants to put sale proceeds into Vantora; advisor pushes back; agrees reserve first, index fund second",
+      "outcome": "decision after pushback",
+      "rating": "substantive"
+    },
+    "INT-077": {
+      "client": "CLIENT-002",
+      "was": "market commentary",
+      "now": "fear of a re-trade in due diligence; Rebecca states a walk-away price of 22 million but says it is where she is today",
+      "outcome": "tentative position",
+      "rating": "substantive"
+    },
+    "INT-085": {
+      "client": "CLIENT-006",
+      "was": "cash flow and portfolio snapshot",
+      "now": "qualified charitable distribution for the church gift: explanation, tax effect, explicit instruction",
+      "outcome": "decision",
+      "rating": "substantive"
+    },
+    "INT-096": {
+      "client": "CLIENT-005",
+      "was": "four-turn Lisbon remark",
+      "now": "Lisbon relocation explored with tax-residency questions and conditions that would turn it into a plan",
+      "outcome": "possibility, not a plan",
+      "rating": "substantive"
+    },
+    "INT-098": {
+      "client": "CLIENT-006",
+      "was": "market check",
+      "now": "advisor note about helping Brian is corrected: it was only a thought, nothing offered",
+      "outcome": "correction",
+      "rating": "substantive"
+    },
+    "INT-110": {
+      "client": "CLIENT-004",
+      "was": "market check dated before the investing plan began (timeline error in v1)",
+      "now": "Grace wants to call off the first investing step; advisor quantifies the worst case; she reaffirms the plan with the right to pause",
+      "outcome": "reaffirmed decision",
+      "rating": "substantive"
+    },
+    "INT-118": {
+      "client": "CLIENT-005",
+      "was": "cash flow and market templates",
+      "now": "Q2 estimated tax with lower income: annualized method explained; pays the safe harbor again; reconsiders in Q3",
+      "outcome": "decision plus deferral",
+      "rating": "substantive"
+    },
+    "INT-119": {
+      "client": "CLIENT-006",
+      "was": "cash flow and liquidity templates",
+      "now": "advisor's model of the aide's days is out of date (four to five days after Frank's fall); spending and portfolio gap restated; final QA pass: portfolio gap corrected to 3,800 a month and the January question about Frank's pension survivor amount is carried forward as unconfirmed",
+      "outcome": "correction of an outdated assumption",
+      "rating": "substantive"
+    },
+    "INT-121": {
+      "client": "CLIENT-002",
+      "was": "staff announcement worry and sleep remark",
+      "now": "retention pool for seven key staff discussed with after-tax cost; not decided",
+      "outcome": "tentative idea",
+      "rating": "substantive"
+    },
+    "INT-122": {
+      "client": "CLIENT-004",
+      "was": "generic portfolio review",
+      "now": "reading the first statement; advisor's note that the insurance money was reserved for the mortgage is corrected",
+      "outcome": "correction of intended use of funds",
+      "rating": "substantive"
+    },
+    "INT-124": {
+      "client": "CLIENT-004",
+      "was": "beneficiary form check only",
+      "now": "Grace worries a 19-year-old would inherit outright; trust idea; deliberately left undecided",
+      "outcome": "unresolved item",
+      "rating": "substantive"
+    },
+    "INT-126": {
+      "client": "CLIENT-002",
+      "was": "liquidity and market templates",
+      "now": "pre-signing costs of 55 thousand; pay from cash, not investments",
+      "outcome": "decision",
+      "rating": "substantive"
+    },
+    "INT-127": {
+      "client": "CLIENT-005",
+      "was": "market and cash-flow templates",
+      "now": "wants to stop selling Vantora after a rebound; advisor restates why; completes the third sale, defers anything further to after Q3 earnings",
+      "outcome": "decision plus deferral",
+      "rating": "substantive"
+    },
+    "INT-128": {
+      "client": "CLIENT-004",
+      "was": "dated before the first investing step could have happened (timeline error in v1)",
+      "now": "after a down day Grace asks whether to stop; continues, with a conditional call before the July step",
+      "outcome": "decision",
+      "rating": "substantive"
+    },
+    "INT-129": {
+      "client": "CLIENT-006",
+      "was": "repeat of the April church-gift discussion",
+      "now": "church gift confirmed as received; Peg chooses monthly required distributions with 12 percent withholding",
+      "outcome": "decision",
+      "rating": "substantive"
+    },
+    "INT-135": {
+      "client": "CLIENT-004",
+      "was": "reflective chat, no content",
+      "now": "whether to keep the house; annual cost; advisor ties the question back to her own twelve-month rule",
+      "outcome": "tentative idea plus deferral",
+      "rating": "substantive"
+    },
+    "INT-137": {
+      "client": "CLIENT-006",
+      "was": "bond-ladder explainer",
+      "now": "Peg thinks 'matures' means she loses it; reinvest in the ladder or add to stocks; she picks the safe option",
+      "outcome": "decision",
+      "rating": "adequate",
+      "remaining_weakness": "advisor-led explanation; client reasoning is brief"
+    },
+    "INT-139": {
+      "client": "CLIENT-003",
+      "was": "template cash-flow and market segments",
+      "now": "advisor assumed the house fund was a childcare cushion; Sofia corrects; childcare gap covered by trimming brokerage contributions",
+      "outcome": "correction plus decision",
+      "rating": "substantive"
+    },
+    "INT-143": {
+      "client": "CLIENT-003",
+      "was": "suitability template",
+      "now": "tempted to return to 90 percent after the rally; advisor separates market from temperament; keeps 75 percent",
+      "outcome": "decision with rationale",
+      "rating": "substantive"
+    },
+    "INT-145": {
+      "client": "CLIENT-006",
+      "was": "half-year recap",
+      "now": "recap kept (and corrected for Maplewood); adds aide hours and a 'someday' status for Maplewood",
+      "outcome": "tentative idea",
+      "rating": "still_thin",
+      "remaining_weakness": "recap-driven; added content is short"
+    },
+    "INT-146": {
+      "client": "CLIENT-004",
+      "was": "half-year recap",
+      "now": "recap kept; adds Tobi's business plan and the conditions on the gift",
+      "outcome": "tentative idea",
+      "rating": "still_thin",
+      "remaining_weakness": "recap-driven"
+    },
+    "INT-147": {
+      "client": "CLIENT-003",
+      "was": "half-year recap",
+      "now": "recap kept; the four-day-week idea is closed as 'not now'",
+      "outcome": "deferral",
+      "rating": "still_thin",
+      "remaining_weakness": "recap-driven"
+    },
+    "INT-148": {
+      "client": "CLIENT-005",
+      "was": "half-year recap",
+      "now": "recap kept; disability-insurance follow-up now has an explicit pending status: broker quotes not yet due (three weeks stated on 18 June), Lucas still wants the cover, nothing is bought until quotes are seen",
+      "outcome": "unresolved: follow-up pending (client action and an unconfirmed intention are logged; no decision manufactured)",
+      "rating": "still_thin",
+      "remaining_weakness": "recap-driven; the portfolio segment is still templated"
+    },
+    "INT-149": {
+      "client": "CLIENT-001",
+      "was": "half-year recap",
+      "now": "recap kept; adds Yuki's undecided choice and the standing 30 thousand cap",
+      "outcome": "unresolved item",
+      "rating": "adequate"
+    },
+    "INT-150": {
+      "client": "CLIENT-002",
+      "was": "half-year recap",
+      "now": "recap kept; charitable gift remains parked, Maine remains a maybe",
+      "outcome": "deferral and possibility",
+      "rating": "adequate",
+      "remaining_weakness": "the two added items restate earlier positions"
+    }
+  },
+  "other_meetings_read_in_full": {
+    "INT-001": "first meeting; opening no longer asks about changes since a previous meeting. Reads naturally.",
+    "INT-005": "Grace's first meeting; an earlier version appended a 'since we last met' check to it, which made no sense. Fixed by never using that check on a client's first meeting.",
+    "INT-051": "Lucas loses a customer; decisive scripted exchange; ends with a generic circumstances check that adds little.",
+    "INT-060": "Peg cuts equities; content good; template cash-flow segment appended.",
+    "INT-061": "Rebecca declines employee ownership; rationale clear; template segments follow the scripted core.",
+    "INT-067": "Kenji decides on 60 percent equities; strong core; portfolio snapshot afterwards is routine.",
+    "INT-069": "Grace retitles the rollover; fine; padding segments mildly bolted on.",
+    "INT-089": "Sofia asks for a conservative approach; strong core; the circumstances check plus cash-flow segment are padding.",
+    "INT-114": "Kenji, with the added Ren correction; the correction reads naturally; market segment before it is padding.",
+    "INT-142": "Rebecca, with the added income-assumption correction; reads naturally."
+  },
+  "flaws_found_in_review_and_fixed": [
+    "bridging filler turns (Okay. / Sure, go on.) removed entirely; adjacent same-speaker segments are merged with a topic-naming transition",
+    "casual remarks were reused 2-3 times per client and could precede the event they depend on (nursery painting after the birth); each is now used once inside a date or step window",
+    "relative dates that contradicted the real gap between meetings (born last week after a meeting two days earlier; stock vested last week; spoke on Tuesday after a Friday meeting) replaced by explicit dates or accurate wording",
+    "v1 timeline error: Grace's 'first investing step' meetings were dated before the plan's start month; the first step is now 1 June and the second 1 July",
+    "stale holdings text (Lucas still discussed crypto after selling it; Kenji's employer shares; Grace's 'inherited' account after the rollover)",
+    "a padding segment (generic market commentary) was being appended to short meetings, producing the same market conversation in three consecutive meetings for one client; padding now uses portfolio, cash-flow or a circumstances check, and none on a first meeting",
+    "'Moving on. Before we move on', 'Let me bring up liquidity' after a transition, '?.' and '..' punctuation, lowercased proper names in topic phrases"
+  ],
+  "new_facts_introduced_by_revision": [
+    "CLIENT-002: Ethan has an existing college account of about 85 thousand; walk-away price 22 million; retention-pool idea of up to about 1.2 million; 55 thousand of pre-signing legal and accounting costs paid from cash; 12-month paid consulting role after closing",
+    "CLIENT-003: Lucia was born on 3 March (the meeting two days later is a telephone call from hospital); manager hinted at a four-day week; Sofia's student loans are federal",
+    "CLIENT-004: survivor pension is 60 percent of Samuel's pension (corrects 'about half'); first investing step 1 June of about 24 thousand dollars; annual house cost of about 15 thousand",
+    "CLIENT-005: April tax shortfall of 20-25 thousand (about 22 thousand later covered from invoices); estimated payments use the safe-harbor method; Vantora remaining position about a sixth of liquid assets after the third sale (corrected in the final QA pass from \"a fifth\")",
+    "CLIENT-006: required distribution about 31 thousand; aide five days a week at about 6,400 a month from spring (spending 10,100; portfolio-funded gap 3,800, corrected in the final QA pass from 4,200); monthly distributions with 12 percent withholding; the bond rung maturing is about 50 thousand",
+    "CLIENT-001: working assumption of six months' base salary as severance; Ren's 14 thousand covers program fee, flights and housing"
+  ],
+  "remaining_weaknesses": [
+    "pivotal v1 scripts were intentionally preserved verbatim, so the uniformly polite, articulate register persists in them; distinct voices are strongest in routine scaffolding and in the 30 rewritten meetings",
+    "routine segments (portfolio snapshot, cash flow, circumstances check, market commentary) remain templates; about 29 percent of turns are still exact repeats and more are repeats after normalisation",
+    "meetings are shorter: mean 14.7 turns, 92 below 15, the shortest 12; filler removal exposed how brief the scripted cores are",
+    "every meeting still ends with the same recap-plus-next-date structure",
+    "half-year reviews remain recap-driven and do not list every unresolved thread",
+    "this review was done by the assistant that wrote the revision and has not been independently audited",
+    "Priya's conditional 1 July call is recorded in the manifest as a commitment beyond the observation window (outside the 48/40/8 ledger)"
+  ],
+  "final_qa_corrections": [
+    "INT-009: 'about three thousand' -> 'about twenty-six hundred' (8,900 - 6,300 = 2,600)",
+    "INT-119: gap 'four thousand two hundred' -> 'thirty-eight hundred' (10,100 - 6,300 = 3,800); added the carried-forward question about Frank's pension survivor amount (promised in INT-009)",
+    "INT-115 and INT-148: Vantora holding text no longer cites a decision made on 9 June before it happens, and 'a fifth' became 'a sixth' after the three sales",
+    "INT-148: explicit pending status for the disability-insurance follow-up; broker timing made consistent with the 18 June statement"
+  ]
+}
