@@ -1,0 +1,5 @@
+liquidity_category,description,liquidity_rank
+cash_equivalent,"Cash and cash equivalents available same day (cash, savings, money-market).",1
+liquid_daily,"Daily-dealing funds, ETFs, listed shares and Treasuries; settles in about T+1 to T+3.",2
+semi_liquid,"Tradable but with gates, redemption limits or early-withdrawal penalties (real estate fund, CDs).",3
+illiquid,"Not freely saleable: private company shares, employer deferred compensation.",4

@@ -1,0 +1,7 @@
+month_end,equity_return,bond_return,note
+2026-01-31,0.008,0.003,Driver for instrument price paths; instruments apply a class beta plus seeded noise.
+2026-02-28,-0.052,0.004,Driver for instrument price paths; instruments apply a class beta plus seeded noise.
+2026-03-31,-0.008,-0.003,Driver for instrument price paths; instruments apply a class beta plus seeded noise.
+2026-04-30,0.055,0.006,Driver for instrument price paths; instruments apply a class beta plus seeded noise.
+2026-05-31,0.03,0.004,Driver for instrument price paths; instruments apply a class beta plus seeded noise.
+2026-06-30,0.012,0.003,Driver for instrument price paths; instruments apply a class beta plus seeded noise.

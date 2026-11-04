@@ -1,0 +1,28 @@
+account_id,client_id,account_type,account_name,currency,account_status,opened_date,closed_date,in_investable_portfolio,access_restriction,data_provenance,provenance_note
+ACC-001-01,CLIENT-001,Taxable Brokerage,Joint Taxable Brokerage Account,USD,active,2012-03-15,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-001-02,CLIENT-001,Employer 401(k),Northgate 401(k),USD,active,2009-09-01,,true,retirement_age_restricted,synthetic,Entirely synthetic account created for the POC.
+ACC-001-03,CLIENT-001,Roth IRA,Roth IRA,USD,active,2014-01-10,,true,retirement_age_restricted,synthetic,Entirely synthetic account created for the POC.
+ACC-001-04,CLIENT-001,Cash Reserve,Cash Reserve Account,USD,active,2012-03-15,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-001-05,CLIENT-001,Deferred Compensation,Northgate Deferred Compensation Plan,USD,active,2016-01-01,,false,employer_plan,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-002-01,CLIENT-002,Taxable Brokerage,Joint Taxable Brokerage Account,USD,active,2010-05-12,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-002-02,CLIENT-002,Rollover IRA,Rollover IRA,USD,active,2013-02-20,,true,retirement_age_restricted,synthetic,Entirely synthetic account created for the POC.
+ACC-002-03,CLIENT-002,Education Savings (529),Ethan College Savings (529),USD,active,2009-10-01,,true,education_use,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-002-04,CLIENT-002,Cash Reserve,Cash and Spending Account,USD,active,2010-05-12,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-002-05,CLIENT-002,Private Business Interest,Holloway Packaging (business interest),USD,active,2004-01-01,,false,private_company,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-003-01,CLIENT-003,Employer 401(k),Employer 401(k),USD,active,2019-08-01,,true,retirement_age_restricted,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-003-02,CLIENT-003,Roth IRA,Roth IRA,USD,active,2018-03-12,,true,retirement_age_restricted,synthetic,Entirely synthetic account created for the POC.
+ACC-003-03,CLIENT-003,Taxable Brokerage,Taxable Brokerage Account,USD,active,2020-06-15,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-003-04,CLIENT-003,High-Yield Savings,High-Yield Savings (emergency cash),USD,active,2019-01-10,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-003-05,CLIENT-003,Taxable Brokerage,House Fund (brokerage sub-account),USD,active,2026-05-13,,true,none,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-004-01,CLIENT-004,Taxable Brokerage,Taxable Brokerage (insurance payout),USD,active,2025-11-20,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-004-02,CLIENT-004,Inherited IRA,Inherited Retirement Account (from Samuel),USD,closed,2025-12-01,2026-05-01,true,retirement_age_restricted,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-004-03,CLIENT-004,Rollover IRA,Rollover IRA (own name),USD,active,2026-05-01,,true,retirement_age_restricted,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-004-04,CLIENT-004,Employer 401(k),Hospital 401(k),USD,active,2008-04-01,,true,retirement_age_restricted,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-004-05,CLIENT-004,Taxable Brokerage,Folake Tuition Bucket (sub-account),USD,active,2026-02-20,,true,none,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-005-01,CLIENT-005,Taxable Brokerage,Taxable Brokerage Account,USD,active,2016-02-08,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-005-02,CLIENT-005,Solo 401(k),Solo 401(k),USD,active,2019-01-15,,true,retirement_age_restricted,synthetic,Entirely synthetic account created for the POC.
+ACC-005-03,CLIENT-005,Cash Reserve,Cash Account (reserve and tax set-asides),USD,active,2017-05-01,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-005-04,CLIENT-005,Private Business Interest,Moreau Labs founder shares,USD,active,2014-06-01,,false,private_company,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-006-01,CLIENT-006,Traditional IRA,Traditional IRA,USD,active,2005-01-10,,true,retirement_age_restricted,conversation_anchored,Existence/name anchored to the cited turn; opened_date and all other fields synthetic.
+ACC-006-02,CLIENT-006,Taxable Brokerage,Joint Taxable Brokerage Account,USD,active,2009-04-20,,true,none,synthetic,Entirely synthetic account created for the POC.
+ACC-006-03,CLIENT-006,Cash Reserve,Cash and Checking Reserve,USD,active,2009-04-20,,true,none,synthetic,Entirely synthetic account created for the POC.

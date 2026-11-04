@@ -1,0 +1,8 @@
+asset_class,description
+Equity,Listed equities and equity funds (including listed real-estate equity funds).
+Fixed Income,"Bonds, bond funds, Treasuries, stable value and bank term deposits."
+Cash & Equivalents,"Cash, savings and money-market funds."
+Multi-Asset,Blended portfolios such as a 529 age-based option.
+Commodities,Gold and other commodity ETFs.
+Alternatives,Crypto and other alternatives.
+Other Illiquid,Private company shares and deferred compensation (never part of the investable total).

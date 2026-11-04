@@ -1,0 +1,8 @@
+expense_period_id,client_id,effective_from,effective_to,monthly_expenses,currency,data_provenance,provenance_note
+EXP-001-01,CLIENT-001,2026-01-01,,11800,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-002-01,CLIENT-002,2026-01-01,,14500,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-003-01,CLIENT-003,2026-01-01,,7800,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-004-01,CLIENT-004,2026-01-01,,6200,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-005-01,CLIENT-005,2026-01-01,,6500,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-006-01,CLIENT-006,2026-01-01,2026-06-01,8900,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
+EXP-006-02,CLIENT-006,2026-06-02,,10100,USD,conversation_anchored,Monthly spending as stated by the advisor in the conversations.
