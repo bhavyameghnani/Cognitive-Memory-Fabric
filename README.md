@@ -1,7 +1,134 @@
-# CMF Phase 1: Longitudinal Synthetic Advisor–Client Conversations
+# Cognitive Memory Fabric (CMF)
 
-Source-evidence dataset for the future Cognitive Memory Fabric (CMF). This phase builds **only** the raw
-conversations. There is no memory extraction, RAG, embeddings, graph store or agent here.
+A long-term memory layer for a wealth-advisor assistant. It turns an advisor's meetings with a client into four kinds of memory, keeps the *history* of what the client said (not just the latest value), and answers questions with a report where every claim cites its evidence. All client data is **synthetic**.
+
+| Memory | Holds | Example |
+|---|---|---|
+| Working | scratch notes for the current question (expire after 4 h) | "preparing Kenji's next portfolio review" |
+| Episodic | specific events, each tied to a meeting turn | "Mar 3: discussed retirement planning" |
+| Semantic | stable facts, **versioned** (superseded, never overwritten) | retirement age 65 -> 63 |
+| Procedural | how the advisor's firm does things | "Retirement readiness review" checklist |
+
+**Four agents, in order:** Planner -> Memory Orchestrator -> Tool Selector (13 read-only MCP tools over the operational data) -> Report Agent. Each agent only sees what the previous ones hand it; the Report Agent has no database or tool access. Agent specs are in `docs/agent_prompts/`.
+
+**Brain UI** (`ui/cmf-brain-ui`): a brain map of the memories, a per-memory dossier (evidence quotes, version history, lifecycle audit trail), and **Ask CMF**, which answers a question and shows how the agents performed: stage timings, which memories were retrieved vs. actually cited, tool calls, and a warning when a fallback replaced a model step.
+
+## Quick start
+
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env                            # set OPENAI_API_KEY (needed only for Ask CMF)
+python utils/seed_demo_db.py install            # demo databases: Kenji's memories + operational data, no LLM needed to browse
+cd ui/cmf-brain-ui && npm install && cd ../..
+PYTHONPATH=src .venv/bin/python -m api.main     # terminal 1: backend  http://127.0.0.1:8000
+cd ui/cmf-brain-ui && npm run dev               # terminal 2: frontend http://localhost:5173
+```
+
+Details, configuration and troubleshooting: [Run the app](#run-the-app-backend--frontend).
+
+## Repository map
+
+| Path | What |
+|---|---|
+| `ui/cmf-brain-ui/` | React + Vite frontend |
+| `api/` | FastAPI backend (read endpoints, `/api/ask`, memory lifecycle) |
+| `src/agents/` | `planner`, `memory`, `tool_selector`, `report` agents |
+| `src/mcp_server/` | The 13 read-only financial tools (MCP) |
+| `src/orchestration/` | Pipeline, CLI (`init-memory`, `ingest`, `ask`, `trace`), request tracing |
+| `src/llm/` | LLM abstraction: OpenAI, Ollama (Qwen) or a mock; loads `.env` |
+| `src/cmfgen/`, `src/opdata/` | Generators for the synthetic meetings (Phase 1) and operational data (Phase 2) |
+| `sql/` | Memory schema (`cmf_memory`) and operational schema |
+| `data/` | `conversations.csv` (150 meetings), `operational/` (financial tables), `seed/` (demo databases) |
+| `docs/`, `reports/` | Design notes, data dictionaries, validation and audit reports |
+| `utils/` | `seed_demo_db.py` and notes on optional integrations |
+| `tests/` | Pytest suite (scripted models; no network needed) |
+
+The rest of this file: [how to run](#run-the-app-backend--frontend), then the build history by phase (1: conversations, 2: operational data, 3: agents).
+
+## Run the app (backend + frontend)
+
+Two processes: a **FastAPI backend** (`api/main.py`, port 8000) and a **React + Vite frontend** (`ui/cmf-brain-ui`, port 5173). The frontend calls `/api/...` on its own origin and the Vite dev server proxies that to the backend, so there is no URL to hard-code in the UI.
+
+**Prerequisites:** Python 3.10+ (developed on 3.14), Node 20.19+ (or 22.12+), and for *Ask CMF* and ingestion an LLM: an OpenAI API key, or a local Ollama with `qwen2.5:3b`. (Browsing the brain map needs no LLM.)
+
+### 1. One-time setup (from the repo root)
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env            # then edit .env: set OPENAI_API_KEY (or CMF_LLM_BACKEND=ollama)
+cd ui/cmf-brain-ui && npm install && cd ../..
+```
+
+`.env` is git-ignored and is the single place for configuration; the backend and the frontend both read it (the frontend sees only `VITE_*` variables).
+
+### 2. Load the memory database
+
+The brain map is empty until the memory DB (`CMF_MEMORY_DATABASE_URL`) has memories.
+
+**Option A (default): install the demo databases shipped in `data/seed/`.** No LLM or API key needed to browse.
+
+```bash
+python utils/seed_demo_db.py install            # writes build/cmf_memory.db and build/cmf_ops_smoke.db, the paths .env.example points at
+```
+
+It refuses to overwrite existing files unless you pass `--force`. The seed holds CLIENT-001 (Kenji): 71 memories from his 25 meetings (62 episodic, 6 semantic, 3 procedural), no working memories. Ask CMF still needs an LLM.
+
+**Option B: rebuild from the meetings yourself** (needs the LLM; this is what produced the seed):
+
+```bash
+.venv/bin/python src/opdata/load_db.py --sqlite build/cmf_ops_smoke.db            # operational data used by the tools
+PYTHONPATH=src .venv/bin/python -m orchestration.cli init-memory --reset          # empty memory schema
+PYTHONPATH=src .venv/bin/python -m orchestration.cli ingest --client CLIENT-001   # extracts memories from Kenji's 25 meetings
+```
+
+Only ingested clients have memories (the other five show 0 until you run `ingest --client CLIENT-00N`). Maintainers can refresh the seed from their local DBs with `python utils/seed_demo_db.py export`.
+
+### 3. Start the backend (terminal 1, repo root)
+
+```bash
+PYTHONPATH=src .venv/bin/python -m api.main          # http://127.0.0.1:8000  (check: curl localhost:8000/api/health)
+```
+
+### 4. Start the frontend (terminal 2)
+
+```bash
+cd ui/cmf-brain-ui && npm run dev                    # http://localhost:5173
+```
+
+Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf-brain-ui/dist`, git-ignored); type check: `npm run lint`.
+
+### Configuration (`.env`, see `.env.example`)
+
+| Variable | Default | Used by |
+|---|---|---|
+| `CMF_LLM_BACKEND` | `ollama` (`openai` in the example) | LLM choice: `openai`, `ollama` or `mock` |
+| `OPENAI_API_KEY`, `CMF_OPENAI_MODEL`, `CMF_OPENAI_BASE_URL` | – / `gpt-4o-mini` / OpenAI URL | OpenAI backend. The key is read only from the environment, never logged |
+| `CMF_LLM_BASE_URL`, `CMF_LLM_MODEL`, `CMF_LLM_NUM_CTX` | `http://localhost:11434`, `qwen2.5:3b`, `6144` | Ollama backend |
+| `CMF_MEMORY_DATABASE_URL`, `CMF_DATABASE_URL` | SQLite files under `build/` | Memory DB (the UI reads it) and operational data DB |
+| `CMF_ALLOWED_CLIENTS` | empty = all | Tool-server client allow-list |
+| `CMF_API_HOST`, `CMF_API_PORT` | `127.0.0.1`, `8000` | Backend bind address |
+| `CMF_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Browser origins allowed to call the API directly |
+| `VITE_DEV_PORT` | `5173` | Frontend dev-server port |
+| `VITE_API_PROXY_TARGET` | `http://localhost:8000` | Where the dev server forwards `/api`. **Change it together with `CMF_API_PORT`** |
+| `VITE_API_BASE_URL` | empty | Absolute API URL for a deployed UI (then add the UI's origin to `CMF_CORS_ORIGINS`) |
+
+Real environment variables always override `.env`. Paths in `.env` are relative to the repo root, so run the commands above from there.
+
+### Troubleshooting
+
+- **Brain map empty / 0 memories:** step 2 was skipped, or `CMF_MEMORY_DATABASE_URL` points at a different DB than the one you loaded (the seed installs to `build/cmf_memory.db`).
+- **"CMF could not answer" in Ask CMF:** the LLM is not reachable. Check `OPENAI_API_KEY` / network, or that Ollama is running. A run that fell back to rule-based steps shows an amber "Degraded run" banner in the agent-performance panel.
+- **UI shows network errors / 502 on `/api`:** the backend is not running, or `VITE_API_PROXY_TARGET` does not match `CMF_API_PORT`.
+- **Port already in use:** change `CMF_API_PORT` + `VITE_API_PROXY_TARGET` (backend) or `VITE_DEV_PORT` (frontend).
+- Every Ask stores short-lived working memories (4 h TTL), so the Working count grows as you ask.
+- The UI loads its fonts from Google Fonts; offline it falls back to system fonts.
+- Run the tests with `.venv/bin/python -m pytest -q`.
+
+## Phase 1: Longitudinal synthetic advisor–client conversations
+
+Source-evidence dataset for CMF. This phase builds **only** the raw conversations: no memory extraction, RAG,
+embeddings, graph store or agent (those are Phases 2-3, below, and use this dataset as input).
 
 - 150 complete meetings (one *interaction* = one whole meeting, 12-24 turns, mean 14.7)
 - 6 fictional clients x 25 meetings, 3 fictional advisors, 2026-01-02 .. 2026-06-30
@@ -21,7 +148,8 @@ See `docs/dataset_design.md` for the design and an honest list of limitations.
 
 ## Requirements
 
-Python 3.9+ (tested on 3.11). Standard library only, nothing to install.
+Dataset generation and validation (this phase): Python 3.9+, standard library only, nothing to install.
+The agents, API and UI need more: see [Run the app](#run-the-app-backend--frontend) (Python 3.10+, Node 20.19+ / 22.12+).
 
 ## Regenerate and validate
 
@@ -83,3 +211,25 @@ python src/opdata/load_db.py --reset   # PostgreSQL schema cmf_ops (needs CMF_DA
 ```
 
 See `docs/synthetic_operational_data.md` (method, provenance, limits) and `docs/operational_data_dictionary.md`.
+
+## Agents (Phase 3)
+
+Planner -> Memory Orchestrator -> Tool Selector (MCP) -> Report Agent. Specs: `docs/agent_prompts/`.
+
+| Component | Code |
+|---|---|
+| Memory Orchestrator (`cmf_memory`, SQLite now) | `src/agents/memory/`, `sql/100_cmf_memory_schema.sql` |
+| MCP server (13 read-only deterministic tools) | `src/mcp_server/` |
+| Tool Selector | `src/agents/tool_selector/` |
+| Report Agent | `src/agents/report/` |
+| Pipeline / CLI | `src/orchestration/` |
+
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python src/opdata/load_db.py --sqlite build/cmf_ops_smoke.db
+.venv/bin/python -m pytest -q tests
+PYTHONPATH=src .venv/bin/python -m orchestration.cli init-memory --reset   # then: ingest --client CLIENT-001 ; ask "..." ; trace <id>
+```
+
+LLM backends: `CMF_LLM_BACKEND=ollama` (default, Qwen), `openai` (set `OPENAI_API_KEY` in `.env` or your shell, optional `CMF_OPENAI_MODEL`, default gpt-4o-mini), `mock`.
+Status: unit tests use a scripted model. Real runs: OpenAI ingest of CLIENT-001 and one `ask` only (Qwen and PostgreSQL not run).

@@ -1,0 +1,7 @@
+pydantic>=2.6
+mcp>=2.3
+pytest>=8
+certifi
+fastapi>=0.115
+uvicorn>=0.30
+httpx

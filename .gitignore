@@ -1,4 +1,4 @@
-﻿# Python cache
+# Python cache
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -19,6 +19,9 @@ env/
 *.db
 *.sqlite
 *.sqlite3
+# ...except the demo seed databases that ship with the repo (see utils/seed_demo_db.py)
+!data/seed/
+!data/seed/*.db
 
 # Generated and backup files
 backup/
@@ -26,6 +29,16 @@ build/
 logs/
 dist/
 *.egg-info/
+*.tsbuildinfo
+
+# Node / frontend
+node_modules/
+ui/**/node_modules/
+ui/**/dist/
+npm-debug.log*
+
+# Local Claude Code settings
+.claude/settings.local.json
 
 # IDE and operating system
 .vscode/
@@ -36,3 +49,4 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+*.log

@@ -102,10 +102,56 @@ class MockLLM:
         return out if isinstance(out, str) else json.dumps(out)
 
 
+def _ssl_context():
+    """python.org builds on macOS ship without CA certificates; use certifi's bundle when available."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+@dataclass
+class OpenAILLM:
+    """OpenAI Chat Completions (JSON mode). The key is read ONLY from the environment (OPENAI_API_KEY or CMF_LLM_API_KEY); never stored or logged.
+    The pydantic schema is given in the prompt (strict json_schema mode would reject optional fields); generate_structured validates and retries.
+    CMF_OPENAI_MODEL (default gpt-4o-mini), CMF_OPENAI_BASE_URL (default https://api.openai.com/v1)."""
+    model: str = field(default_factory=lambda: os.environ.get("CMF_OPENAI_MODEL", "gpt-4o-mini"))
+    base_url: str = field(default_factory=lambda: os.environ.get("CMF_OPENAI_BASE_URL", "https://api.openai.com/v1"))
+    temperature: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TEMPERATURE", "0")))
+    max_tokens: int = field(default_factory=lambda: int(os.environ.get("CMF_LLM_MAX_TOKENS", "1500")))
+    timeout: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TIMEOUT", "120")))
+    calls: int = 0
+
+    def complete(self, agent: str, system: str, user: str, schema: Optional[dict] = None) -> str:
+        key = os.environ.get("OPENAI_API_KEY") or os.environ.get("CMF_LLM_API_KEY")
+        if not key:
+            raise LLMError("OPENAI_API_KEY is not set")
+        sys_msg = system + (("\n\nReturn ONLY a JSON object that conforms to this JSON schema:\n" + json.dumps(schema)) if schema else "")
+        body: dict[str, Any] = {"model": self.model, "temperature": self.temperature, "max_tokens": self.max_tokens,
+                                "messages": [{"role": "system", "content": sys_msg}, {"role": "user", "content": user}]}
+        if schema is not None:
+            body["response_format"] = {"type": "json_object"}
+        req = urllib.request.Request(self.base_url.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json", "Authorization": "Bearer " + key})
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout, context=_ssl_context()) as r:
+                out = json.load(r)
+        except urllib.error.HTTPError as e:
+            raise LLMError(f"OpenAI HTTP {e.code}: {e.read().decode(errors='replace')[:200]}") from e
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            raise LLMError(f"OpenAI endpoint unavailable: {e}") from e
+        self.calls += 1
+        return out["choices"][0]["message"]["content"]
+
+
 def make_llm() -> LLMClient:
     backend = os.environ.get("CMF_LLM_BACKEND", "ollama")
     if backend == "mock":
         return MockLLM()
+    if backend == "openai":
+        return OpenAILLM()
     return OllamaLLM()
 
 

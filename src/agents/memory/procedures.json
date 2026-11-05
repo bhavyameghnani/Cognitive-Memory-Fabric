@@ -1,0 +1,41 @@
+{
+  "_label": "CURATED approved procedures maintained by the CMF team. They are loaded as approved, are NOT derived from conversations, and carry no client evidence.",
+  "version": "1",
+  "approver": "curated:cmf-team",
+  "procedures": [
+    {
+      "key": "retirement_readiness_review",
+      "name": "Retirement readiness review",
+      "topics": ["retirement_age", "retirement_income"],
+      "keywords": ["retirement readiness", "retirement target", "funding gap", "retire"],
+      "steps": [
+        "Retrieve the client's confirmed retirement target from memory (current semantic value and its evidence), not an exploratory one.",
+        "Retrieve profile, portfolio and goals through the tools (operational data, synthetic).",
+        "Compute a simple funding gap with the deterministic funding-gap tool.",
+        "State clearly that the result is a simple gap check and not a projection, and name the retirement age that was used and where it came from."
+      ]
+    },
+    {
+      "key": "open_items_review",
+      "name": "Open items and follow-up review",
+      "topics": [],
+      "keywords": ["unresolved", "open items", "follow-up", "follow up", "outstanding", "pending"],
+      "steps": [
+        "List unresolved episodes (exploratory, unconfirmed or recommended and not yet decided) per topic with their dates and evidence.",
+        "Do not present an exploratory idea as a decision.",
+        "Mention items that were later settled only as history, not as open."
+      ]
+    },
+    {
+      "key": "allocation_change_check",
+      "name": "Asset allocation change check",
+      "topics": ["asset_allocation", "risk_tolerance"],
+      "keywords": ["allocation", "equity", "rebalance"],
+      "steps": [
+        "Retrieve the confirmed allocation target and the history of earlier targets from memory.",
+        "Retrieve the current allocation through the tools and compare it with the target.",
+        "Report drift as an observation; any change is a recommendation that needs the client's agreement."
+      ]
+    }
+  ]
+}
