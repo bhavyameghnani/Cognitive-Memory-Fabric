@@ -7,6 +7,7 @@ from test_memory_support import *  # noqa: F401,F403
 
 from agents.memory import consolidate as cons  # noqa: E402
 from agents.memory.config import EPISODE_CAP, OrchestratorConfig, RetrievalConfig  # noqa: E402
+from agents.memory.errors import MemoryResetRefused  # noqa: E402
 from agents.memory.store import MemoryStore  # noqa: E402
 from schemas.tools import Envelope, Provenance, ToolExecution  # noqa: E402
 
@@ -65,7 +66,7 @@ class RetrievalTests(unittest.TestCase):
         with self.assertRaises(ValueError):                              # the store refuses cross-client relationships
             a = store.records(KENJI, "episodic")[0]["memory_id"]
             b = store.records(REBECCA, "episodic")[0]["memory_id"]
-            store.add_relationship(a, b, "related_to")
+            store.add_relationship(a, b, "related_to", principal=svc("consolidation", KENJI, REBECCA))
 
     def test_unknown_client_is_reported_not_guessed(self):
         orch, _, _, _ = make()
@@ -152,19 +153,21 @@ class LifecycleTests(unittest.TestCase):
         sem = next(s for s in self.store.records(KENJI, "semantic") if s["status"] == "active")
         for actor in ("", "llm", "consolidation"):
             with self.assertRaises(PermissionError):
-                self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "x", actor)
+                self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "x", actor, principal=person(actor, KENJI))      # '', 'llm', 'consolidation' are not people
         with self.assertRaises(PermissionError):
-            self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "", "advisor:priya")
-        r = self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "client says 62", "advisor:priya")
+            self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "", "advisor:priya", principal=person("advisor:priya", KENJI))
+        with self.assertRaises(PermissionError):                         # and no Principal at all is refused too
+            self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "client says 62", "advisor:priya")
+        r = self.orch.update_memory_lifecycle(sem["memory_id"], "disputed", "client says 62", "advisor:priya", principal=person("advisor:priya", KENJI))
         self.assertEqual((r["from_status"], r["to_status"]), ("active", "disputed"))
         ctx = self.orch.retrieve(plan("target", [KENJI], ["retirement_age"]))[KENJI]
         self.assertEqual([m.status for m in ctx.current], ["disputed"])
         self.assertTrue(any("disputed" in c for c in ctx.contradictions))
         with self.assertRaises(ValueError):                              # no 'promotion' of an exploratory episode by lifecycle action
             expl = next(e for e in self.store.records(KENJI, "episodic") if e["certainty"] == "exploratory")
-            self.orch.update_memory_lifecycle(expl["memory_id"], "active", "make it a decision", "advisor:priya")
+            self.orch.update_memory_lifecycle(expl["memory_id"], "active", "make it a decision", "advisor:priya", principal=person("advisor:priya", KENJI))
         with self.assertRaises(ValueError):                              # approving a non-procedure
-            self.orch.update_memory_lifecycle(sem["memory_id"], "active", "ok", "advisor:priya", approval_status="approved")
+            self.orch.update_memory_lifecycle(sem["memory_id"], "active", "ok", "advisor:priya", approval_status="approved", principal=person("advisor:priya", KENJI))
 
     def test_no_automatic_dispute(self):
         self.assertEqual(self.store.count("memory_records", "status='disputed'"), 0)
@@ -220,13 +223,13 @@ class DatabaseTests(unittest.TestCase):
                     content_hash="h1", valid_from="2026-05-01", valid_to="2026-01-01")
         det = dict(slot_key="retirement_age|retirement_age", basis="b", supporting_episodes=1)
         with self.assertRaises(sqlite3.IntegrityError):                  # valid_to >= valid_from
-            store.insert_memory(base, det)
+            store.insert_memory(base, det, principal=svc("consolidation", KENJI))
         for bad in (dict(status="bogus"), dict(certainty="maybe"), dict(memory_type="other"), dict(confidence=1.5), dict(origin="llm")):
             with self.assertRaises(sqlite3.IntegrityError):
-                store.insert_memory(dict(base, valid_to=None, content_hash="h2", **bad), det)
+                store.insert_memory(dict(base, valid_to=None, content_hash="h2", **bad), det, principal=svc("consolidation", KENJI))
         self.assertEqual(store.count("memory_records"), 3)               # only the 3 curated procedures: all failed inserts rolled back
         with self.assertRaises(sqlite3.IntegrityError):                  # self-supersession
-            store.insert_memory(dict(base, valid_to=None, content_hash="h3", supersedes_id="M1"), det)
+            store.insert_memory(dict(base, valid_to=None, content_hash="h3", supersedes_id="M1"), det, principal=svc("consolidation", KENJI))
         with self.assertRaises(sqlite3.IntegrityError):                  # incomplete conversation evidence
             store.execute("INSERT INTO {S}memory_evidence (evidence_id, memory_id, source_type) VALUES ('e','x','conversation')")
 
@@ -235,7 +238,7 @@ class DatabaseTests(unittest.TestCase):
         ingest(orch, ["INT-090"])
         row = store.records(KENJI, "episodic")[0]
         again = {k: row[k] for k in ("memory_id", "client_id", "memory_type", "topic", "content", "certainty", "status", "origin", "content_hash")}
-        mid, created = store.insert_memory(again, dict(interaction_id="INT-090", turn_index=2, event_ts="x", speaker_role="Client", event_type="decision"))
+        mid, created = store.insert_memory(again, dict(interaction_id="INT-090", turn_index=2, event_ts="x", speaker_role="Client", event_type="decision"), principal=svc("ingestion", KENJI))
         self.assertFalse(created)
 
     def test_reset_and_file_database(self):
@@ -247,12 +250,22 @@ class DatabaseTests(unittest.TestCase):
             self.assertGreater(store.count("memory_records"), 3)
             store.close()
             s2 = MemoryStore(url=url, conv=CONV)
-            self.assertGreater(s2.count("memory_records"), 3)            # persisted
-            s2.init()                                                    # idempotent, keeps data
-            self.assertGreater(s2.count("memory_records"), 3)
-            s2.init(reset=True)
-            self.assertEqual(s2.count("memory_records"), 0)
-            self.assertEqual(s2.count("schema_migrations"), 1)
+            try:
+                self.assertGreater(s2.count("memory_records"), 3)        # persisted
+                s2.init()                                                # idempotent, keeps data
+                self.assertGreater(s2.count("memory_records"), 3)
+                with self.assertRaises(MemoryResetRefused):              # P1.4.1: erasing a populated store is an operator decision, never an application call
+                    s2.init(reset=True)
+                self.assertGreater(s2.count("memory_records"), 3)
+                os.environ["CMF_MEMORY_MAINTENANCE"] = "1"
+                try:
+                    s2.init(reset=True)
+                finally:
+                    del os.environ["CMF_MEMORY_MAINTENANCE"]
+                self.assertEqual(s2.count("memory_records"), 0)
+                self.assertEqual(s2.count("schema_migrations"), 1)
+            finally:
+                s2.close()                                               # Windows cannot delete the temp dir while the file is open
 
     def test_default_url_and_env_switch(self):
         from agents.memory.config import DEFAULT_DB_URL, database_url
@@ -269,7 +282,7 @@ class DatabaseTests(unittest.TestCase):
         import pathlib, re
         for p in pathlib.Path(__file__).resolve().parents[1].joinpath("src/agents/memory").glob("*.py"):
             if p.name != "store.py":
-                self.assertIsNone(re.search(r"^\s*(import|from)\s+(sqlite3|psycopg|psycopg2)", p.read_text(), re.M), p.name)
+                self.assertIsNone(re.search(r"^\s*(import|from)\s+(sqlite3|psycopg|psycopg2)", p.read_text(encoding="utf-8"), re.M), p.name)
 
     def test_schema_files_cover_the_spec_tables(self):
         sql = (pathlib_root() / "sql" / "100_cmf_memory_schema.sql").read_text()

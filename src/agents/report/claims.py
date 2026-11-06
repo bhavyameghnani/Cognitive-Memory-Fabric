@@ -94,6 +94,8 @@ def validate_claims(claims: list[Claim], evidence: list[EvidenceItem], plan: Exe
     for c in claims:
         why = check_claim(c, evidence, allowed)
         e = next((x for x in evidence if x.ref == c.evidence_ref), None)
+        if not why and e is not None and (e.evidence_class in ("unverified", "contradicted", "open_conflict") or (e.evidence_class == "ambiguous" and c.status in ("current", "superseded"))):
+            why = f"the cited memory is {e.evidence_class} ({e.verification or 'no verification'}): it cannot support a {c.status} claim"
         if not why and c.status == "current" and e is not None:
             key = (e.client_id, _norm(e.topic or c.topic))
             prev = current_by_topic.get(key)
@@ -124,15 +126,15 @@ def render_claim(c: Claim, e: EvidenceItem) -> tuple[str, Finding]:
     val = e.value or c.value or "the value in the cited memory"
     ref = [e.ref]
     if c.status == "current":
-        return "key_findings", Finding(text=f"{who}'s {topic} is {val}, the current confirmed knowledge" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f"{_src(e)}.", refs=ref)
+        return "key_findings", Finding(text=f"{who}'s {topic} is {val}, the current confirmed knowledge" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f"{_src(e)}.", refs=ref, origin="rendered")
     if c.status == "superseded":
         win = f"valid {e.valid_from or 'earlier'} until {e.valid_to}" if e.valid_to else f"valid from {e.valid_from}" if e.valid_from else "no longer valid"
-        return "historical_context", Finding(text=f"{who}'s {topic} was {val} ({win}); it has been superseded and is no longer current{_src(e)}.", refs=ref)
+        return "historical_context", Finding(text=f"{who}'s {topic} was {val} ({win}); it has been superseded and is no longer current{_src(e)}.", refs=ref, origin="rendered")
     if c.status == "exploratory":
         when = f" on {e.event_date}" if e.event_date else ""
-        return "historical_context", Finding(text=f"{who} explored {topic} {val}{when}; this was exploratory, not a decision{_src(e)}.", refs=ref)
+        return "historical_context", Finding(text=f"{who} explored {topic} {val}{when}; this was exploratory, not a decision{_src(e)}.", refs=ref, origin="rendered")
     when = f" on {e.event_date}" if e.event_date else ""
-    return "historical_context", Finding(text=f"The advisor recommended {topic} {val}{when}; this is an advisor recommendation, not a client decision{_src(e)}.", refs=ref)
+    return "historical_context", Finding(text=f"The advisor recommended {topic} {val}{when}; this is an advisor recommendation, not a client decision{_src(e)}.", refs=ref, origin="rendered")
 
 
 def render_claims(claims: list[Claim], evidence: list[EvidenceItem]) -> dict[str, list[Finding]]:
