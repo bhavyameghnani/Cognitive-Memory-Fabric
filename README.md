@@ -11,13 +11,15 @@ A long-term memory layer for a wealth-advisor assistant. It turns an advisor's m
 
 **Four agents, in order:** Planner -> Memory Orchestrator -> Tool Selector (13 read-only MCP tools over the operational data) -> Report Agent. Each agent only sees what the previous ones hand it; the Report Agent has no database or tool access. Agent specs are in `docs/agent_prompts/`.
 
+**Harness** (`src/harness/`, see [docs/harness.md](docs/harness.md)): a request-scoped layer around the four agents - one shared budget and trace, Strands-based model-call control, token-aware compression, a safe response cache, permission gate, evidence verifier, temporal-conflict detector, memory write validator, human-approval gate and a repeatable evaluation runner (`python -m harness.evaluation.runner`).
+
 **Brain UI** (`ui/cmf-brain-ui`): a brain map of the memories, a per-memory dossier (evidence quotes, version history, lifecycle audit trail), and **Ask CMF**, which answers a question and shows how the agents performed: stage timings, which memories were retrieved vs. actually cited, tool calls, and a warning when a fallback replaced a model step.
 
 ## Quick start
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env                            # set OPENAI_API_KEY (needed only for Ask CMF)
+cp .env.development.example .env                # LOCAL DEVELOPMENT profile (no authentication, loopback only); set OPENAI_API_KEY (needed only for Ask CMF)
 python utils/seed_demo_db.py install            # demo databases: Kenji's memories + operational data, no LLM needed to browse
 cd ui/cmf-brain-ui && npm install && cd ../..
 PYTHONPATH=src .venv/bin/python -m api.main     # terminal 1: backend  http://127.0.0.1:8000
@@ -56,7 +58,7 @@ Two processes: a **FastAPI backend** (`api/main.py`, port 8000) and a **React + 
 ```bash
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env            # then edit .env: set OPENAI_API_KEY (or CMF_LLM_BACKEND=ollama)
+cp .env.development.example .env   # local development; then edit .env: set OPENAI_API_KEY (or CMF_LLM_BACKEND=ollama).  For a shared deployment use .env.example (production), see below
 cd ui/cmf-brain-ui && npm install && cd ../..
 ```
 
@@ -107,6 +109,9 @@ Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf
 | `CMF_LLM_BASE_URL`, `CMF_LLM_MODEL`, `CMF_LLM_NUM_CTX` | `http://localhost:11434`, `qwen2.5:3b`, `6144` | Ollama backend |
 | `CMF_MEMORY_DATABASE_URL`, `CMF_DATABASE_URL` | SQLite files under `build/` | Memory DB (the UI reads it) and operational data DB |
 | `CMF_ALLOWED_CLIENTS` | empty = all | Tool-server client allow-list |
+| `HARNESS_PROFILE` | `production` | `production` or `development` (see *Security profiles*) |
+| `CMF_AUTH_JWT_SECRET`, `CMF_AUTH_TRUSTED_GATEWAY`, `CMF_AUTH_ISSUER`, `CMF_AUTH_AUDIENCE` | empty / `false` | Signed-token identity (secret >= 32 chars; the API will not start in trusted-gateway mode without it) |
+| `CMF_API_DOCS_ENABLED` | `false` | Serve `/docs` and `/openapi.json` in production (verified callers only) |
 | `CMF_API_HOST`, `CMF_API_PORT` | `127.0.0.1`, `8000` | Backend bind address |
 | `CMF_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Browser origins allowed to call the API directly |
 | `VITE_DEV_PORT` | `5173` | Frontend dev-server port |
@@ -115,8 +120,26 @@ Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf
 
 Real environment variables always override `.env`. Paths in `.env` are relative to the repo root, so run the commands above from there.
 
+### Security profiles: production (default) vs local development
+
+| | `.env.example` (**production**, the default) | `.env.development.example` (local only) |
+|---|---|---|
+| `HARNESS_PROFILE` | `production` | `development` |
+| Authentication | **required**: `Authorization: Bearer <signed JWT>`, verified with `CMF_AUTH_JWT_SECRET` (>= 32 chars) | none: token-less requests from a *loopback* peer act as an admin for all clients |
+| `X-CMF-Actor-*` headers | refused (never authentication) | refused |
+| Safety controls (`HARNESS_PERMISSION_GATE`, evidence verification, write validation, approval) | cannot be switched off; an attempt is ignored with a warning | may be switched off for experiments |
+| Network binding | any address | **loopback only**; the API refuses to start otherwise and prints a warning at start-up |
+| `/docs`, `/openapi.json` | off (`CMF_API_DOCS_ENABLED=true` serves them to verified callers only) | on |
+| Only unauthenticated route | `GET /api/health` -> `{"ok": true}` | same |
+
+`CMF_AUTH_TRUSTED_GATEWAY=true` declares that identities arrive as signed tokens; the API **refuses to start** in that mode without `CMF_AUTH_JWT_SECRET`.
+Mint a token for testing: `PYTHONPATH=src python -m harness.auth_tokens --actor ADVISOR-001 --role advisor` (reads the secret from the environment), then
+`curl -H "Authorization: Bearer <token>" localhost:8000/api/clients`. Details: [docs/harness.md](docs/harness.md#permissions-and-identity).
+
 ### Troubleshooting
 
+- **Every call answers 401:** the production profile needs a signed Bearer token (see above). For local work copy `.env.development.example`. The bundled UI sends no token, so it works only with the development profile (or behind a gateway that adds the header).
+- **API refuses to start ("loopback"):** the development profile may only bind to `127.0.0.1` / `::1` / `localhost`; fix `CMF_API_HOST` or switch to the production profile with a secret.
 - **Brain map empty / 0 memories:** step 2 was skipped, or `CMF_MEMORY_DATABASE_URL` points at a different DB than the one you loaded (the seed installs to `build/cmf_memory.db`).
 - **"CMF could not answer" in Ask CMF:** the LLM is not reachable. Check `OPENAI_API_KEY` / network, or that Ollama is running. A run that fell back to rule-based steps shows an amber "Degraded run" banner in the agent-performance panel.
 - **UI shows network errors / 502 on `/api`:** the backend is not running, or `VITE_API_PROXY_TARGET` does not match `CMF_API_PORT`.

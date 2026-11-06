@@ -18,7 +18,8 @@ def redact(obj: Any) -> Any:
     if isinstance(obj, str):
         return _SECRET.sub(lambda m: (m.group(1) + "***" + m.group(2)) if m.group(1) else (m.group(3) + "***"), obj)
     if isinstance(obj, dict):
-        return {k: ("***" if re.search(r"password|api_?key|secret|token", str(k), re.I) else redact(v)) for k, v in obj.items()}
+        # "token(?!s)": a key named token is a credential; "input_tokens" / "cached_tokens" are usage counts and must stay readable
+        return {k: ("***" if re.search(r"password|api_?key|secret|token(?!s)", str(k), re.I) else redact(v)) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [redact(v) for v in obj]
     return obj

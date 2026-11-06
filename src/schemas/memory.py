@@ -62,6 +62,12 @@ class MemoryItem(BaseModel):
     origin: Origin = "conversation_llm"
     supporting_episodes: int = 0
     evidence: list[EvidenceRef] = Field(default_factory=list)
+    # P1.4.3: what the integrity boundary decided about this memory travels WITH it to the Report Agent.  The default is the conservative one: a memory built without this
+    # information is "unverified", never "verified".
+    verification: str = "unverified"          # verified | unverified
+    verification_basis: str = ""
+    source_class: str = ""                    # observed_transcript | llm_extraction | derived | human_correction | curated | tool_summary | system
+    temporal_status: str = ""                 # current | historical | hypothetical ...
     # additions by the Memory Orchestrator (all optional; nothing renamed or removed)
     expires_at: Optional[str] = None          # working memory
     session_id: Optional[str] = None          # working memory
@@ -91,6 +97,7 @@ class MemoryContext(BaseModel):
     working: list[MemoryItem] = Field(default_factory=list)
     relations: list[Relationship] = Field(default_factory=list)
     contradictions: list[str] = Field(default_factory=list)
+    conflicts: list[dict] = Field(default_factory=list, description="OPEN durable conflicts that touch the memories shown: a person has to review them")
     unresolved: list[MemoryItem] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 

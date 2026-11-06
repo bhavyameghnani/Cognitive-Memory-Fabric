@@ -29,7 +29,7 @@ def plan(task="retrieval", clients=(K,), calc=False, tools=(), missing=(), text=
 
 def mem(mid, mtype, value, status, certainty, vf=None, vt=None, ev=None, client=K, event=None, content=None, topic="retirement_age"):
     return MemoryItem(memory_id=mid, client_id=client, memory_type=mtype, topic=topic, subject="retirement_age", content=content or f"Retirement age {value}",
-                      value_text=value, certainty=certainty, status=status, valid_from=vf, valid_to=vt, event_date=event, evidence=ev or [])
+                      value_text=value, certainty=certainty, status=status, valid_from=vf, valid_to=vt, event_date=event, evidence=ev or [], verification="verified")      # these fixtures stand for memories the integrity boundary verified (P1.4.3)
 
 
 def kenji_ctx(**kw):

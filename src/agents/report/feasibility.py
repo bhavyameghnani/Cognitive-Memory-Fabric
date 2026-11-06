@@ -40,16 +40,16 @@ def tool_findings(evidence: list[EvidenceItem], tools: ToolSelectorState) -> lis
             for g in d.get("goals", []):
                 out.append(Finding(text=f"Simple funding gap for the {g.get('type', 'goal')} goal as of {asof}: target {_money(g['target'])}, "
                                         f"{d.get('resources_basis', 'resources').replace('_', ' ')} {_money(g['resources'])}, gap {_money(g['simple_gap'])}, "
-                                        f"coverage {g['coverage_percent']}% (synthetic; not a projection).", refs=[ref]))
+                                        f"coverage {g['coverage_percent']}% (synthetic; not a projection).", refs=[ref], origin="tool_code"))
         elif env.tool == "calculate_liquidity_ratio":
             out.append(Finding(text=f"Liquidity as of {asof}: cash covers {d.get('cash_months')} months of expenses against a {d.get('target_months')}-month target "
-                                    f"(shortfall {_money(d.get('shortfall_amount', 0))}) (synthetic).", refs=[ref]))
+                                    f"(shortfall {_money(d.get('shortfall_amount', 0))}) (synthetic).", refs=[ref], origin="tool_code"))
         elif env.tool == "calculate_portfolio_concentration":
             out.append(Finding(text=f"Concentration by {d.get('dimension', 'dimension')} as of {asof}: top {d.get('top_n')} holdings are {d.get('top_n_percent')}% "
-                                    f"of the portfolio; Herfindahl index {d.get('herfindahl_index')} (synthetic).", refs=[ref]))
+                                    f"of the portfolio; Herfindahl index {d.get('herfindahl_index')} (synthetic).", refs=[ref], origin="tool_code"))
         elif env.tool == "calculate_asset_allocation" and d.get("allocation"):
             parts = ", ".join(f"{a['group']} {a['percent']}%" for a in d["allocation"][:5])
-            out.append(Finding(text=f"Allocation as of {asof}: {parts} (synthetic).", refs=[ref]))
+            out.append(Finding(text=f"Allocation as of {asof}: {parts} (synthetic).", refs=[ref], origin="tool_code"))
     return out
 
 

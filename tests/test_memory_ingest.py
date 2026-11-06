@@ -98,7 +98,7 @@ class ClassificationTests(unittest.TestCase):
         ctx = orch.retrieve(plan("how do we rebalance", ["CLIENT-001"], ["asset_allocation"], cats=("procedural", "episodic")))["CLIENT-001"]
         self.assertEqual([p for p in ctx.procedures if p.origin == "conversation_llm"], [])
         # explicit human approval makes it retrievable
-        orch.update_memory_lifecycle(pro[0]["memory_id"], "active", "reviewed with compliance", "advisor:priya", approval_status="approved")
+        orch.update_memory_lifecycle(pro[0]["memory_id"], "active", "reviewed with compliance", "advisor:priya", approval_status="approved", principal=person("advisor:priya", "CLIENT-001"))
         ctx = orch.retrieve(plan("how do we rebalance", ["CLIENT-001"], ["asset_allocation"], cats=("procedural",), rid="REQ-2"))["CLIENT-001"]
         self.assertIn(pro[0]["memory_id"], [p.memory_id for p in ctx.procedures])
 
@@ -203,14 +203,14 @@ class EvidenceTests(unittest.TestCase):
     def test_store_refuses_fake_or_foreign_evidence(self):
         orch, store, _, _ = make()
         rec = lambda cid, h_: dict(memory_id="MEM-X-" + h_, client_id=cid, memory_type="episodic", topic="retirement_age", content="x", certainty="confirmed", status="active", origin="conversation_llm", content_hash=h_)
-        det = dict(interaction_id="INT-090", turn_index=2, event_ts="2026-05-01T08:00:00", speaker_role="Client", event_type="decision")
+        det = dict(interaction_id="INT-090", turn_index=2, event_ts="2026-05-01T08:15:00", speaker_role="Client", event_type="decision")
         good = dict(source_type="conversation", interaction_id="INT-090", turn_index=2, speaker="Client", excerpt=K090_T2)
-        self.assertTrue(store.insert_memory(rec("CLIENT-001", "a"), det, [good])[1])
+        self.assertTrue(store.insert_memory(rec("CLIENT-001", "a"), det, [good], principal=svc("ingestion", "CLIENT-001"))[1])
         for bad in (dict(good, excerpt="We have decided to retire at 55"), dict(good, turn_index=99), dict(good, speaker="Advisor")):
             with self.assertRaises(EvidenceError):
-                store.insert_memory(rec("CLIENT-001", "b"), det, [bad])
+                store.insert_memory(rec("CLIENT-001", "b"), det, [bad], principal=svc("ingestion", "CLIENT-001"))
         with self.assertRaises(EvidenceError):                           # real turn, wrong client
-            store.insert_memory(rec("CLIENT-002", "c"), det, [good])
+            store.insert_memory(rec("CLIENT-002", "c"), det, [good], principal=svc("ingestion", "CLIENT-002"))
         self.assertEqual(store.count("memory_records", "memory_type='episodic'"), 1)       # failed inserts rolled back completely
         self.assertEqual(store.count("memory_lifecycle_events", "memory_id='MEM-X-b'"), 0)
 

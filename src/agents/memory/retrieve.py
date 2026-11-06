@@ -11,6 +11,7 @@ from typing import Optional
 
 from agents.memory import rules
 from agents.memory.config import CERTAINTY_WEIGHT, RetrievalConfig
+from agents.memory.integrity import Principal
 from agents.memory.store import MemoryStore, to_item
 from agents.planner.topics import TOPICS, infer_topics
 from schemas.memory import MemoryContext, MemoryItem
@@ -28,6 +29,9 @@ def relevance(row: dict, kw: set[str]) -> float:
     """Ranking extension point (replace with embeddings): certainty weight + keyword overlap with content/subject."""
     overlap = len(kw & keywords(f"{row['content']} {row['subject']} {row['topic'].replace('_', ' ')}"))
     return CERTAINTY_WEIGHT.get(row["certainty"], 0.2) + 0.25 * min(overlap, 4)
+
+
+REVIEW_CONFLICTS = {"human_correction_vs_evidence", "contradiction_same_period", "unverified_vs_verified"}      # conflict kinds that need a person; informational kinds stay in the audit data
 
 
 def parse_as_of(time_period: Optional[str]) -> Optional[str]:
@@ -109,7 +113,7 @@ def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, re
     work_rows: list[dict] = []
     if "working" in cats:
         sid = session_id or request_id
-        store.expire_working()
+        store.expire_working(Principal.service("ttl_expiry", [client_id]))       # this client's rows only, by the store's own clock
         work_rows = [w for w in store.records(client_id, "working", statuses=["active"], session_id=sid) if w["expires_at"] > store.now()]
 
     rows_all = cur_rows + hist_rows + ep_rows + unres + proc_rows + work_rows
@@ -127,6 +131,17 @@ def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, re
         if r.rel_type == "related_to" and r.note.startswith("conflict:"):
             ctx.contradictions.append(r.note[len("conflict:"):].strip())
     ctx.contradictions += [f"{s['topic']} {s['value_text']} is marked disputed" for s in cur_rows if s["status"] == "disputed"]
+    # OPEN durable conflicts of THIS client that touch what is being shown: a consumer must never read a disputed value as unqualified current truth (P1.4.2)
+    shown = {r["memory_id"] for r in rows_all}
+    for c in store.conflicts(client_id, "open"):
+        if c["kind"] not in REVIEW_CONFLICTS:
+            continue
+        sides = [store.get(c["memory_id"]), store.get(c["other_memory_id"])]
+        if not (c["memory_id"] in shown or c["other_memory_id"] in shown or any(x and (scan_all or x["topic"] in topics) for x in sides)):
+            continue
+        ctx.conflicts.append({k: c[k] for k in ("conflict_id", "kind", "severity", "memory_id", "other_memory_id", "detail", "detected_at")})
+        ctx.contradictions.append(f"review required ({c['kind']}): {c['detail'] or 'two memories disagree'} [memories {c['memory_id']} / {c['other_memory_id']}; open conflict {c['conflict_id']}]")
+    ctx.contradictions = list(dict.fromkeys(ctx.contradictions))
     if omitted:
         ctx.notes.append(f"{omitted} further episode(s) omitted (cap {cfg.episode_cap}); narrow the topic or period to see them")
     for r in rows_all:
