@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from typing import Any, Optional
 
 DEFAULT_DB_URL = "sqlite:///build/cmf_memory.db"
 EXTRACTION_AGENT = "memory"          # agent name used with the shared LLM client (MockLLM handlers are keyed by it)
@@ -17,7 +18,7 @@ FIXED_SUBJECT_TOPICS = {"retirement_age", "asset_allocation"}
 
 # Higher = stronger claim.  A guard may only move certainty DOWN this ranking.
 CERTAINTY_RANK = {"confirmed": 5, "correction": 5, "recommendation": 3, "exploratory": 2, "hypothetical": 2, "unconfirmed": 1, "n/a": 0}
-# Ranking weight used by retrieval (extension point: replace relevance() with embeddings).
+# Ranking weight used by retrieval (blended with keyword overlap and embedding similarity in retrieve.relevance()).
 CERTAINTY_WEIGHT = {"confirmed": 1.0, "correction": 0.9, "recommendation": 0.6, "exploratory": 0.5, "hypothetical": 0.35, "unconfirmed": 0.3, "n/a": 0.2}
 
 
@@ -51,6 +52,8 @@ class RetrievalConfig:
     unresolved_cap: int = 6
     history_cap: int = 6
     working_ttl_hours: float = WORKING_TTL_HOURS
+    semantic_weight: float = 1.0      # weight of query-memory embedding cosine in episode ranking; 0 disables embeddings (keyword-only ranking)
+    embedder: Optional[Any] = None    # agents.memory.embeddings.Embedder; None -> default_embedder() (env CMF_EMBED_BACKEND)
 
 
 @dataclass

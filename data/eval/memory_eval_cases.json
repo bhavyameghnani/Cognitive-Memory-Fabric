@@ -1,0 +1,29 @@
+{
+  "note": "Gold labels for evaluation/memory_eval.py, derived from reports/generation_manifest.json (authored outcomes, QC only). A retrieved episode is relevant when its (interaction_id, topic) is listed in relevant. Scope: CLIENT-001 (the only client in the seed memory DB).",
+  "client_id": "CLIENT-001",
+  "gold_chains": {
+    "retirement_age": ["65", "63"],
+    "asset_allocation": ["75", "60"],
+    "education_funding": ["30000"]
+  },
+  "retrieval_cases": [
+    {"id": "ret-now", "query": "When does Kenji plan to retire?", "topics": ["retirement_age"],
+     "gold_current": {"retirement_age": "63"}, "relevant": [["INT-090", "retirement_age"]]},
+    {"id": "ret-history", "query": "How did Kenji's retirement age change over time?", "topics": ["retirement_age"], "needs_history": true, "task_type": "history",
+     "gold_current": {"retirement_age": "63"}, "gold_history": {"retirement_age": ["65"]},
+     "relevant": [["INT-001", "retirement_age"], ["INT-012", "retirement_age"], ["INT-049", "retirement_age"], ["INT-090", "retirement_age"]]},
+    {"id": "ret-retire-asof", "query": "What was Kenji's retirement plan as of 2026-03-01?", "topics": ["retirement_age"], "time_period": "2026-03-01",
+     "gold_current": {"retirement_age": "65"}, "relevant": [["INT-001", "retirement_age"], ["INT-049", "retirement_age"]]},
+    {"id": "alloc-now", "query": "What equity allocation did Kenji decide on?", "topics": ["asset_allocation"],
+     "gold_current": {"asset_allocation": "60"}, "relevant": [["INT-067", "asset_allocation"]]},
+    {"id": "alloc-history", "query": "How has Kenji's equity allocation changed?", "topics": ["asset_allocation"], "needs_history": true, "task_type": "history",
+     "gold_current": {"asset_allocation": "60"}, "gold_history": {"asset_allocation": ["75"]},
+     "relevant": [["INT-010", "asset_allocation"], ["INT-031", "asset_allocation"], ["INT-067", "asset_allocation"]]},
+    {"id": "alloc-asof", "query": "What was Kenji's equity target as of 2026-03-15?", "topics": ["asset_allocation"], "time_period": "2026-03-15",
+     "gold_current": {"asset_allocation": "75"}, "relevant": [["INT-010", "asset_allocation"], ["INT-031", "asset_allocation"]]},
+    {"id": "edu-now", "query": "How much will Kenji contribute to Yuki's graduate school?", "topics": ["education_funding"],
+     "gold_current": {"education_funding": "30000"}, "relevant": [["INT-068", "education_funding"]]},
+    {"id": "ret-notopic", "query": "Is Kenji still planning to retire at sixty-five?", "topics": [],
+     "gold_current": {"retirement_age": "63"}, "relevant": [["INT-090", "retirement_age"], ["INT-049", "retirement_age"]]}
+  ]
+}

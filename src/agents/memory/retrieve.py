@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from agents.memory import rules
+from agents.memory.embeddings import EmbeddingError, cosine, default_embedder
 from agents.memory.config import CERTAINTY_WEIGHT, RetrievalConfig
 from agents.memory.store import MemoryStore, to_item
 from agents.planner.topics import TOPICS, infer_topics
@@ -24,10 +25,31 @@ def keywords(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z]{3,}", rules.norm(text)) if w not in STOP}
 
 
-def relevance(row: dict, kw: set[str]) -> float:
-    """Ranking extension point (replace with embeddings): certainty weight + keyword overlap with content/subject."""
+def relevance(row: dict, kw: set[str], sem: float = 0.0, semantic_weight: float = 0.0) -> float:
+    """Ranking score = certainty weight + keyword overlap with content/subject + semantic_weight * embedding cosine (sem, clamped at 0).
+
+    With the defaults (sem=0, semantic_weight=0) this is the original keyword-only ranking."""
     overlap = len(kw & keywords(f"{row['content']} {row['subject']} {row['topic'].replace('_', ' ')}"))
-    return CERTAINTY_WEIGHT.get(row["certainty"], 0.2) + 0.25 * min(overlap, 4)
+    return CERTAINTY_WEIGHT.get(row["certainty"], 0.2) + 0.25 * min(overlap, 4) + semantic_weight * max(sem, 0.0)
+
+
+def doc_text(row: dict) -> str:
+    return f"{row['topic'].replace('_', ' ')} {row['subject']}: {row['content']}"
+
+
+def semantic_scores(query: str, rows: list[dict], cfg: RetrievalConfig) -> tuple[dict[str, float], Optional[str]]:
+    """memory_id -> cosine(query, memory).  Returns ({}, note) when embeddings are off or the backend fails (ranking then falls back to keywords)."""
+    if cfg.semantic_weight <= 0 or not rows:
+        return {}, None
+    try:
+        emb = cfg.embedder or default_embedder()
+        if emb is None:
+            return {}, None
+        vecs = emb.embed([query] + [doc_text(r) for r in rows])
+    except EmbeddingError as e:
+        return {}, f"embedding retrieval unavailable ({e}); ranked by keywords only"
+    q = vecs[0]
+    return {r["memory_id"]: cosine(q, v) for r, v in zip(rows, vecs[1:])}, None
 
 
 def parse_as_of(time_period: Optional[str]) -> Optional[str]:
@@ -89,7 +111,10 @@ def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, re
     omitted = 0
     if "episodic" in cats and not (scan_all):
         pool = [e for e in all_eps if e["status"] in ("active", "unconfirmed") or (history_wanted and e["status"] == "superseded")]
-        ranked = sorted(pool, key=lambda r: -relevance(r, kw))[: cfg.episode_cap]
+        sims, emb_note = semantic_scores(plan.request_text, pool, cfg)
+        if emb_note:
+            ctx.notes.append(emb_note)
+        ranked = sorted(pool, key=lambda r: -relevance(r, kw, sims.get(r["memory_id"], 0.0), cfg.semantic_weight))[: cfg.episode_cap]
         ep_rows = sorted(ranked, key=_ord)
         omitted = len(pool) - len(ep_rows)
     unres = unresolved_items([e for e in all_eps if e["status"] != "superseded"])[: cfg.unresolved_cap]

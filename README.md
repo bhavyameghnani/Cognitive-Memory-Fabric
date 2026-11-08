@@ -105,6 +105,7 @@ Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf
 | `CMF_LLM_BACKEND` | `ollama` (`openai` in the example) | LLM choice: `openai`, `ollama` or `mock` |
 | `OPENAI_API_KEY`, `CMF_OPENAI_MODEL`, `CMF_OPENAI_BASE_URL` | – / `gpt-4o-mini` / OpenAI URL | OpenAI backend. The key is read only from the environment, never logged |
 | `CMF_LLM_BASE_URL`, `CMF_LLM_MODEL`, `CMF_LLM_NUM_CTX` | `http://localhost:11434`, `qwen2.5:3b`, `6144` | Ollama backend |
+| `CMF_EMBED_BACKEND`, `CMF_EMBED_MODEL` | `none` / backend default | Hybrid episode ranking: `none` (off), `hash` (offline, lexical only), `ollama` (`nomic-embed-text`) or `openai` (`text-embedding-3-small`) |
 | `CMF_MEMORY_DATABASE_URL`, `CMF_DATABASE_URL` | SQLite files under `build/` | Memory DB (the UI reads it) and operational data DB |
 | `CMF_ALLOWED_CLIENTS` | empty = all | Tool-server client allow-list |
 | `CMF_API_HOST`, `CMF_API_PORT` | `127.0.0.1`, `8000` | Backend bind address |
@@ -114,6 +115,14 @@ Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf
 | `VITE_API_BASE_URL` | empty | Absolute API URL for a deployed UI (then add the UI's origin to `CMF_CORS_ORIGINS`) |
 
 Real environment variables always override `.env`. Paths in `.env` are relative to the repo root, so run the commands above from there.
+
+### Memory-quality evaluation
+
+```bash
+PYTHONPATH=src .venv/bin/python -m evaluation.memory_eval [--caps 3,5,8] [--embedder hash|ollama|openai] [--json out.json]
+```
+
+Runs on a temp copy of the seed memory DB, with no LLM and no network by default. It reports extraction recall per authored kind (from `reports/generation_manifest.json`), unsupported-commitment rate, semantic version-chain accuracy, and retrieval metrics (value accuracy, episode recall/precision/MRR, joint score, cross-client leaks) for keyword-only vs hybrid ranking at several episode caps. Gold cases are in `data/eval/memory_eval_cases.json` (CLIENT-001 only, matching the seed DB).
 
 ### Troubleshooting
 
