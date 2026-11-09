@@ -2,6 +2,7 @@
 deterministic fallback report built straight from the evidence."""
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Optional
 
@@ -127,6 +128,24 @@ def check_prose(text: str, evidence: list[EvidenceItem], nc: NumberChecker) -> O
     return check_interaction_cites(text, evidence) or status_conflict(text, evidence)
 
 
+_FIGURES = re.compile(r"^(number\(s\) not in evidence):.*$")
+_NON_CURRENT = re.compile(r"^presents non-current value .+ as current$")
+_CURRENT_AS_EXPLORATORY = re.compile(r"^presents the current value .+ as exploratory$")
+
+
+def public_reason(why: str) -> str:
+    """A report-layer refusal reason as the API shows it: the category, without the figures / values of the refused text (the reasons quote them)."""
+    why = _FIGURES.sub(r"\1", why or "")
+    why = _NON_CURRENT.sub("presents a non-current value as current", why)
+    return _CURRENT_AS_EXPLORATORY.sub("presents the current value as exploratory", why)
+
+
+def withheld_ref(text: str) -> dict:
+    """How a withheld / dropped finding is recorded in `validation`, which is returned by the API: a fingerprint and a length, NEVER the text (it may be exactly the fabricated
+    statement that was refused).  The fingerprint lets a reviewer match the record to the model output kept in the server-side audit trail."""
+    return {"finding_sha": hashlib.sha256((text or "").encode("utf-8")).hexdigest()[:12], "chars": len(text or "")}
+
+
 def filter_findings(items: list[Finding], evidence: list[EvidenceItem], nc: NumberChecker, rec: dict) -> list[Finding]:
     valid = {e.ref for e in evidence}
     out = []
@@ -136,11 +155,11 @@ def filter_findings(items: list[Finding], evidence: list[EvidenceItem], nc: Numb
         text, n_in = strip_bad_inline_refs(f.text, valid)
         rec["invalid_refs_removed"] += n_in
         if not refs:
-            rec["findings_dropped"].append({"text": f.text[:120], "reason": "no valid evidence reference"})
+            rec["findings_dropped"].append({**withheld_ref(f.text), "reason": "no valid evidence reference"})
             continue
         why = check_prose(text, evidence, nc)
         if why:
-            rec["findings_dropped"].append({"text": f.text[:120], "reason": why})
+            rec["findings_dropped"].append({**withheld_ref(f.text), "reason": public_reason(why)})
             continue
         out.append(Finding(text=text.strip(), refs=refs))
     return out
@@ -179,7 +198,7 @@ def authority_split(items: list[Finding], evidence: list[EvidenceItem], rec: dic
         bad = [by[r] for r in f.refs if r in by and by[r].evidence_class in ("unverified", "contradicted", "open_conflict")]
         if bad:
             moved.append("Withheld pending confirmation: a statement rested on " + ", ".join(f"{b.ref} ({b.evidence_class})" for b in bad) + ", which is not verified evidence.")
-            rec.setdefault("findings_demoted", []).append({"text": f.text[:120], "refs": [b.ref for b in bad], "classes": sorted({str(b.evidence_class) for b in bad})})
+            rec.setdefault("findings_demoted", []).append({**withheld_ref(f.text), "refs": [b.ref for b in bad], "classes": sorted({str(b.evidence_class) for b in bad})})
         else:
             kept.append(f)
     return kept, moved

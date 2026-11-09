@@ -97,6 +97,13 @@ def harness() -> Harness:
     return _harness
 
 
+def _forbidden(e: PermissionDenied) -> HTTPException:
+    """403 for a denial.  A client_not_in_scope message never names a client: an id in the text would confirm that it exists.  (The detailed text stays in the server-side trace.)"""
+    if e.code == "client_not_in_scope":
+        return HTTPException(403, "client_not_in_scope: the request refers to a client you are not permitted to use")
+    return HTTPException(403, str(e))
+
+
 def _unauthorized(detail: str) -> HTTPException:
     return HTTPException(401, detail, headers={"WWW-Authenticate": 'Bearer realm="cmf"'})
 
@@ -149,7 +156,7 @@ def authorize(request: Request, operation: str, client_ids=()) -> Optional[AuthC
     except PermissionDenied as e:
         if e.code in ("missing_identity", "unauthenticated"):
             raise _unauthorized(str(e))
-        raise HTTPException(403, str(e))
+        raise _forbidden(e)
     return auth
 
 
@@ -284,7 +291,7 @@ def ask(body: AskBody, request: Request) -> dict:
     except PermissionDenied as e:   # raised by the harness once the plan names the clients; no data was retrieved
         if e.code in ("missing_identity", "unauthenticated"):
             raise _unauthorized(str(e))
-        raise HTTPException(403, str(e))
+        raise _forbidden(e)
     except Exception as e:  # LLM down, planner rejected, ...
         raise HTTPException(503, f"{type(e).__name__}: {e}")
     if not getattr(res, "released", True):                    # pending approval: the ONLY representation that may leave the process (no findings, evidence, ids, conflicts, tools)

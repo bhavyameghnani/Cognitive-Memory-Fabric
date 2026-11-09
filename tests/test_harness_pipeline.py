@@ -104,7 +104,9 @@ def test_unsupported_claim_is_removed_before_the_final_response():
     llm = MockLLM(handlers={"planner": [p], "report": [report_out([{"text": "Kenji's current retirement age is 59", "refs": [ref]}])]})
     res = run_pipeline("Why did Kenji's retirement age change?", llm, mem, persist_trace=False, harness=harness(), auth=ADMIN)
     assert not any("59" in f.text for f in res.report.key_findings)
-    assert any(u.startswith("Withheld unsupported") and "59" in u for u in res.report.uncertainties)
+    # P6.2.1: the uncertainty names the reason CODE; the refused figure (59) is not repeated in it (the detailed reason stays in the server-side trace)
+    withheld = [u for u in res.report.uncertainties if u.startswith("Withheld unsupported")]
+    assert withheld and all("VALUE_MISMATCH" in u and "59" not in u for u in withheld)
     assert res.harness["evidence"]["unsupported"] >= 1
 
 

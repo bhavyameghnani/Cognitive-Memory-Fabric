@@ -69,6 +69,10 @@ def _run(request_text, llm, memory, toolbox_factory, rid, tracer, rt) -> Pipelin
         try:
             rt.authorize_request()
             pre, _ = memory.conv.resolve_clients(request_text)   # deny BEFORE any model call is spent
+            # An explicit client id that does not exist must look exactly like one the caller may not use (otherwise the answer tells a restricted caller which ids exist).  Callers whose scope
+            # is every client (supervisor / admin / operator / service) can list them all anyway, so for them nothing changes.
+            if set(rt.gate.authorized_clients(rt.auth)) != set(memory.conv.directory()):
+                pre = pre + [c for c in memory.conv.explicit_client_ids(request_text) if c not in memory.conv.directory()]
             if pre:
                 rt.gate.check(rt.auth, "read_memory", pre)
         except PermissionDenied as e:
@@ -81,7 +85,9 @@ def _run(request_text, llm, memory, toolbox_factory, rid, tracer, rt) -> Pipelin
     tm: dict = {}
     t = time.perf_counter()
     planner = Planner(llm, tracer=tracer)
-    plan = planner.plan(request_text, list(TOOL_NAMES), request_id=rid)
+    # the model is told only about the clients this caller may use (the directory lists every advisor's clients); without a harness there is no caller, so no restriction
+    visible = rt.gate.authorized_clients(rt.auth) if rt is not None and rt.cfg.permission_gate else None
+    plan = planner.plan(request_text, list(TOOL_NAMES), request_id=rid, visible_clients=visible)
     if rt is not None:
         try:
             rt.authorize_plan(plan)
@@ -111,7 +117,7 @@ def _run(request_text, llm, memory, toolbox_factory, rid, tracer, rt) -> Pipelin
             sel = ToolSelector(llm, toolbox_factory(), tracer=tracer, config=rt.selector_config() if rt is not None else None)
             tools = sel.run_sync(request_text, plan, summary)
             if tools.stop_reason in ("tool_discovery_failed", "transport_failed"):  # replan without tools, record the gap
-                plan = planner.replan(plan, list(TOOL_NAMES), tools.stop_reason, [])
+                plan = planner.replan(plan, list(TOOL_NAMES), tools.stop_reason, [], visible_clients=visible)
                 tools.missing_information.append("tools were unavailable; financial data could not be collected")
             tm["tool_selector"] = int((time.perf_counter() - t) * 1000)
     if rt is not None and "memory_orchestrator" not in order:

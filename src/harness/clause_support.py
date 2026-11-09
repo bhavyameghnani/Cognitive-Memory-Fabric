@@ -33,6 +33,15 @@ COMPLETED = {"retired", "sold", "bought", "purchased", "completed", "transferred
              "finished", "cancelled", "canceled", "withdrew", "withdrawn", "liquidated"}
 # conditions that a SOURCE attaches to a statement ("only after the sale", "once the house sells", "when the loan closes"): a finding without them states more than the source does
 CONDITION = {"only", "after", "before", "once", "when", "whenever", "provided", "assuming", "depending", "contingent"}
+# "after tax" is an AMOUNT qualifier ("15,000 a month after tax", "after-tax income"), not a temporal "after".  The tokenizer drops hyphens and punctuation ("after-tax" == "after tax"), so the pair
+# alone cannot tell it from "after tax season" / "after tax filing".  An "after <tax>" is therefore exempt ONLY in one of two shapes; anything else stays a condition (conservative: the
+# finding is withheld/qualified rather than silently verified):
+#   (a) it ENDS the clause and an amount cue (a period unit or a currency token) comes before it: "fifteen thousand a month after tax";
+#   (b) the tax word is followed by an amount noun and nothing but filler / figures: "after-tax income", "after-tax income is 15,000".
+TAX_WORDS = {"tax", "taxes", "taxation"}
+AMOUNT_NOUNS = {"income", "pay", "salary", "wage", "wages", "return", "returns", "proceeds", "amount", "cash", "profit", "profits", "earnings", "pension", "benefit", "yield"}
+AMOUNT_FILLER = {"is", "are", "was", "were", "will", "be", "of", "at", "about", "around", "roughly", "approximately", "a", "an", "per", "month", "year", "week", "monthly", "annual", "annually"}
+AMOUNT_CUES = {"month", "months", "monthly", "year", "years", "yearly", "annual", "annually", "week", "weekly", "per", "dollars", "usd", "inr", "eur", "gbp", "rupees", "euros", "pounds"}
 _FIRST = {"he", "she", "his", "her", "hers", "him", "the client", "client"}
 
 
@@ -110,6 +119,30 @@ def _duration_ok(c: dict, best: dict, uncovered: list) -> bool:
     return False
 
 
+def _is_tax_qualifier(tk: list, i: int) -> bool:
+    """True when the 'after' at tk[i] qualifies an amount ('... a month after tax', 'after-tax income') instead of naming a moment."""
+    if i + 1 >= len(tk) or tk[i + 1] not in TAX_WORDS:
+        return False
+    rest = tk[i + 2:]
+    if not rest:                                                                       # shape (a): the clause ends with 'after tax' and an amount cue precedes it
+        return any(t in AMOUNT_CUES or t.startswith("$") for t in tk[:i])
+    return rest[0] in AMOUNT_NOUNS and all(t in AMOUNT_NOUNS or t in AMOUNT_FILLER or support._is_num(t) for t in rest)       # shape (b)
+
+
+_DETERMINERS = {"the", "a", "an", "my", "his", "her", "our", "their", "this", "that"}
+
+
+def conditions(tk: list) -> set:
+    """Condition markers of a clause, as comparable keys.  Plain markers ('only', 'once', ...) are their own key.  Every 'after' that is not an amount qualifier becomes 'after:<next word>'
+    (determiners skipped), so a DIFFERENT 'after' in the claim ('after tax') cannot cover the source's ('after the sale'): the claim must state the same condition, not just any 'after'."""
+    found = {t for t in tk if t in CONDITION and t != "after"}
+    for i, t in enumerate(tk):
+        if t == "after" and not _is_tax_qualifier(tk, i):
+            nxt = next((w for w in tk[i + 1:] if w not in _DETERMINERS), "")
+            found.add(f"after:{nxt}")
+    return found
+
+
 def _roles(actors: tuple) -> tuple:
     """Who comes first matters when someone else is involved ('my wife retires before me' is not 'I retire before my wife')."""
     return tuple(a for a in actors if a != "you")
@@ -141,7 +174,8 @@ def check(finding: str, sources: list, vocabulary: str, client_names: Iterable[s
                 continue
             stranger = sorted(_outsiders(c["actors"]) - src_outsiders)
             if stranger:                                       # a person (wife, parent, colleague ...) that no cited source clause mentions
-                problems.append(ClauseResult(Outcome.UNVERIFIED, Reason.ACTOR_MISMATCH, f"a clause brings in a person ({stranger[0]}) who is not in the cited source"))
+                who = "named person" if stranger[0].startswith("NAME:") else stranger[0]        # a relation noun (wife, father ...) comes from a fixed list; a NAME: token is a word of the finding itself, which may be withheld
+                problems.append(ClauseResult(Outcome.UNVERIFIED, Reason.ACTOR_MISMATCH, f"a clause brings in a person ({who}) who is not in the cited source"))
                 continue
             # the source clause this one is about: the most shared numbers / content words
             best: Optional[dict] = None
@@ -165,7 +199,7 @@ def check(finding: str, sources: list, vocabulary: str, client_names: Iterable[s
             done = sorted(t for t in c["toks"] if t in COMPLETED and t not in best["toks"])
             if done:
                 problems.append(ClauseResult(Outcome.UNVERIFIED, Reason.TEMPORAL_MISMATCH, f"a clause states a completed action ({done[0]}) that the source does not state as done"))
-            elif (best["toks_set"] & CONDITION) - c["toks_set"]:
+            elif conditions(best["toks"]) - conditions(c["toks"]):
                 problems.append(ClauseResult(Outcome.UNVERIFIED, Reason.MODALITY_MISMATCH, "the source attaches a condition (only / after / once / when ...) that the clause leaves out"))
             elif c["neg"] != best["neg"]:
                 problems.append(ClauseResult(Outcome.UNVERIFIED, Reason.POLARITY_MISMATCH, f"negation differs between a clause and the source"))

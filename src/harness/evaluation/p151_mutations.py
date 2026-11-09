@@ -44,6 +44,18 @@ MUTATIONS = [
     ("M15", "every memory is classed verified in the report evidence", "evidence provenance / authority", "src/agents/report/evidence.py", "evidence_class=ecls,", 'evidence_class="verified",', [T2]),
     ("M16", "findings on non-verified memory are no longer withdrawn", "report authority split", "src/agents/report/validate.py", "        if bad:\n            moved.append(", "        if False:\n            moved.append(", [T2]),
     ("M17", "the report verifier ignores the memory layer's verdict", "report authority (verifier guard)", "src/harness/evidence_verifier.py", 'if e.evidence_class in ("unverified", "contradicted", "open_conflict"):        # P1.5.1', "if False:        # P1.5.1", [T1, "-k", "refuses_any_finding"]),
+    # ---- P1.5.3: direct mutants of the condition logic (clause_support.conditions / _is_tax_qualifier / the source-vs-claim comparison).  M01 disables the whole check and is NOT counted as coverage of these.
+    ("N01", "the tax-qualifier exception is removed: 'a month after tax' becomes a condition", "condition detection (tax exemption)", CL, 'if t == "after" and not _is_tax_qualifier(tk, i):', 'if t == "after":', [T1, "-k", "test_p153_amount_qualifier_after_tax_is_not_a_condition"]),
+    ("N02", "every 'after' is exempt: 'after the sale' / 'after retirement' are no longer conditions", "condition detection (exemption scope)", CL, 'if t == "after" and not _is_tax_qualifier(tk, i):', "if False:", [T1, "-k", "test_p153_after_retirement_and_after_the_sale_remain_conditions"]),
+    ("N03", "the old comparison is restored (raw 'after' token on both sides, no tax exception)", "condition comparison", CL, 'elif conditions(best["toks"]) - conditions(c["toks"]):', 'elif (best["toks_set"] & CONDITION) - c["toks_set"]:', [T1, "-k", "test_p153_amount_qualifier_after_tax_is_not_a_condition"]),
+    ("N04", "claim-side masking: the claim's raw tokens hide a source condition", "condition comparison (claim side)", CL, 'elif conditions(best["toks"]) - conditions(c["toks"]):', 'elif {k for k in conditions(best["toks"]) if k.split(":")[0] not in c["toks_set"]}:', [T1, "-k", "test_p153_a_claim_side_tax_qualifier_cannot_mask_a_source_condition"]),
+    ("N05", "the source-versus-claim condition comparison is removed", "condition comparison", CL, 'elif conditions(best["toks"]) - conditions(c["toks"]):', "elif False:", [T1, "-k", "test_p153_after_retirement_and_after_the_sale_remain_conditions"]),
+    ("N06", "the comparison is reversed (claim minus source)", "condition comparison", CL, 'elif conditions(best["toks"]) - conditions(c["toks"]):', 'elif conditions(c["toks"]) - conditions(best["toks"]):', [T1, "-k", "test_p153_after_retirement_and_after_the_sale_remain_conditions"]),
+    ("N07", "shape (b) broadened: 'after tax season' / 'after tax filing' are exempt", "tax exemption scope", CL, "return rest[0] in AMOUNT_NOUNS and all(", "return True or all(", [T1, "-k", "test_p153_after_tax_season_remains_a_condition"]),
+    ("N08", "shape (a) broadened: 'I retire after tax' is exempt without an amount cue", "tax exemption scope", CL, 'return any(t in AMOUNT_CUES or t.startswith("$") for t in tk[:i])', "return True", [T1, "-k", "test_p153_after_tax_season_remains_a_condition"]),
+    ("N09", "exemption is per clause, not per occurrence: one tax qualifier hides a real 'after'", "tax exemption (per occurrence)", CL, 'if t == "after" and not _is_tax_qualifier(tk, i):', 'if t == "after" and not any(_is_tax_qualifier(tk, j) for j in range(len(tk))):', [T1, "-k", "test_p153_a_source_with_both_a_tax_qualifier_and_a_real_condition_stays_conditional"]),
+    ("N10", "the 'after' key ignores what follows it: any claim 'after' covers any source 'after'", "condition comparison (key)", CL, 'found.add(f"after:{nxt}")', 'found.add("after:")', [T1, "-k", "test_p153_a_different_after_in_the_claim_does_not_cover_the_sources_after"]),
+    ("N11", "determiners are not skipped: 'after the sale' no longer equals 'after sale'", "condition comparison (key)", CL, "if w not in _DETERMINERS), \"\")", "if True), \"\")", [T1, "-k", "test_p153_a_different_after_in_the_claim_does_not_cover_the_sources_after"]),
 ]
 
 
@@ -77,8 +89,11 @@ def run(out: Path, only=None) -> list:
         mutated = s.replace(old, new, 1)
         io.open(path, "w", encoding="utf-8", newline="").write(mutated.replace("\n", "\r\n") if crlf else mutated)
         env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
-        r = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests], cwd=work, env=env, capture_output=True, text=True)
+        r = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-rf", "-p", "no:cacheprovider", *tests], cwd=work, env=env, capture_output=True, text=True)
         last = (r.stdout.strip().splitlines() or [""])[-1][:120]
+        failed = [ln[7:110] for ln in r.stdout.splitlines() if ln.startswith("FAILED ")]
+        if failed:
+            last += " | killed by " + failed[0]                                          # P1.5.3: name the test that actually failed
         results.append(dict(id=mid, defect=defect, component=comp, file=f, tests=" ".join(tests), result="KILLED" if r.returncode != 0 else "SURVIVED", evidence=last))
         io.open(path, "w", encoding="utf-8", newline="").write(raw)                       # restore the copy
     shutil.rmtree(work, ignore_errors=True)
@@ -99,6 +114,10 @@ def main(argv=None) -> int:
     for r in res:
         print(f"{r['id']} {r['result']:11s} {r['component']}: {r['defect']}")
     k = sum(r["result"] == "KILLED" for r in res)
+    for grp, label in (("M", "P1.5.1 original"), ("N", "P1.5.3 condition logic")):
+        g = [r for r in res if r["id"].startswith(grp)]
+        if g:
+            print(f"  {label}: attempted {len(g)}  killed {sum(r['result'] == 'KILLED' for r in g)}  survived {sum(r['result'] == 'SURVIVED' for r in g)}  not-applied {sum(r['result'] == 'NOT-APPLIED' for r in g)}")
     print(f"attempted {len(res)}  killed {k}  survived {sum(r['result'] == 'SURVIVED' for r in res)}  not-applied {sum(r['result'] == 'NOT-APPLIED' for r in res)}")
     return 0 if k == len(res) else 1
 

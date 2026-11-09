@@ -284,3 +284,91 @@ def test_clause_unit_the_other_rules_each_fire_alone():
     assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 63.", "I will retire at 63 only after the sale.")    # condition left out
     assert "TEMPORAL_MISMATCH" in _reasons("Kenji has retired at 63.", "I plan to retire at 63.")
     assert "ACTOR_MISMATCH" in _reasons("Kenji will retire at 63.", "My wife will retire at 63.")
+
+
+# ---------------------------------------------------------------------------------------------------------------- P1.5.2: "after tax" is an amount qualifier, other "after" stays a condition
+def test_p152_after_tax_is_an_amount_qualifier_not_a_condition():
+    q = "I plan to retire at 65 on about fifteen thousand a month after tax."
+    assert _reasons("Kenji plans to retire at 65.", q) == set()
+    assert _reasons("Kenji plans to retire at 65.", q.replace("after tax", "after-tax")) == set()
+    assert _reasons("Kenji plans to retire at 65.", q.replace("after tax", "after taxes")) == set()
+
+
+def test_p152_a_genuine_temporal_after_is_still_a_condition():
+    assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 63.", "I will retire at 63 after the house sells.")
+    assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 63.", "I will retire at 63 after my daughter graduates.")
+
+
+def test_p152_a_genuine_conditional_after_is_still_a_condition_even_beside_after_tax():
+    assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 65.", "I will retire at 65 only after the sale, on fifteen thousand a month after tax.")
+    assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 65.", "I will retire at 65 after the sale, with fifteen thousand a month after tax.")
+
+
+def test_p152_source_and_claim_that_disagree_about_a_condition_are_still_flagged():
+    # the claim states a condition the source does not (reverse direction is not this rule's job), and a claim's "after tax" cannot mask a source condition
+    assert "MODALITY_MISMATCH" in _reasons("Kenji will retire at 63 after tax.", "I will retire at 63 after the sale.")
+    assert _reasons("Kenji will retire at 63 after the sale.", "I will retire at 63 after the sale.") == set()
+
+
+# ---------------------------------------------------------------------------------------------------------------- P1.5.3: the tax-qualifier exemption is narrow, and each side of the comparison is tested alone
+def _marks(tokens):
+    return {k.split(":")[0] for k in clause_support.conditions(tokens)}
+
+
+_TAXV = "retire tax month"          # vocabulary that covers the claim's own words, so UNSUPPORTED_CLAUSE cannot be the reason a case fails
+
+
+def test_p153_tokenizer_drops_hyphens_so_the_rule_cannot_rely_on_them():
+    from agents.memory import support
+    assert support.tokens("after-tax income") == ["after", "tax", "income"] and support.tokens("after tax") == ["after", "tax"]
+
+
+def test_p153_amount_qualifier_after_tax_is_not_a_condition():
+    assert _marks(["fifteen", "thousand", "a", "month", "after", "tax"]) == set()
+    assert _reasons("Kenji will retire at 65.", "I will retire at 65 on fifteen thousand a month after tax.", _TAXV) == set()
+
+
+def test_p153_hyphenated_amount_qualifier_is_not_a_condition():
+    from agents.memory import support
+    for text in ("after-tax income", "after-tax income is 15,000", "$5,000 after taxes"):
+        assert _marks(support.tokens(text)) == set(), text
+
+
+def test_p153_after_tax_season_remains_a_condition():
+    from agents.memory import support
+    for text in ("I retire after tax season", "I retire after tax filing", "I retire after tax", "I retire at 63 after tax", "retire after tax income arrives"):
+        assert _marks(support.tokens(text)) == {"after"}, text
+    assert _reasons("Kenji will retire at 63.", "I will retire at 63 after tax season.", _TAXV) == {"MODALITY_MISMATCH"}
+
+
+def test_p153_after_retirement_and_after_the_sale_remain_conditions():
+    from agents.memory import support
+    for text in ("I will move abroad after retirement", "I will retire at 63 after the sale", "I retire after my daughter graduates"):
+        assert _marks(support.tokens(text)) == {"after"}, text
+    assert _reasons("Kenji will retire at 63.", "I will retire at 63 after retirement.", _TAXV) == {"MODALITY_MISMATCH"}
+    assert _reasons("Kenji will retire at 63.", "I will retire at 63 after the sale.", _TAXV) == {"MODALITY_MISMATCH"}
+
+
+def test_p153_a_source_with_both_a_tax_qualifier_and_a_real_condition_stays_conditional():
+    from agents.memory import support
+    assert _marks(support.tokens("after the sale on a month after tax")) == {"after"}          # one genuine 'after' is enough
+    assert _marks(support.tokens("a month after tax and after the sale")) == {"after"}          # in either order
+    assert _reasons("Kenji will retire at 63.", "I will retire at 63 after the sale and a month after tax.", _TAXV) == {"MODALITY_MISMATCH"}
+
+
+def test_p153_a_claim_side_tax_qualifier_cannot_mask_a_source_condition():
+    # claim: only a tax qualifier; source: a real 'after'.  Vocabulary covers every claim word, so the ONLY possible problem is the condition comparison.
+    assert _reasons("Kenji will retire at 63 a month after tax.", "I will retire at 63 after the sale.", _TAXV) == {"MODALITY_MISMATCH"}
+    # control: the same claim against a source that has the same qualifier and no condition is clean (the case above is not failing for some other reason)
+    assert _reasons("Kenji will retire at 63 a month after tax.", "I will retire at 63 a month after tax.", _TAXV) == set()
+
+
+def test_p153_a_claim_that_states_the_same_condition_as_the_source_is_not_flagged():
+    assert _reasons("Kenji will retire at 63 after the sale.", "I will retire at 63 after the sale.", _TAXV) == set()
+
+
+def test_p153_a_different_after_in_the_claim_does_not_cover_the_sources_after():
+    # keys compare WHAT follows 'after': 'after tax season' (claim) is not 'after the sale' (source), 'after the sale' equals 'after sale' (determiners skipped)
+    assert clause_support.conditions(["after", "tax", "season"]) == {"after:tax"} and clause_support.conditions(["after", "the", "sale"]) == {"after:sale"}
+    assert _reasons("Kenji will retire at 63 after tax season.", "I will retire at 63 after the sale.", _TAXV + " season") == {"MODALITY_MISMATCH"}
+    assert _reasons("Kenji will retire at 63 after sale.", "I will retire at 63 after the sale.", _TAXV + " sale") == set()

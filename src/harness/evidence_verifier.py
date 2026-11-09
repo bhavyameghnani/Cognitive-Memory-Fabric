@@ -90,6 +90,37 @@ class OverlapEntailment:
 
 
 # ---- results -----------------------------------------------------------------------------------------------------------------------------------
+# What the PUBLIC response says about why a finding was withheld.  The detailed reason (`FindingVerdict.reasons`, from claim_matching / clause_support) quotes the claimed value ("claim 60
+# years vs evidence 63 years"); that is kept for the server-side trace only.  Here: the reason CODE plus a description written in code, containing nothing taken from the finding.
+PUBLIC_REASON = {
+    "CLIENT_MISMATCH": "the statement concerns a client other than the one the cited evidence is about",
+    "AMBIGUOUS_SUBJECT": "it cannot be established whom the statement is about",
+    "POLARITY_MISMATCH": "the statement affirms or denies something the cited evidence does not",
+    "VALUE_MISMATCH": "a figure in the statement does not match the cited evidence",
+    "UNIT_MISMATCH": "the unit of a figure does not match the cited evidence",
+    "TEMPORAL_MISMATCH": "the period or date of the statement is not supported by the cited evidence",
+    "MODALITY_MISMATCH": "the statement is firmer than, or differs in kind from, the cited evidence",
+    "EVIDENCE_NOT_FOUND": "the cited evidence reference does not exist",
+    "EVIDENCE_INACCESSIBLE": "the cited evidence is outside the authorised scope",
+    "QUOTE_NOT_IN_SOURCE": "the quoted text is not text of the original source",
+    "QUOTE_UNAVAILABLE": "there is no source text to check the statement against",
+    "NO_COMPARABLE_FACT": "the cited evidence contains no fact about this topic",
+    "NO_QUANTIFIABLE_CLAIM": "the statement states no checkable value",
+    "QUALIFIER_PRESENT": "the statement depends on a qualifier that cannot be compared safely",
+    "AMBIGUOUS_EVIDENCE": "the cited evidence is itself unclear",
+    "SOURCE_NOT_PERMITTED": "this kind of evidence cannot support this kind of statement",
+    "EVIDENCE_NOT_FINAL": "the cited evidence is exploratory, unconfirmed or superseded",
+    "UNSUPPORTED_CLAUSE": "a part of the statement is not stated by the cited source",
+    "ACTOR_MISMATCH": "the statement is about a different person than the cited source",
+    "EVIDENCE_NOT_VERIFIED": "the cited memory is not verified evidence",
+}
+PUBLIC_REASON_FALLBACK = "it could not be verified against the cited evidence"
+
+
+def public_reason(code: str) -> str:
+    return f"{code} - {PUBLIC_REASON.get(code, PUBLIC_REASON_FALLBACK)}"
+
+
 @dataclass
 class FindingVerdict:
     section: str
@@ -105,6 +136,17 @@ class FindingVerdict:
     def as_dict(self) -> dict:
         return dict(section=self.section, text=self.text[:200], refs=self.refs, verdict=self.verdict, reasons=self.reasons, memory_ids=self.memory_ids, outcome=self.outcome,
                     reason_codes=self.reason_codes)
+
+    def public_reasons(self) -> list:
+        """The reasons as the API shows them: codes with code-written descriptions, never a value or a word taken from the withheld finding."""
+        return [public_reason(c) for c in self.reason_codes] or [PUBLIC_REASON_FALLBACK]
+
+    def public_dict(self) -> dict:
+        """as_dict without the finding's text and without the detailed reasons (which quote the claimed value): what may leave the process in the API response."""
+        d = self.as_dict()
+        d.pop("text")
+        d["reasons"] = self.public_reasons()
+        return d
 
 
 @dataclass
@@ -129,8 +171,13 @@ class VerificationResult:
                 for v in self.verdicts if v.verdict != "unsupported"]
 
     def findings_summary(self) -> list:
-        """Per finding: label, outcome, reasons and the structured claims.  No quotations and no evidence text."""
-        return [dict(section=v.section, refs=v.refs, verdict=v.verdict, outcome=v.outcome, reason_codes=v.reason_codes, claims=v.claims) for v in self.verdicts]
+        """Per finding: label, outcome, reasons and the structured claims.  No quotations and no evidence text; for a WITHHELD finding not even the sentence the model wrote."""
+        return [dict(section=v.section, refs=v.refs, verdict=v.verdict, outcome=v.outcome, reason_codes=v.reason_codes, claims=_redact_claims(v.claims) if v.verdict == "unsupported" else v.claims)
+                for v in self.verdicts]
+
+    def withheld_public(self) -> list:
+        """The withheld findings as returned by the API: section, refs, outcome and reason codes - never the text (`FindingVerdict.as_dict` keeps it for the server-side trace)."""
+        return [v.public_dict() for v in self.verdicts if v.verdict == "unsupported"]
 
 
 def _worst(outcomes: list) -> Outcome:
@@ -360,9 +407,9 @@ class EvidenceVerifier:
                 result.verdicts.append(v)
                 if v.verdict == "unsupported":
                     if {Reason.CLIENT_MISMATCH.value, Reason.EVIDENCE_INACCESSIBLE.value} & set(v.reason_codes):      # P1.5: a statement about a client / evidence the caller may not use is not echoed
-                        withheld.append(f"Withheld unsupported statement ({sec.replace('_', ' ')}): [text not shown - it refers to a client or evidence outside the authorised scope] [{'; '.join(v.reasons)[:200]}]")
+                        withheld.append(f"Withheld unsupported statement ({sec.replace('_', ' ')}): [text not shown - it refers to a client or evidence outside the authorised scope] [{'; '.join(v.public_reasons())[:300]}]")
                     else:
-                        withheld.append(f"Withheld unsupported statement ({sec.replace('_', ' ')}): {f.text[:140]} [{'; '.join(v.reasons)[:200]}]")
+                        withheld.append(f"Withheld unsupported statement ({sec.replace('_', ' ')}): [text not shown - it could not be verified against the cited evidence] [{'; '.join(v.public_reasons())[:300]}]")
                 elif v.verdict == "qualified":
                     kept.append(Finding(text=f"[Qualified: {'; '.join(v.reasons)[:160]}] {f.text}", refs=f.refs, origin=f.origin))
                 else:
@@ -376,14 +423,35 @@ class EvidenceVerifier:
         bad_s = [raw for k, raw in s_nums if not (float(k) < 13 and raw.strip("$%,").isdigit()) and k not in keys and raw.strip("$%,")]
         bad_s += [d for d in DATE.findall(summary) if d not in allsrc]
         if bad_s and fallback_summary is not None:
-            result.summary_replaced = f"summary cited figures/dates not in any evidence: {bad_s[:3]}"
+            result.summary_replaced = "summary cited figures/dates not in any evidence"          # the figures themselves are not repeated in the response
             summary = fallback_summary()
         validation = dict(report.validation)
         validation["harness_evidence"] = dict(counts=result.counts(), outcomes=result.outcome_counts(), mode="structured" if self.structured else "lexical",
                                               summary_replaced=result.summary_replaced, claim_evidence=result.claim_evidence(), findings=result.findings_summary(),
-                                              withheld=[v.as_dict() for v in result.verdicts if v.verdict == "unsupported"])
+                                              withheld=result.withheld_public())
         new = report.model_copy(update=dict(summary=summary, uncertainties=list(report.uncertainties) + withheld, validation=validation, **new_sections))
         return new, result
+
+
+def _redact_claims(claims: list) -> list:
+    """ClaimVerification dumps of a WITHHELD finding.  Kept: topic, unit, polarity, modality, handles, outcome and reason CODES.  Removed: the sentence, the extracted VALUE, the extracted
+    dates and the detailed reason text (it quotes the value).  The unredacted form exists only in the server-side trace (`FindingVerdict.as_dict`)."""
+    out = []
+    # decided per FINDING: one sentence yields several claims (each figure), and only one of them need carry the scope reason
+    out_of_scope = any({"CLIENT_MISMATCH", "EVIDENCE_INACCESSIBLE"} & {str(r) for r in (c.get("reasons") or [])} for c in claims or [])
+    for c in claims or []:
+        c = dict(c)
+        codes = [str(r) for r in (c.get("reasons") or [])]
+        if isinstance(c.get("claim"), dict):
+            claim = {**c["claim"], "text": None, "value": None}
+            if isinstance(claim.get("period"), dict):
+                claim["period"] = {**claim["period"], "dates": []}
+            if out_of_scope:
+                claim["subject_client"] = None                                      # the client a withheld statement was ABOUT is the thing outside the caller's scope: not an id the response may carry
+            c["claim"] = claim
+        c["detail"] = "; ".join(PUBLIC_REASON.get(r, PUBLIC_REASON_FALLBACK) for r in codes) if codes else ""
+        out.append(c)
+    return out
 
 
 def _date_ok(d: str, cand) -> bool:

@@ -9,7 +9,7 @@ from agents.report.claims import render_claims, summary_from_claims, validate_cl
 from agents.report.feasibility import feasibility_summary, guard_summary, is_feasibility, tool_findings
 from agents.report.evidence import build_evidence, prompt_lines, PROMPT_ITEMS
 from agents.report.prompts import REPORT_SYSTEM
-from agents.report.validate import (authority_notes, authority_split, NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
+from agents.report.validate import (public_reason, authority_notes, authority_split, NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
                                     filter_findings, no_evidence_summary)
 from llm.client import LLMClient, LLMError, StructuredOutputError, generate_structured
 from orchestration.tracing import NullTracer, Tracer
@@ -74,11 +74,11 @@ class ReportAgent:
         why = check_prose(out.summary, evidence, nc)
         summary = out.summary.strip()
         if why or not summary:
-            rec["summary_replaced"] = why or "empty summary"
+            rec["summary_replaced"] = public_reason(why) if why else "empty summary"
             summary = summary_from_claims(claims, evidence) or deterministic_summary(evidence, plan)
         leaked = _unverified_in(summary, evidence)
         if leaked:                                                                  # the summary may not state what only an unverified / contradicted / ambiguous memory says
-            rec["summary_replaced"] = (rec["summary_replaced"] or "") + f" authority guard: summary states {leaked} from a non-verified memory"
+            rec["summary_replaced"] = (rec["summary_replaced"] or "") + " authority guard: summary states a value from a non-verified memory"
             summary = deterministic_summary(evidence, plan)
         fixed = guard_summary(summary, plan, request_text, evidence, fin)
         if fixed:

@@ -114,7 +114,8 @@ class Citations(unittest.TestCase):
     def test_invented_number_dropped_and_summary_replaced(self):
         r, _ = run(llm_out(summary="Retirement age is 71 [E1].", key_findings=[{"text": "Retirement age is 63", "refs": ["E1"]}, {"text": "Net worth is $9,999,999", "refs": ["E1"]}]))
         self.assertEqual(len(r.key_findings), 1)
-        self.assertIn("71", r.validation["summary_replaced"])
+        self.assertIn("number(s) not in evidence", r.validation["summary_replaced"])      # P6.2.1: the category, not the refused figure
+        self.assertNotIn("71", r.validation["summary_replaced"])
         self.assertNotIn("71", r.summary)
         self.assertIn("63", r.summary)
 
