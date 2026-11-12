@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from pydantic.json_schema import SkipJsonSchema
 
 SourceClass = Literal["conversation_evidence", "memory", "operational_data", "tool_calculation", "assumption"]
 ClaimStatus = Literal["current", "superseded", "exploratory", "recommendation"]
@@ -12,6 +13,9 @@ ClaimStatus = Literal["current", "superseded", "exploratory", "recommendation"]
 class Finding(BaseModel):
     text: str
     refs: list[str] = Field(default_factory=list)
+    # Provenance, set ONLY by code in the report package: "rendered" = prose assembled from the cited evidence item's own fields, "tool_code" = figures formatted from a tool result.
+    # None = free text written by a model.  Hidden from the JSON schema the model sees and stripped from model output (ReportLLMOutput), so a model cannot claim code provenance.
+    origin: SkipJsonSchema[Optional[Literal["rendered", "tool_code"]]] = None
 
 
 class EvidenceItem(BaseModel):
@@ -34,6 +38,14 @@ class EvidenceItem(BaseModel):
     client_id: Optional[str] = None
     memory_type: Optional[str] = None
     event_date: Optional[str] = None
+    # P1.4.3: the memory integrity boundary's verdict, carried to the report.  evidence_class is what the report may DO with the item:
+    #   verified | unverified | contradicted | ambiguous | open_conflict   (None for tool results, which are not memories)
+    verification: Optional[str] = None
+    verification_basis: Optional[str] = None
+    memory_source_class: Optional[str] = None
+    temporal_status: Optional[str] = None
+    evidence_class: Optional[str] = None
+    conflict_ids: list[str] = Field(default_factory=list)
 
 
 class Claim(BaseModel):
@@ -55,6 +67,11 @@ class ReportLLMOutput(BaseModel):
     uncertainties: list[str] = Field(default_factory=list, max_length=6)
     suggested_followups: list[str] = Field(default_factory=list, max_length=5)
     claims: list[Claim] = Field(default_factory=list, max_length=10)
+
+    @field_validator("key_findings", "historical_context", "financial_analysis", mode="after")
+    @classmethod
+    def _no_model_supplied_provenance(cls, v: list[Finding]) -> list[Finding]:
+        return [Finding(text=f.text, refs=f.refs) for f in v]
 
 
 class AdvisorReport(BaseModel):

@@ -13,6 +13,7 @@ from typing import Optional
 from agents.memory import rules
 from agents.memory.config import CERTAINTY_RANK, EXTRACTION_AGENT, FilterConfig, NUMERIC_TOPICS
 from agents.memory.prompts import EXTRACTION_SYSTEM, build_user_prompt
+from agents.memory.integrity import Principal
 from agents.memory.store import MemoryStore, h
 from llm.client import LLMClient, LLMError, StructuredOutputError, generate_structured
 from orchestration.tracing import NullTracer, Tracer
@@ -253,12 +254,13 @@ def route_memory(cls: Classification) -> list[str]:
 
 
 # ---------------------------------------------------------------------------------------------- stage 8 (episodic/procedural)
-def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: Classification, model: str, selection_note: str = "") -> list[tuple[str, bool]]:
+def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: Classification, model: str, selection_note: str = "", request_id: str = "") -> list[tuple[str, bool]]:
     """Returns [(memory_id, created)]; created is False when the same memory (content hash) was already stored."""
     c = d.final
     assert c is not None
     ev = [dict(source_type="conversation", interaction_id=ctx.interaction_id, turn_index=c.turn_index, speaker=c.speaker_role, excerpt=c.excerpt, role="primary")]
     ids: list[tuple[str, bool]] = []
+    who = Principal.service("ingestion", [ctx.client_id], request_id=request_id)      # scope = the client of the verified meeting row
     for mtype in route_memory(cls):
         digest = h(ctx.client_id, mtype, ctx.interaction_id, c.turn_index, c.topic, c.subject, rules.norm(c.value or ""), c.certainty, rules.norm(c.excerpt), n=40)
         base = dict(client_id=ctx.client_id, memory_type=mtype, topic=c.topic, subject=c.subject, title=f"{c.topic}: {c.certainty}", content=c.statement, value_text=c.value,
@@ -273,6 +275,6 @@ def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: 
             rec = dict(base, memory_id="MEM-PRO-" + digest[:12], status="candidate", valid_from=ctx.date)
             det = dict(procedure_name=c.statement[:80], steps=json.dumps([c.statement]), topics=c.topic, keywords="", approval_status="proposed", approver=None,
                        source_ref=f"{ctx.interaction_id}.{c.turn_index}")
-        mid, created = store.insert_memory(rec, det, ev, actor="ingestion", reason=f"created from {ctx.interaction_id} turn {c.turn_index} ({d.origin})")
+        mid, created = store.insert_memory(rec, det, ev, reason=f"created from {ctx.interaction_id} turn {c.turn_index} ({d.origin})", principal=who)
         ids.append((mid, created))
     return ids

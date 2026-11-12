@@ -42,4 +42,5 @@ def build_agent_run(res: Any) -> dict:
                    fallback_used=_g(tools, "fallback_used", False), executions=execs, missing_information=_g(tools, "missing_information", [])),
         report=dict(validation=_g(report, "validation", {}) or {}, evidence=len(_g(report, "evidence", []) or [])),
         degraded=degraded,
+        harness=_g(res, "harness", None) or None,
     )

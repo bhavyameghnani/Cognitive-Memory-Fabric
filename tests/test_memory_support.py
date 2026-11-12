@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from agents.memory.agent import MemoryOrchestrator  # noqa: E402
 from agents.memory.config import OrchestratorConfig  # noqa: E402
+from agents.memory.integrity import Principal  # noqa: E402
 from agents.memory.store import MemoryStore  # noqa: E402
 from llm.client import MockLLM  # noqa: E402
 from schemas.plan import ExecutionPlan  # noqa: E402
@@ -16,6 +17,15 @@ from services.conversations import shared  # noqa: E402
 
 CONV = shared()
 KENJI, REBECCA, SOFIA, GRACE, PEG = "CLIENT-001", "CLIENT-002", "CLIENT-003", "CLIENT-004", "CLIENT-006"
+
+
+def person(name="advisor:priya", *clients):
+    """A verified person acting for the given clients (P1.4.1: every durable mutation needs an explicit Principal)."""
+    return Principal.user(name, list(clients) or [KENJI], authenticated=True)
+
+
+def svc(name, *clients, **kw):
+    return Principal.service(name, list(clients), **kw)
 
 
 class Clock:

@@ -2,6 +2,7 @@
 deterministic fallback report built straight from the evidence."""
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Optional
 
@@ -127,6 +128,24 @@ def check_prose(text: str, evidence: list[EvidenceItem], nc: NumberChecker) -> O
     return check_interaction_cites(text, evidence) or status_conflict(text, evidence)
 
 
+_FIGURES = re.compile(r"^(number\(s\) not in evidence):.*$")
+_NON_CURRENT = re.compile(r"^presents non-current value .+ as current$")
+_CURRENT_AS_EXPLORATORY = re.compile(r"^presents the current value .+ as exploratory$")
+
+
+def public_reason(why: str) -> str:
+    """A report-layer refusal reason as the API shows it: the category, without the figures / values of the refused text (the reasons quote them)."""
+    why = _FIGURES.sub(r"\1", why or "")
+    why = _NON_CURRENT.sub("presents a non-current value as current", why)
+    return _CURRENT_AS_EXPLORATORY.sub("presents the current value as exploratory", why)
+
+
+def withheld_ref(text: str) -> dict:
+    """How a withheld / dropped finding is recorded in `validation`, which is returned by the API: a fingerprint and a length, NEVER the text (it may be exactly the fabricated
+    statement that was refused).  The fingerprint lets a reviewer match the record to the model output kept in the server-side audit trail."""
+    return {"finding_sha": hashlib.sha256((text or "").encode("utf-8")).hexdigest()[:12], "chars": len(text or "")}
+
+
 def filter_findings(items: list[Finding], evidence: list[EvidenceItem], nc: NumberChecker, rec: dict) -> list[Finding]:
     valid = {e.ref for e in evidence}
     out = []
@@ -136,11 +155,11 @@ def filter_findings(items: list[Finding], evidence: list[EvidenceItem], nc: Numb
         text, n_in = strip_bad_inline_refs(f.text, valid)
         rec["invalid_refs_removed"] += n_in
         if not refs:
-            rec["findings_dropped"].append({"text": f.text[:120], "reason": "no valid evidence reference"})
+            rec["findings_dropped"].append({**withheld_ref(f.text), "reason": "no valid evidence reference"})
             continue
         why = check_prose(text, evidence, nc)
         if why:
-            rec["findings_dropped"].append({"text": f.text[:120], "reason": why})
+            rec["findings_dropped"].append({**withheld_ref(f.text), "reason": public_reason(why)})
             continue
         out.append(Finding(text=text.strip(), refs=refs))
     return out
@@ -151,26 +170,66 @@ def _label(e: EvidenceItem) -> str:
     return e.topic or "item"
 
 
+# ---- P1.4.3: evidence authority.  Presence in the retrieval context is not proof of truth ---------------------------------------
+def is_definitive(e: EvidenceItem) -> bool:
+    """Tool results (evidence_class None) and VERIFIED memories may support a definitive statement; unverified / contradicted / ambiguous / open-conflict memories may not."""
+    return e.evidence_class in (None, "verified")
+
+
+def authority_notes(evidence: list[EvidenceItem]) -> list[str]:
+    """One code-written line per memory that is shown but may NOT be relied on, so the reader (and the model) sees the review requirement."""
+    out = []
+    for e in evidence:
+        if e.evidence_class in (None, "verified"):
+            continue
+        what = {"unverified": "unverified - needs confirmation, not an established fact", "contradicted": "contradicted / disputed - not used as support",
+                "ambiguous": "exploratory or unconfirmed - not a decision", "open_conflict": "part of an open conflict - review required"}[e.evidence_class]
+        out.append(f"[{e.ref}] {e.topic or 'item'}{(' ' + e.value) if e.value else ''}: {what}" + (f" (conflict {', '.join(e.conflict_ids)})" if e.conflict_ids else ""))
+    return out
+
+
+def authority_split(items: list[Finding], evidence: list[EvidenceItem], rec: dict) -> tuple[list[Finding], list[str]]:
+    """A finding that cites ANY unverified / contradicted / open-conflict memory is not a definitive finding: it is withdrawn and a code-written 'needs confirmation' line replaces it
+    (the withheld text is NOT echoed - it may be exactly the fabricated statement).  AMBIGUOUS (exploratory) evidence may still be cited by a finding that says so: the evidence
+    verifier checks the modality of the wording against it, and claims about it are limited to exploratory / recommendation status."""
+    by = {e.ref: e for e in evidence}
+    kept, moved = [], []
+    for f in items:
+        bad = [by[r] for r in f.refs if r in by and by[r].evidence_class in ("unverified", "contradicted", "open_conflict")]
+        if bad:
+            moved.append("Withheld pending confirmation: a statement rested on " + ", ".join(f"{b.ref} ({b.evidence_class})" for b in bad) + ", which is not verified evidence.")
+            rec.setdefault("findings_demoted", []).append({**withheld_ref(f.text), "refs": [b.ref for b in bad], "classes": sorted({str(b.evidence_class) for b in bad})})
+        else:
+            kept.append(f)
+    return kept, moved
+
+
 def deterministic_sections(evidence: list[EvidenceItem]) -> dict:
     key, hist, fin = [], [], []
     for e in evidence:
         v = f" is {e.value}" if e.value else ""
+        if e.evidence_class in ("unverified", "contradicted", "open_conflict"):
+            continue                                   # never a finding: authority_notes() lists it under uncertainties
+        if e.evidence_class == "ambiguous":
+            if len(hist) < 4:
+                hist.append(Finding(text=f"{_label(e)} (ambiguous: {e.certainty or e.status}): {e.description.split(': ', 1)[-1]}", refs=[e.ref], origin="rendered"))
+            continue
         if e.source_class in ("operational_data", "tool_calculation"):
             if len(fin) < 4:
-                fin.append(Finding(text=("Synthetic " if e.synthetic else "") + e.description, refs=[e.ref]))
+                fin.append(Finding(text=("Synthetic " if e.synthetic else "") + e.description, refs=[e.ref], origin="rendered"))
         elif e.status == "active" and e.memory_type == "semantic" and not e.valid_to and len(key) < 4:
-            key.append(Finding(text=f"Current {_label(e)}{v}" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f": {e.description.split(': ', 1)[-1]}", refs=[e.ref]))
+            key.append(Finding(text=f"Current {_label(e)}{v}" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f": {e.description.split(': ', 1)[-1]}", refs=[e.ref], origin="rendered"))
         elif e.status == "superseded" or e.valid_to:
             if len(hist) < 4:
-                hist.append(Finding(text=f"Earlier {_label(e)}{v} was superseded (valid {e.valid_from or '?'} to {e.valid_to or 'open'}).", refs=[e.ref]))
+                hist.append(Finding(text=f"Earlier {_label(e)}{v} was superseded (valid {e.valid_from or '?'} to {e.valid_to or 'open'}).", refs=[e.ref], origin="rendered"))
         elif len(hist) < 4:
             lab = f" ({e.certainty})" if e.certainty and e.certainty != "n/a" else ""
-            hist.append(Finding(text=f"{_label(e)}{lab}: {e.description.split(': ', 1)[-1]}", refs=[e.ref]))
+            hist.append(Finding(text=f"{_label(e)}{lab}: {e.description.split(': ', 1)[-1]}", refs=[e.ref], origin="rendered"))
     return {"key_findings": key, "historical_context": hist, "financial_analysis": fin}
 
 
 def deterministic_summary(evidence: list[EvidenceItem], plan: ExecutionPlan) -> str:
-    cur = [e for e in evidence if e.status == "active" and e.memory_type == "semantic" and not e.valid_to and e.value]
+    cur = [e for e in evidence if e.status == "active" and e.memory_type == "semantic" and not e.valid_to and e.value and is_definitive(e)]
     if cur:
         parts = [f"{e.topic} is {e.value}" + (f" since {e.valid_from}" if e.valid_from else "") + f" [{e.ref}]" for e in cur[:3]]
         return "Based on the available memory: " + "; ".join(parts) + "."

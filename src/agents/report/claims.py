@@ -7,6 +7,7 @@ from typing import Optional
 
 from schemas.plan import ExecutionPlan
 from schemas.report import Claim, EvidenceItem, Finding
+from agents.report.validate import withheld_ref
 
 EXPLORATORY = ("exploratory", "hypothetical")
 CURRENT_OK = (None, "confirmed", "n/a", "correction")
@@ -48,11 +49,11 @@ def _dates_ok(c: Claim, e: EvidenceItem) -> Optional[str]:
     haystack = f"{e.description} {e.excerpt or ''}"
     for d in DATE_RX.findall(c.text):
         if e.valid_from and d < e.valid_from:
-            return f"date {d} is before the validity window start {e.valid_from}"
+            return f"a date in the claim is before the validity window start {e.valid_from}"
         if e.valid_to and d > e.valid_to:
-            return f"date {d} is after the validity window end {e.valid_to}"
+            return f"a date in the claim is after the validity window end {e.valid_to}"
         if not e.valid_from and not e.valid_to and d not in haystack and d != e.event_date:
-            return f"date {d} does not occur in the cited evidence"
+            return "a date in the claim does not occur in the cited evidence"
     return None
 
 
@@ -83,7 +84,7 @@ def check_claim(c: Claim, evidence: list[EvidenceItem], allowed_clients: set[str
         if e.certainty != "recommendation":
             return f"a recommendation claim must cite a recommendation; {e.ref} is certainty {e.certainty}"
     if not _value_ok(c, e):
-        return f"value {c.value!r} does not match the cited evidence value {e.value!r}"
+        return "the claimed value does not match the cited evidence"           # neither value is quoted: the claimed one is what was refused
     return _dates_ok(c, e)
 
 
@@ -94,15 +95,18 @@ def validate_claims(claims: list[Claim], evidence: list[EvidenceItem], plan: Exe
     for c in claims:
         why = check_claim(c, evidence, allowed)
         e = next((x for x in evidence if x.ref == c.evidence_ref), None)
+        if not why and e is not None and (e.evidence_class in ("unverified", "contradicted", "open_conflict") or (e.evidence_class == "ambiguous" and c.status in ("current", "superseded"))):
+            why = f"the cited memory is {e.evidence_class} ({e.verification or 'no verification'}): it cannot support a {c.status} claim"
         if not why and c.status == "current" and e is not None:
             key = (e.client_id, _norm(e.topic or c.topic))
             prev = current_by_topic.get(key)
             if prev is not None and _norm(prev) != _norm(e.value or c.value):
-                why = f"more than one current value for topic {key[1]!r} ({prev} vs {e.value or c.value})"
+                why = f"more than one current value for topic {key[1]!r}"
             else:
                 current_by_topic[key] = e.value or c.value or ""
         if why:
-            rejected.append({"claim": c.model_dump(), "reason": why})
+            dump = c.model_dump()
+            rejected.append({"claim": {**{k: v for k, v in dump.items() if k not in ("text", "value")}, **withheld_ref(c.text)}, "reason": why})        # topic / status / ref yes; the sentence AND the claimed value, no
         else:
             ok.append(c)
     return ok, rejected
@@ -124,15 +128,15 @@ def render_claim(c: Claim, e: EvidenceItem) -> tuple[str, Finding]:
     val = e.value or c.value or "the value in the cited memory"
     ref = [e.ref]
     if c.status == "current":
-        return "key_findings", Finding(text=f"{who}'s {topic} is {val}, the current confirmed knowledge" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f"{_src(e)}.", refs=ref)
+        return "key_findings", Finding(text=f"{who}'s {topic} is {val}, the current confirmed knowledge" + (f" (valid from {e.valid_from})" if e.valid_from else "") + f"{_src(e)}.", refs=ref, origin="rendered")
     if c.status == "superseded":
         win = f"valid {e.valid_from or 'earlier'} until {e.valid_to}" if e.valid_to else f"valid from {e.valid_from}" if e.valid_from else "no longer valid"
-        return "historical_context", Finding(text=f"{who}'s {topic} was {val} ({win}); it has been superseded and is no longer current{_src(e)}.", refs=ref)
+        return "historical_context", Finding(text=f"{who}'s {topic} was {val} ({win}); it has been superseded and is no longer current{_src(e)}.", refs=ref, origin="rendered")
     if c.status == "exploratory":
         when = f" on {e.event_date}" if e.event_date else ""
-        return "historical_context", Finding(text=f"{who} explored {topic} {val}{when}; this was exploratory, not a decision{_src(e)}.", refs=ref)
+        return "historical_context", Finding(text=f"{who} explored {topic} {val}{when}; this was exploratory, not a decision{_src(e)}.", refs=ref, origin="rendered")
     when = f" on {e.event_date}" if e.event_date else ""
-    return "historical_context", Finding(text=f"The advisor recommended {topic} {val}{when}; this is an advisor recommendation, not a client decision{_src(e)}.", refs=ref)
+    return "historical_context", Finding(text=f"The advisor recommended {topic} {val}{when}; this is an advisor recommendation, not a client decision{_src(e)}.", refs=ref, origin="rendered")
 
 
 def render_claims(claims: list[Claim], evidence: list[EvidenceItem]) -> dict[str, list[Finding]]:

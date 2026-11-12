@@ -21,6 +21,7 @@ from agents.memory import ingest as ing
 from agents.memory import retrieve as ret
 from agents.memory.config import GLOBAL_CLIENT, OrchestratorConfig
 from agents.memory.consolidate import Consolidator
+from agents.memory.integrity import Principal
 from agents.memory.store import MemoryStore, h, iso
 from llm.client import LLMClient
 from orchestration.tracing import NullTracer, Tracer
@@ -34,11 +35,14 @@ HUMAN_REQUIRED = {"", "llm", "model", "system", "ingestion", "consolidation", "a
 
 class MemoryOrchestrator:
     def __init__(self, llm: LLMClient, store: Optional[MemoryStore] = None, conv: Optional[Conversations] = None, tracer: Optional[Tracer] = None,
-                 config: Optional[OrchestratorConfig] = None) -> None:
+                 config: Optional[OrchestratorConfig] = None, write_validator=None) -> None:
         self.llm, self.conv = llm, conv or shared()
         self.store = store or MemoryStore(conv=self.conv)
         self.tracer, self.cfg = tracer or NullTracer(), config or OrchestratorConfig()
-        self.consolidator = Consolidator(self.store)
+        self.write_validator = write_validator          # optional harness MemoryWriteValidator (independent pre-persistence check)
+        self.consolidator = Consolidator(self.store, validator=write_validator)
+        # durable-write audit events go to this orchestrator's CURRENT tracer (the pipeline swaps it per request, so it is read lazily)
+        self.store.boundary.emit_fn = lambda component, name, **payload: self.tracer.event(component, name, **payload)
 
     # ------------------------------------------------------------------ setup
     def init(self, reset: bool = False) -> dict:
@@ -56,8 +60,8 @@ class MemoryOrchestrator:
                        confidence=1.0, valid_from="2026-01-01", origin="curated_file", content_hash=digest)
             det = dict(procedure_name=p["name"], steps=json.dumps(p["steps"]), topics=",".join(p["topics"]), keywords=",".join(p["keywords"]), approval_status="approved",
                        approver=data["approver"], source_ref=f"{PROCEDURES_FILE.name} v{data['version']} (curated)")
-            _, created = self.store.insert_memory(rec, det, [dict(source_type="curated", ref=f"{PROCEDURES_FILE.name}#{p['key']}", role="primary")], actor=data["approver"],
-                                                  reason="loaded from curated procedures file")
+            _, created = self.store.insert_memory(rec, det, [dict(source_type="curated", ref=f"{PROCEDURES_FILE.name}#{p['key']}", role="primary")],
+                                                  reason="loaded from curated procedures file", principal=Principal.service("curated_loader", [GLOBAL_CLIENT]))
             n += int(created)
         return n
 
@@ -81,10 +85,13 @@ class MemoryOrchestrator:
             why = {t.turn_index: ",".join(t.reasons) for t in selected}
             kept = 0
             for d in decisions:
+                if d.kept and self.write_validator is not None:   # independent re-check; may reject or downgrade, never upgrade
+                    self.write_validator.apply(d, self.write_validator.review(d, ctx))
                 mem_id, decision, reason = None, d.decision, d.reason
                 if d.kept:
                     cls = ing.classify_memory(d)
-                    done = ing.persist_decision(st, ctx, d, cls, getattr(self.llm, "model", "unknown"), "selected: " + why.get(d.final.turn_index, "rule"))
+                    done = ing.persist_decision(st, ctx, d, cls, getattr(self.llm, "model", "unknown"), "selected: " + why.get(d.final.turn_index, "rule"),
+                                                request_id=getattr(self.tracer, "request_id", "") or "")
                     mem_id = done[0][0]
                     if not any(c for _, c in done):
                         decision, reason = "merged", "already stored (same content hash)"
@@ -135,14 +142,15 @@ class MemoryOrchestrator:
 
     # ------------------------------------------------------------------ working memory
     def _working(self, session_id: str, plan: ExecutionPlan, client_id: str, content: str, derived_from: Optional[str], origin: str, ttl: Optional[float],
-                 ref: Optional[str] = None, topic: str = "other") -> tuple[str, bool]:
+                 ref: Optional[str] = None, topic: str = "other", known_refs: tuple = ()) -> tuple[str, bool]:
         ttl = self.cfg.retrieval.working_ttl_hours if ttl is None else ttl
         digest = h("working", session_id, client_id, content, n=40)
         rec = dict(memory_id="MEM-WRK-" + digest[:12], client_id=client_id, memory_type="working", topic=topic, title="working context", content=content[:600],
                    certainty="n/a", source_role="System", status="active", confidence=0.5, origin=origin, content_hash=digest, event_date=iso(self.store.clock())[:10])
         det = dict(session_id=session_id, plan_id=plan.plan_id, derived_from_id=derived_from, expires_at=iso(self.store.clock() + timedelta(hours=ttl)))
         ev = [dict(source_type="tool", ref=ref, role="primary")] if ref else []
-        return self.store.insert_memory(rec, det, ev, actor="orchestrator", reason=f"working memory for session {session_id}")
+        who = Principal.service("orchestrator", [client_id], request_id=session_id, evidence_refs=known_refs)     # tool refs resolve only against THIS request's executions
+        return self.store.insert_memory(rec, det, ev, reason=f"working memory for session {session_id}", principal=who)
 
     @staticmethod
     def _summary_fields(s: Any) -> tuple[Optional[str], str, Optional[str], str]:
@@ -163,6 +171,7 @@ class MemoryOrchestrator:
         """Task context and Tool Selector summaries become working memory for ONE session (default TTL 4 h).  Never promoted to semantic memory,
         never stored as a client statement.  A summary that names no client is attached only when the plan has exactly one client."""
         ids: list[str] = []
+        known = tuple(r for r in (self._summary_fields(s)[2] for s in tool_summaries) if r)
         for cid in plan.client_ids:
             if cid in self.conv.directory():
                 ids.append(self._working(session_id, plan, cid, f"Task context: {plan.task_type}; topics: {', '.join(plan.memory_topics) or 'none'}; intent: {plan.user_intent}",
@@ -173,31 +182,35 @@ class MemoryOrchestrator:
             if cid not in plan.client_ids:
                 self.tracer.event("memory", "tool_summary_skipped", reason="no client in plan scope", client=cid)
                 continue
-            ids.append(self._working(session_id, plan, cid, text, None, "tool_summary", ttl_hours, ref=ref, topic=topic if topic in ret.TOPICS else "other")[0])
+            ids.append(self._working(session_id, plan, cid, text, None, "tool_summary", ttl_hours, ref=ref, topic=topic if topic in ret.TOPICS else "other", known_refs=known)[0])
         return ids
 
     def expire_working(self) -> list[str]:
-        return self.store.expire_working()
+        return self.store.expire_working(Principal.service("ttl_expiry", any_client=True))      # the background job: every client, genuinely expired rows only
 
     # ------------------------------------------------------------------ lifecycle (explicit, human)
-    def update_memory_lifecycle(self, memory_id: str, new_status: str, reason: str, actor: str, approval_status: Optional[str] = None) -> dict:
-        """Explicit lifecycle actions only: dispute, expire, procedure approval/rejection.  Everything appends a lifecycle event; nothing is deleted."""
-        row = self.store.get(memory_id)
+    def update_memory_lifecycle(self, memory_id: str, new_status: str, reason: str, actor: str, approval_status: Optional[str] = None, *, principal: Optional[Principal] = None,
+                                expected_version: Optional[int] = None) -> dict:
+        """Explicit lifecycle actions only: dispute, expire, procedure approval/rejection.  Everything appends a lifecycle event; nothing is deleted.
+        `principal` (an authenticated person) is REQUIRED; `actor` is kept for compatibility but the recorded actor is always principal.actor_id."""
+        # the Principal is validated FIRST (nothing about the target is read before we know who is asking); a memory outside the caller's scope is reported exactly like a missing one
+        row = self.store.boundary.lookup(memory_id, principal)
         if row is None:
             raise KeyError(memory_id)
-        if actor.strip().lower() in HUMAN_REQUIRED or not reason.strip():
+        if principal.actor_id.strip().lower() in HUMAN_REQUIRED or not reason.strip():
             raise PermissionError("an explicit human actor and a reason are required")
         frm, mt = row["status"], row["memory_type"]
         with self.store.transaction():
             if mt == "procedural" and approval_status:
                 if approval_status not in ("approved", "rejected") or frm != "candidate":
                     raise ValueError("only a candidate procedure can be approved or rejected")
-                self.store.set_approval(memory_id, approval_status, actor)
-                self.store.set_status(memory_id, "active" if approval_status == "approved" else "expired", f"procedure {approval_status}: {reason}", actor)
+                self.store.set_approval(memory_id, approval_status, principal.actor_id, principal=principal)
+                self.store.set_status(memory_id, "active" if approval_status == "approved" else "expired", f"procedure {approval_status}: {reason}", principal.actor_id, principal=principal,
+                                      expected_version=expected_version)
             elif new_status == "disputed" and mt in ("episodic", "semantic") and frm in ("active", "unconfirmed"):
-                self.store.set_status(memory_id, "disputed", reason, actor)
+                self.store.set_status(memory_id, "disputed", reason, principal.actor_id, principal=principal, expected_version=expected_version)
             elif new_status == "expired" and frm in ("active", "candidate", "disputed", "unconfirmed"):
-                self.store.set_status(memory_id, "expired", reason, actor)
+                self.store.set_status(memory_id, "expired", reason, principal.actor_id, principal=principal, expected_version=expected_version)
             else:
                 raise ValueError(f"transition {mt}:{frm} -> {new_status} is not an explicit lifecycle action")
         return dict(memory_id=memory_id, from_status=frm, to_status=self.store.get(memory_id)["status"])

@@ -28,12 +28,14 @@ class Planner:
 
     # ------------------------------------------------------------------
     def plan(self, request_text: str, available_tools: list[str], request_id: Optional[str] = None, feedback: Optional[str] = None,
-             revision: int = 0) -> ExecutionPlan:
+             revision: int = 0, visible_clients=None) -> ExecutionPlan:
+        """`visible_clients` (the harness passes the clients the caller may use) limits which clients the MODEL is told exist; None = all (no caller known).
+        Clients named in the request are resolved by code, not by the model, so this changes no plan - it only stops another advisor's clients being listed in the prompt."""
         rid = request_id or "REQ-" + uuid.uuid4().hex[:8]
         clients, _ = self.conv.resolve_clients(request_text)
         notes: list[str] = []
         d = self.conv.directory()
-        known = "; ".join(f"{c} = {v['first_name']}" for c, v in d.items())
+        known = "; ".join(f"{c} = {v['first_name']}" for c, v in d.items() if visible_clients is None or c in visible_clients) or "none"
         user = (f"REQUEST: {request_text}\nKNOWN CLIENTS: {known}\nCLIENTS FOUND IN THE REQUEST: {', '.join(clients) or 'none'}\n"
                 f"ALLOWED TOPICS: {', '.join(TOPICS)}\nAVAILABLE TOOLS: {', '.join(available_tools)}\n"
                 f"SUBTASK AGENTS: memory_orchestrator, tool_selector, report_agent" + (f"\nREVISION FEEDBACK: {feedback}" if feedback else ""))
@@ -49,11 +51,11 @@ class Planner:
                           tools=plan.required_tools, order=plan.execution_order, parallel=plan.parallelizable_tasks, missing=plan.missing_information, notes=plan.planner_notes)
         return plan
 
-    def replan(self, plan: ExecutionPlan, unavailable_tools: list[str], reason: str, available_tools: list[str]) -> ExecutionPlan:
+    def replan(self, plan: ExecutionPlan, unavailable_tools: list[str], reason: str, available_tools: list[str], visible_clients=None) -> ExecutionPlan:
         """New plan after a tool or data source turned out to be unavailable. Never silently assumes the missing piece."""
         usable = [t for t in available_tools if t not in unavailable_tools]
         fb = f"Tools {unavailable_tools} are unavailable ({reason}). Re-plan without them and state in missing_information what can no longer be answered."
-        new = self.plan(plan.request_text, usable, request_id=plan.request_id, feedback=fb, revision=plan.revision + 1)
+        new = self.plan(plan.request_text, usable, request_id=plan.request_id, feedback=fb, revision=plan.revision + 1, visible_clients=visible_clients)
         new.planner_notes.append(f"replanned: {reason}; unavailable tools: {unavailable_tools}")
         for t in unavailable_tools:
             if t in plan.required_tools:
