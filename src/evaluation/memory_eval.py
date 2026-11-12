@@ -168,6 +168,7 @@ def run(db: Path, caps: list[int], embedder) -> dict:
         shutil.copyfile(db, copy)
         store = MemoryStore(url=f"sqlite:///{copy}", conv=shared())
         try:
+            store.init()   # additive, idempotent upgrade of the TEMP copy (integrity columns, conflict tables); the shipped seed is never touched
             return {"db": str(db), "embedder": getattr(embedder, "name", "none"), "extraction": eval_extraction(store, manifest),
                     "chains": eval_chains(store, cases["client_id"], cases["gold_chains"]), "retrieval": eval_retrieval(store, cases, caps, embedder)}
         finally:
