@@ -196,9 +196,9 @@ class CorrectionSupersedesWrongDecisionTests(unittest.TestCase):
                                                     "business_sale", "correction", None, subject="lakeshore_offer", role="Advisor", corrects="accepted")]})
         ex = "After our last meeting, my note says you had accepted the Lakeshore offer."
         rec = dict(memory_id="MEM-EPI-seeded0001", client_id=REBECCA, memory_type="episodic", topic="business_sale", subject="lakeshore_offer", content="accepted the Lakeshore offer",
-                   value_text="accepted", certainty="confirmed", source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-03-11", content_hash="seed1")
-        det = dict(interaction_id="INT-058", turn_index=3, event_ts="2026-03-11T08:00:00", speaker_role="Advisor", event_type="decision")
-        store.insert_memory(rec, det, [dict(source_type="conversation", interaction_id="INT-058", turn_index=3, speaker="Advisor", excerpt=ex)])
+                   value_text="accepted", certainty="confirmed", source_role="Advisor", status="active", origin="conversation_llm", event_date=CONV.turn("INT-058", 3)["interaction_datetime"][:10], content_hash="seed1")
+        det = dict(interaction_id="INT-058", turn_index=3, event_ts=CONV.turn("INT-058", 3)["interaction_datetime"], speaker_role="Advisor", event_type="decision")
+        store.insert_memory(rec, det, [dict(source_type="conversation", interaction_id="INT-058", turn_index=3, speaker="Advisor", excerpt=ex)], principal=svc("ingestion", REBECCA))
         orch.ingest_meeting("INT-058")
         self.assertEqual(store.get("MEM-EPI-seeded0001")["status"], "superseded")
         events = store.lifecycle_events("MEM-EPI-seeded0001")

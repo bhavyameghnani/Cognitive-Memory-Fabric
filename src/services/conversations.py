@@ -80,6 +80,14 @@ class Conversations:
                 found.append(cid)
         return found, []
 
+    def explicit_client_ids(self, text: str) -> list[str]:
+        """Every CLIENT-nnn id the text names, whether or not it exists (same pattern as resolve_clients).  Used to treat an id that does not exist exactly like one the caller may not use."""
+        out: list[str] = []
+        for m in re.finditer(r"CLIENT-\d{3}", text, re.I):
+            if m.group(0).upper() not in out:
+                out.append(m.group(0).upper())
+        return out
+
 
 def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.replace("’", "'").replace("“", '"').replace("”", '"')).strip().lower()

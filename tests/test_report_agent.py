@@ -29,7 +29,7 @@ def plan(task="retrieval", clients=(K,), calc=False, tools=(), missing=(), text=
 
 def mem(mid, mtype, value, status, certainty, vf=None, vt=None, ev=None, client=K, event=None, content=None, topic="retirement_age"):
     return MemoryItem(memory_id=mid, client_id=client, memory_type=mtype, topic=topic, subject="retirement_age", content=content or f"Retirement age {value}",
-                      value_text=value, certainty=certainty, status=status, valid_from=vf, valid_to=vt, event_date=event, evidence=ev or [])
+                      value_text=value, certainty=certainty, status=status, valid_from=vf, valid_to=vt, event_date=event, evidence=ev or [], verification="verified")      # these fixtures stand for memories the integrity boundary verified (P1.4.3)
 
 
 def kenji_ctx(**kw):
@@ -114,7 +114,8 @@ class Citations(unittest.TestCase):
     def test_invented_number_dropped_and_summary_replaced(self):
         r, _ = run(llm_out(summary="Retirement age is 71 [E1].", key_findings=[{"text": "Retirement age is 63", "refs": ["E1"]}, {"text": "Net worth is $9,999,999", "refs": ["E1"]}]))
         self.assertEqual(len(r.key_findings), 1)
-        self.assertIn("71", r.validation["summary_replaced"])
+        self.assertIn("number(s) not in evidence", r.validation["summary_replaced"])      # P6.2.1: the category, not the refused figure
+        self.assertNotIn("71", r.validation["summary_replaced"])
         self.assertNotIn("71", r.summary)
         self.assertIn("63", r.summary)
 

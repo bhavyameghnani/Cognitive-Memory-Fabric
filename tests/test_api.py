@@ -35,7 +35,7 @@ def test_unknown_ids_are_404(client):
     assert c.get("/api/clients/NOPE/brain").status_code == 404
     assert c.get("/api/memories/MEM-NOPE").status_code == 404
     r = c.post("/api/memories/MEM-NOPE/lifecycle", json={"new_status": "expired", "reason": "test reason", "actor": "advisor-1"})
-    assert r.status_code == 404
+    assert r.status_code == 403         # P1.4.1: no VERIFIED identity -> refused before any lookup, so an existing id and a missing one cannot be told apart (an authenticated caller gets 404)
 
 
 def test_ask_returns_report_and_retrieved_ids(client, monkeypatch):

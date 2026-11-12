@@ -9,7 +9,7 @@ from agents.report.claims import render_claims, summary_from_claims, validate_cl
 from agents.report.feasibility import feasibility_summary, guard_summary, is_feasibility, tool_findings
 from agents.report.evidence import build_evidence, prompt_lines, PROMPT_ITEMS
 from agents.report.prompts import REPORT_SYSTEM
-from agents.report.validate import (NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
+from agents.report.validate import (public_reason, authority_notes, authority_split, NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
                                     filter_findings, no_evidence_summary)
 from llm.client import LLMClient, LLMError, StructuredOutputError, generate_structured
 from orchestration.tracing import NullTracer, Tracer
@@ -17,6 +17,17 @@ from schemas.memory import MemoryContext
 from schemas.plan import ExecutionPlan
 from schemas.report import AdvisorReport, Finding, ReportLLMOutput
 from schemas.tools import ToolSelectorState
+
+
+def _unverified_in(text: str, evidence: list) -> str:
+    """A value that appears in `text`, is carried by a non-definitive memory and by NO definitive evidence."""
+    import re
+    good = {e.value for e in evidence if e.value and e.evidence_class in (None, "verified")}
+    for e in evidence:
+        v = e.value
+        if v and e.evidence_class not in (None, "verified") and v not in good and re.search(r"(?<![\d.])" + re.escape(v) + r"(?![\d])", text):
+            return v
+    return ""
 
 
 class ReportAgent:
@@ -28,6 +39,7 @@ class ReportAgent:
     def write(self, request_text: str, plan: ExecutionPlan, memory: dict[str, MemoryContext], tools: ToolSelectorState) -> AdvisorReport:
         evidence, removed = build_evidence(plan, memory, tools)
         assumptions, limitations, uncertainties = assemble(plan, memory, tools, evidence)
+        uncertainties = list(uncertainties) + [u for u in authority_notes(evidence) if u not in uncertainties]
         self.tracer.event("report", "evidence_built", items=len(evidence), by_class={c: sum(e.source_class == c for e in evidence) for c in {e.source_class for e in evidence}},
                           ownership_removed=len(removed["ownership_removed"]))
         rec: dict = {"model_called": False, "mode": "", "invalid_refs_removed": 0, "findings_dropped": [], "summary_replaced": None,
@@ -53,19 +65,26 @@ class ReportAgent:
         key = rendered["key_findings"] + filter_findings(out.key_findings, evidence, nc, rec)
         hist = rendered["historical_context"] + filter_findings(out.historical_context, evidence, nc, rec)
         fin = tool_findings(evidence, tools) + filter_findings(out.financial_analysis, evidence, nc, rec)
+        key, m1 = authority_split(key, evidence, rec)
+        hist, m2 = authority_split(hist, evidence, rec)
+        fin, m3 = authority_split(fin, evidence, rec)
         if not (key or hist or fin):
             return self._deterministic(base, plan, evidence, uncertainties, rec, "deterministic_nothing_valid", tools, request_text)
 
         why = check_prose(out.summary, evidence, nc)
         summary = out.summary.strip()
         if why or not summary:
-            rec["summary_replaced"] = why or "empty summary"
+            rec["summary_replaced"] = public_reason(why) if why else "empty summary"
             summary = summary_from_claims(claims, evidence) or deterministic_summary(evidence, plan)
+        leaked = _unverified_in(summary, evidence)
+        if leaked:                                                                  # the summary may not state what only an unverified / contradicted / ambiguous memory says
+            rec["summary_replaced"] = (rec["summary_replaced"] or "") + " authority guard: summary states a value from a non-verified memory"
+            summary = deterministic_summary(evidence, plan)
         fixed = guard_summary(summary, plan, request_text, evidence, fin)
         if fixed:
             rec["summary_replaced"] = (rec["summary_replaced"] or "") + " feasibility guard: summary did not state that feasibility is unconfirmed"
             summary = fixed
-        unc = list(uncertainties)
+        unc = list(uncertainties) + [m for m in m1 + m2 + m3 if m not in uncertainties]
         for u in out.uncertainties:
             if not check_prose(u, evidence, nc) and u not in unc:
                 unc.append(u)
