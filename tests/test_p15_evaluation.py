@@ -63,8 +63,8 @@ def test_the_corpus_is_balanced_labelled_by_hand_and_independent_of_the_systems_
 def test_the_shipped_matcher_flags_restore_after_the_before_measurement():
     before = dict(support.FLAGS)
     with p15.shipped_p142():
-        assert support.FLAGS == {"modal_parity": False, "magnitude_units": False, "structure": False}
-    assert support.FLAGS == before == {"modal_parity": True, "magnitude_units": True, "structure": True}
+        assert support.FLAGS == {"modal_parity": False, "magnitude_units": False, "structure": False, "context_window": False}
+    assert support.FLAGS == before == {"modal_parity": True, "magnitude_units": True, "structure": True, "context_window": True}
 
 
 # ===================================================================================================== claim verification metrics

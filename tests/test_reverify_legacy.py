@@ -17,7 +17,8 @@ from agents.memory.store import MemoryStore  # noqa: E402
 SEED = Path(__file__).resolve().parents[1] / "data" / "seed" / "cmf_memory_demo.db"
 VERIFIABLE_EPISODE = "MEM-EPI-1301b1bc15da"     # rule-extracted sentence that IS the cited source sentence ("65", confirmed)
 CURATED = "MEM-PRO-f526b52938dd"
-TERSE_CURRENT = "MEM-SEM-33d022d24ad8"          # derived 63: its episodes cite "We've decided: 63." and the sentence-level checker rightly does not accept the paraphrase
+CURRENT_63 = "MEM-SEM-33d022d24ad8"             # derived 63: verified via its episode that cites the client's "We've decided: 63." (see tests/test_context_verification.py)
+MISTOPICED = "MEM-EPI-b8b00df6fb25"             # "installments starting at 63" extracted as a retirement age: its turn is not about retirement, so it must stay unverified
 
 
 def operator(*clients: str) -> Principal:
@@ -50,7 +51,7 @@ def test_rows_that_pass_the_boundary_rules_become_verified(store):
 
 def test_paraphrases_the_checker_cannot_match_stay_unverified(store):
     out = store.reverify_legacy(principal=operator())
-    assert store.get(TERSE_CURRENT)["verification"] == "unverified"
+    assert store.get(MISTOPICED)["verification"] == "unverified"
     assert out["unverified"] > 0 and out["reasons"]                                          # every refusal is explained
 
 

@@ -129,7 +129,7 @@ Memories that predate the integrity boundary (including the shipped demo seed) a
 PYTHONPATH=src .venv/bin/python -m orchestration.cli reverify [--client CLIENT-001]
 ```
 
-It re-resolves each memory's cited transcript turn(s) and judges it with the same rules a new write goes through; passes are recorded in the append-only `memory_reverifications` table (migration 124, applied by `init`), failures stay `unverified` and are listed with a reason. Offline operator tool: no API route, no LLM. It is idempotent. Expect a minority to pass on the demo seed: the checker only accepts a claim that a *single cited source sentence* supports, so paraphrases of terse turns (e.g. "We've decided: 63.") stay unverified by design.
+It re-resolves each memory's cited transcript turn(s) and judges it with the same rules a new write goes through; passes are recorded in the append-only `memory_reverifications` table (migration 124, applied by `init`), failures stay `unverified` and are listed with a reason. Offline operator tool: no API route, no LLM. It is idempotent. Expect a minority to pass on the demo seed (11 of 71): the checker only accepts a claim that a *single cited source sentence* supports. The one exception is a client's short reply to an advisor turn that names the topic ("We've decided: 63." after "the next topic is retirement age"), see [docs/harness.md](docs/harness.md); paraphrases beyond that stay unverified by design.
 
 ### Memory-quality evaluation
 

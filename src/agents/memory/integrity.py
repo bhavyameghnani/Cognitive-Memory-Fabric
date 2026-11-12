@@ -663,9 +663,13 @@ class MemoryIntegrityBoundary:
             return "unverified", "the stated value is not supported by the cited source"
         open_item = rec.get("certainty") in ("exploratory", "hypothetical", "recommendation", "unconfirmed")      # a hedged item may carry the hedged number as its value
         if sclass in ("observed_transcript", "llm_extraction"):
-            ok, why = support.claim_supported(rec["content"], v, excerpts, verbatim=(sclass == "observed_transcript"), allow_noncurrent=open_item, context=topic_ctx)
+            ctxs = self._source_contexts(client, conv, topic_ctx) if sclass == "llm_extraction" else None
+            ok, why = support.claim_supported(rec["content"], v, excerpts, verbatim=(sclass == "observed_transcript"), allow_noncurrent=open_item, context=topic_ctx, ctxs=ctxs)
             if sclass == "observed_transcript":
                 return ("verified", "rule-extracted sentence IS a cited source sentence and its value is stated there as a current value of the same unit") if ok else ("unverified", why)
+            if ok and why == "supported_with_context":
+                return "verified", ("every sentence of the statement is matched by the cited CLIENT sentence plus the topic named in the advisor turn just before it (the client's own 'we/I' is read as "
+                                    "the client); negation, hedging, numbers, units and roles agree on the cited sentence itself; the paraphrase itself is not verified")
             return ("verified", "every sentence of the statement is matched by a cited source sentence (negation, hedging, numbers, units and roles agree); the paraphrase itself is not verified")                 if ok else ("unverified", why)
         if sclass == "derived":   # deterministic consolidation: a verified creating episode of the SAME turn must carry the SAME value
             for ev in conv:
@@ -733,6 +737,22 @@ class MemoryIntegrityBoundary:
         except MemoryWriteRejected as e:                        # e.g. a curated row that no longer matches the shipped procedures file
             return "unverified", f"{e.code}", len(conv)
         return verdict, basis, len(conv)
+
+    def _source_contexts(self, client: str, conv: list, topic_ctx: str) -> list:
+        """One optional support.SourceContext per cited conversation source: only a CLIENT turn that directly answers an ADVISOR turn naming the memory's topic gets one."""
+        conv_svc = self.store.conv
+        try:
+            name = (conv_svc.directory().get(client) or {}).get("first_name")
+        except (AttributeError, KeyError, TypeError):             # the context is an optional extra: a conversation service that cannot provide it just means "no context"
+            return [None] * len(conv)
+        out = []
+        for ev in conv:
+            try:
+                cur, prev = conv_svc.turn(ev["interaction_id"], int(ev["turn_index"])), conv_svc.turn(ev["interaction_id"], int(ev["turn_index"]) - 1)
+            except (AttributeError, KeyError, ValueError, TypeError):
+                cur = prev = None
+            out.append(support.source_context(prev["utterance"], name, topic_ctx) if cur and prev and cur["speaker"] == "Client" and prev["speaker"] == "Advisor" else None)
+        return out
 
     def _curated_verification(self, client: str, rec: dict, det: dict, ev_rows: list) -> tuple:
         """Curated = this row is exactly the entry of the shipped procedures file that its evidence names (key, content hash, steps, name, approver) - else it is refused."""

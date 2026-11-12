@@ -109,7 +109,7 @@ class shipped_p142:
 
     def __enter__(self):
         self.old = dict(support.FLAGS)
-        support.FLAGS.update(modal_parity=False, magnitude_units=False, structure=False)
+        support.FLAGS.update(modal_parity=False, magnitude_units=False, structure=False, context_window=False)
 
     def __exit__(self, *exc):
         support.FLAGS.update(self.old)

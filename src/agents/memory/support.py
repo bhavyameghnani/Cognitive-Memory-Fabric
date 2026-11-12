@@ -8,6 +8,7 @@ Whenever it cannot decide it answers False.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Optional
 
 from agents.memory import rules
@@ -44,7 +45,7 @@ WEAK = {"plans", "intends", "intend", "intending", "propose", "proposes", "propo
         "wishes", "wish", "expects", "expect"}
 MODAL = WEAK | {"was", "were"}
 # P1.5 rules are on by default.  The switches exist ONLY so that harness.evaluation.p15 can re-run the shipped P1.4.2 behaviour on the same corpus (reproducible before/after).
-FLAGS = {"modal_parity": True, "magnitude_units": True, "structure": True}
+FLAGS = {"modal_parity": True, "magnitude_units": True, "structure": True, "context_window": True}
 _MAG = {"thousand": "thousand", "lakh": "lakh", "lakhs": "lakh", "lac": "lakh", "crore": "crore", "crores": "crore", "million": "million", "billion": "billion", "k": "thousand", "hundred": "hundred"}
 _UNIT_PCT = {"%", "percent", "pct", "per"}
 _UNIT_MONEY = {"$", "dollar", "dollars", "usd", "grand", "rupee", "rupees", "rs", "inr"}
@@ -151,12 +152,30 @@ def numbers_in(text: str) -> list[str]:
     return [_num_value(t) for t in tokens(text) if _is_num(t)]
 
 
-def _sentence_match(claim: list[str], source: list[str]) -> tuple[float, int]:
-    """(share of the claim's content words found in the source sentence, number of claim content words NOT found)."""
+@dataclass(frozen=True)
+class SourceContext:
+    """The ONLY thing a cited CLIENT sentence may borrow from its surroundings (P1.5.x): the topic words that the immediately preceding ADVISOR turn names, and the client's own first
+    name (a client who says "we've decided: 63" is the subject the statement calls "Kenji").  Nothing else is borrowed: negation, hedging, modality, attribution, structure and the
+    value itself are still judged on the cited sentence alone."""
+    topic_stems: frozenset
+    client_name: str
+
+
+def source_context(prior_turn: Optional[str], client_name: Optional[str], topic_context: str) -> Optional[SourceContext]:
+    """A SourceContext for a cited client turn, or None.  None unless the preceding advisor turn is not a retraction and names the memory's own topic (shares a content stem with
+    `topic_context` = topic + subject): a turn about "the college fund" never licenses a statement about retirement."""
+    if not FLAGS["context_window"] or not (prior_turn or "").strip() or not (client_name or "").strip() or retracted(prior_turn):
+        return None
+    shared = set(content_stems(tokens(topic_context))) & set(content_stems(tokens(prior_turn)))
+    return SourceContext(frozenset(shared), client_name.strip().lower()) if shared else None
+
+
+def _sentence_match(claim: list[str], source: list[str], extra: frozenset = frozenset()) -> tuple[float, int]:
+    """(share of the claim's content words found in the source sentence [or in `extra`, the borrowed context stems], number of claim content words NOT found)."""
     cs = content_stems(claim)
     if not cs:
         return 0.0, 0
-    ss = {_stem(t) for t in source}
+    ss = {_stem(t) for t in source} | set(extra)
     hit = sum(1 for c in cs if c in ss or any(s.startswith(c) for s in ss if len(c) < 4))
     return hit / len(cs), len(cs) - hit
 
@@ -209,12 +228,15 @@ def _clause_ok(c: dict, s: dict, first: bool) -> bool:
     return c["actors"] == s["actors"] or (c["actors"] == () and s["actors"] in ((), ("SELF",)))
 
 
-def structure_ok(claim_text: str, source_text: str) -> bool:
+def structure_ok(claim_text: str, source_text: str, client_name: Optional[str] = None) -> bool:
     """Every clause of the claim must be matched, in order, by a clause of the source with the same actor(s), the same negation / hedge / attribution flags, the same connective
     (and / or / but) and the numbers it states.  The source may have MORE clauses; the claim may not state a clause the source does not state in that form."""
     if not FLAGS["structure"]:
         return True
     cl, sl = _structure(claim_text), _structure(source_text)
+    if client_name:                                          # a client's own turn: "we/I" IS the client, so the statement may name them; any OTHER name still mismatches
+        me = "NAME:" + client_name.lower()
+        cl = [dict(c, actors=tuple("SELF" if a == me else a for a in c["actors"])) for c in cl]
     j = 0
     for k, c in enumerate(cl):
         while j < len(sl) and not _clause_ok(c, sl[j], k == 0):
@@ -246,19 +268,23 @@ def _number_ok(src: list[str], n: str, unit: str, stems: set, allow_noncurrent: 
     return False
 
 
-def _claim_sentence_supported(claim_text: str, value_nums: list[tuple[str, str]], source_sents: list[str], allow_noncurrent: bool = False, context: str = "", verbatim: bool = False) -> tuple[bool, str]:
+def _claim_sentence_supported(claim_text: str, value_nums: list[tuple[str, str]], source_sents: list[str], allow_noncurrent: bool = False, context: str = "", verbatim: bool = False,
+                              ctx: Optional[SourceContext] = None) -> tuple[bool, str]:
     ct = tokens(claim_text)
     if len(ct) < 3 or len(content_stems(ct)) + sum(1 for t in ct if _is_num(t)) < 2:
         return False, "the claim is too short to express a proposition"
     best, best_cov, best_miss, best_raw = None, 0.0, 0, ""
+    extra = (ctx.topic_stems | {_stem(ctx.client_name)}) if ctx else frozenset()
     for s in source_sents:
         st = tokens(s)
-        cov, miss = _sentence_match(ct, st)
+        cov, miss = _sentence_match(ct, st, extra)
+        if ctx and _sentence_match(ct, st)[1] >= len(content_stems(ct)):      # borrowed words may fill gaps; they can never be the ONLY match: the cited sentence itself must share a content word
+            continue
         if cov > best_cov:
             best, best_cov, best_miss, best_raw = st, cov, miss, s
     if best is None or best_cov < 0.75 or best_miss > 1:         # a long sentence must not hide appended words behind its own coverage
         return False, "part of the claim is not found in any single source sentence"
-    if not structure_ok(claim_text, best_raw):
+    if not structure_ok(claim_text, best_raw, ctx.client_name if ctx else None):
         return False, "who acts, what is negated / conditional / attributed to someone else, or how the clauses are joined differs between the claim and the source"
     if _has(ct, NEGATION) != _has(best, NEGATION):
         return False, "negation differs between the claim and the source"
@@ -278,7 +304,8 @@ def _claim_sentence_supported(claim_text: str, value_nums: list[tuple[str, str]]
     return True, "supported"
 
 
-def claim_supported(content: str, value: Optional[str], excerpts: list[str], *, verbatim: bool, allow_noncurrent: bool = False, context: str = "") -> tuple[bool, str]:
+def claim_supported(content: str, value: Optional[str], excerpts: list[str], *, verbatim: bool, allow_noncurrent: bool = False, context: str = "",
+                    ctxs: Optional[list] = None) -> tuple[bool, str]:
     """Is the memory's statement (and its extracted value) supported by ONE cited excerpt?
     verbatim=True (rule-extracted): the statement must BE one source sentence.  verbatim=False (LLM paraphrase): see the module docstring."""
     if not (content or "").strip():
@@ -286,7 +313,7 @@ def claim_supported(content: str, value: Optional[str], excerpts: list[str], *, 
     vu = _value_unit(value or "")
     vnums = [(n, vu or "age") for n in numbers_in(value or "")]
     why = "the statement is not supported by the cited source"
-    for ex in excerpts:
+    for idx, ex in enumerate(excerpts):
         if retracted(ex):
             why = "the cited source takes the statement back (retraction)"
             continue
@@ -306,6 +333,11 @@ def claim_supported(content: str, value: Optional[str], excerpts: list[str], *, 
         if all(ok for ok, _ in results):
             return True, "supported"
         why = next(w for ok, w in results if not ok)
+        ctx = ctxs[idx] if ctxs and idx < len(ctxs) else None
+        if ctx is not None:                      # second, strictly additive attempt: only for a cited client turn whose preceding advisor turn names the topic (see SourceContext)
+            again = [_claim_sentence_supported(c, vnums if k == 0 else [], src, allow_noncurrent, context, False, ctx) for k, c in enumerate(csents)]
+            if all(ok for ok, _ in again):
+                return True, "supported_with_context"
     return False, why
 
 
