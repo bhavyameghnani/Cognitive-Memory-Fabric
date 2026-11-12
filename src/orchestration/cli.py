@@ -32,12 +32,25 @@ def main(argv=None) -> int:
     p.add_argument("--json", action="store_true")
     p.add_argument("--actor", default=os.environ.get("CMF_CLI_ACTOR", "local-operator"), help="actor id recorded in the trace and approvals")
     p.add_argument("--no-harness", action="store_true", help="development/test profiles only: run the original pipeline without the harness")
+    p = sub.add_parser("reverify", help="re-check legacy (pre-integrity-boundary) memories against their transcript turns; the ones that pass become 'verified' (append-only)")
+    p.add_argument("--client", help="only this client (default: every client and the GLOBAL procedures)")
+    p.add_argument("--actor", default=os.environ.get("CMF_CLI_ACTOR", "local-operator"), help="operator id recorded in the audit table")
     p = sub.add_parser("trace")
     p.add_argument("request_id")
     a = ap.parse_args(argv)
 
     if a.cmd == "trace":
         print(render_trace(a.request_id))
+        return 0
+    if a.cmd == "reverify":                                   # offline operator maintenance: needs neither the LLM nor the harness
+        from agents.memory.config import GLOBAL_CLIENT
+        from agents.memory.integrity import Principal
+        from agents.memory.store import MemoryStore
+        store = MemoryStore()
+        store.init()
+        clients = [r["client_id"] for r in store.query("SELECT DISTINCT client_id FROM {S}memory_records")] + [GLOBAL_CLIENT]
+        print(json.dumps(store.reverify_legacy(principal=Principal.user(a.actor, clients, authenticated=True), client_id=a.client), indent=2, sort_keys=True))
+        store.close()
         return 0
     try:
         cfg = HarnessConfig.from_env()

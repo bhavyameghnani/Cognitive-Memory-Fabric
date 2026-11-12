@@ -88,7 +88,7 @@ SERVICES = {
     "curated_loader": ServiceSpec(frozenset({"create"}), frozenset({"curated_file"}), frozenset({"procedural"}), global_only=True),
     "ttl_expiry": ServiceSpec(frozenset({"transition"}), any_client=True),
 }
-USER_OPS = frozenset({"transition", "approval", "correct", "supersede", "resolve"})        # people can change status, approve procedures, correct and supersede - never create arbitrary rows
+USER_OPS = frozenset({"transition", "approval", "correct", "supersede", "resolve", "reverify"})        # people can change status, approve procedures, correct and supersede - never create arbitrary rows
 RESERVED_ACTORS = frozenset(SERVICES) | {"", "llm", "model", "system", "admin", "root", "assistant", "dev-anonymous", "anonymous", "unknown", "none", "null"}
 _SEAL_KEY = os.urandom(32)
 
@@ -670,12 +670,69 @@ class MemoryIntegrityBoundary:
         if sclass == "derived":   # deterministic consolidation: a verified creating episode of the SAME turn must carry the SAME value
             for ev in conv:
                 for r in self.store.query(
-                        "SELECT m.value_text AS v FROM {S}memory_evidence e JOIN {S}memory_records m ON m.memory_id=e.memory_id WHERE m.client_id=? AND m.memory_type='episodic' "
-                        "AND m.verification='verified' AND e.interaction_id=? AND e.turn_index=?", (client, ev.get("interaction_id"), ev.get("turn_index"))):
+                        "SELECT m.value_text AS v FROM {S}memory_evidence e JOIN {S}memory_records m ON m.memory_id=e.memory_id LEFT JOIN {S}memory_reverifications rv ON rv.memory_id=m.memory_id WHERE m.client_id=? AND m.memory_type='episodic' "
+                        "AND COALESCE(rv.verification, m.verification)='verified' AND e.interaction_id=? AND e.turn_index=?", (client, ev.get("interaction_id"), ev.get("turn_index"))):
                     if _canon(r["v"]) == _canon(v):
                         return "verified", "derived deterministically from a verified episode of the same turn that states the same value"
             return "unverified", "no verified episode of the cited turn states this value"
         return "unverified", "unclassified source"
+
+    # ------------------------------------------------------------------ re-verification of legacy rows (migration 124)
+    _REVERIFY_ORDER = {"episodic": 0, "procedural": 1, "semantic": 2, "working": 3}     # derived semantic rows are judged AFTER the episodes they derive from
+
+    def reverify_legacy(self, *, principal: Any, client_id: Optional[str] = None) -> dict:
+        """Let rows that predate the integrity boundary (operation_id = '', still 'unverified') EARN 'verified' - never by being edited, never by trust.  Each row's cited sources are
+        re-resolved inside the owning client's scope and judged by the SAME `_verification` rules a new write goes through; a pass is recorded (append-only) in memory_reverifications,
+        a failure leaves the row 'unverified'.  Idempotent: rows already re-verified are skipped.  Offline-operator tool - there is no API route for it.
+        Returns {checked, verified, unverified, reasons: {why: n}, by_client: {id: n}}."""
+        ctx = self._ctx("reverify", principal, client_id or "")
+        p = self._principal(principal, "reverify", ctx)
+        st = self.store
+        sql = ("SELECT m.memory_id FROM {S}memory_records m LEFT JOIN {S}memory_reverifications rv ON rv.memory_id=m.memory_id "
+               "WHERE m.operation_id='' AND m.verification='unverified' AND rv.memory_id IS NULL")
+        ps: list = []
+        if client_id:
+            sql, ps = sql + " AND m.client_id=?", [client_id]
+        todo = [r["memory_id"] for r in st.query(sql, ps)]
+        rows = [st.get(i) for i in todo]
+        rows = sorted((r for r in rows if r is not None and p.covers(r["client_id"])), key=lambda r: (self._REVERIFY_ORDER.get(r["memory_type"], 9), r["memory_id"]))
+        out: dict = {"checked": 0, "verified": 0, "unverified": 0, "reasons": {}, "by_client": {}}
+        with st.transaction():
+            for row in rows:
+                out["checked"] += 1
+                verdict, basis, n_ev = self._reverify_row(row)
+                if verdict != "verified":
+                    out["unverified"] += 1
+                    out["reasons"][basis] = out["reasons"].get(basis, 0) + 1
+                    continue
+                with st._gate():
+                    st._p_reverification(dict(memory_id=row["memory_id"], client_id=row["client_id"], verification="verified", verification_basis=basis, evidence_checked=n_ev,
+                                              operation_id=ctx["operation_id"], actor_id=p.actor_id, verified_at=st.now()))
+                out["verified"] += 1
+                out["by_client"][row["client_id"]] = out["by_client"].get(row["client_id"], 0) + 1
+        return out
+
+    def _reverify_row(self, row: dict) -> tuple:
+        """(verdict, basis-or-reason, resolved conversation sources) for one stored row, rebuilt from its own evidence rows."""
+        st, client = self.store, row["client_id"]
+        conv, ev_rows = [], []
+        for e in st.query("SELECT * FROM {S}memory_evidence WHERE memory_id=? ORDER BY interaction_id, turn_index", (row["memory_id"],)):
+            ev = {k: e[k] for k in ("source_type", "interaction_id", "turn_index", "speaker", "excerpt", "role", "ref")}
+            if ev["source_type"] == "conversation":
+                try:
+                    st.verify_evidence(client, ev)
+                except (EvidenceError, KeyError, ValueError, TypeError):
+                    continue                                    # a source that no longer resolves simply does not count
+                conv.append(ev)
+                ev_rows.append((ev, "resolved"))
+            else:
+                ev_rows.append((ev, "resolved" if ev["source_type"] == "curated" else "unresolvable"))
+        det = {k: row.get(k) for k in ("steps", "procedure_name", "approval_status", "approver", "source_ref")}
+        try:
+            verdict, basis = self._verification(client, row["source_class"], row, det, conv, [c.get("excerpt") or "" for c in conv], ev_rows)
+        except MemoryWriteRejected as e:                        # e.g. a curated row that no longer matches the shipped procedures file
+            return "unverified", f"{e.code}", len(conv)
+        return verdict, basis, len(conv)
 
     def _curated_verification(self, client: str, rec: dict, det: dict, ev_rows: list) -> tuple:
         """Curated = this row is exactly the entry of the shipped procedures file that its evidence names (key, content hash, steps, name, approver) - else it is refused."""

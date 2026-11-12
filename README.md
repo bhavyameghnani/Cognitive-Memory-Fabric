@@ -121,6 +121,16 @@ Open http://localhost:5173. Production build: `npm run build` (output in `ui/cmf
 
 Real environment variables always override `.env`. Paths in `.env` are relative to the repo root, so run the commands above from there.
 
+### Legacy memories: `reverify`
+
+Memories that predate the integrity boundary (including the shipped demo seed) are marked `unverified` and the memory row itself is immutable. To let them earn `verified`, run
+
+```bash
+PYTHONPATH=src .venv/bin/python -m orchestration.cli reverify [--client CLIENT-001]
+```
+
+It re-resolves each memory's cited transcript turn(s) and judges it with the same rules a new write goes through; passes are recorded in the append-only `memory_reverifications` table (migration 124, applied by `init`), failures stay `unverified` and are listed with a reason. Offline operator tool: no API route, no LLM. It is idempotent. Expect a minority to pass on the demo seed: the checker only accepts a claim that a *single cited source sentence* supports, so paraphrases of terse turns (e.g. "We've decided: 63.") stay unverified by design.
+
 ### Memory-quality evaluation
 
 ```bash

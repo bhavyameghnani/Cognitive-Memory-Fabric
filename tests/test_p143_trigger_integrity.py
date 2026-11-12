@@ -80,7 +80,7 @@ def _rec(mid="MEM-T1"):
 def test_a_pristine_database_has_exactly_the_canonical_triggers(pristine):
     path, defs = pristine
     st = _open(path)
-    assert len(defs) == 40 and st.integrity_ready() and st.trigger_mismatches() == {}
+    assert len(defs) == 43 and st.integrity_ready() and st.trigger_mismatches() == {}
     have = {r["name"] for r in st.query("SELECT name FROM sqlite_master WHERE type='trigger'")}
     assert have == set(defs)                                                        # nothing missing, nothing unexpected
     st.close()

@@ -31,7 +31,7 @@ from services.conversations import Conversations, shared
 ROOT = Path(__file__).resolve().parents[3]
 SQL_DIR = ROOT / "sql"
 SCHEMA_FILE, DROP_FILE, SCHEMA_VERSION = "100_cmf_memory_schema.sql", "199_drop_cmf_memory.sql", "100"
-TABLES = ["memory_conflict_resolutions", "memory_conflicts", "memory_write_log", "memory_candidates", "memory_lifecycle_events", "memory_relationships", "memory_evidence", "working_context", "procedural_details",
+TABLES = ["memory_reverifications", "memory_conflict_resolutions", "memory_conflicts", "memory_write_log", "memory_candidates", "memory_lifecycle_events", "memory_relationships", "memory_evidence", "working_context", "procedural_details",
           "semantic_details", "episodic_details", "memory_records", "ingestion_log", "schema_migrations"]
 
 
@@ -275,10 +275,10 @@ class MemoryStore:
             ("row_version", "INTEGER NOT NULL DEFAULT 1")],
         "memory_evidence": [("resolution", "TEXT NOT NULL DEFAULT 'unrecorded' CHECK (resolution IN ('resolved', 'unresolvable', 'unrecorded'))"), ("verified_at", "TEXT")],
     }
-    GUARDED = ['memory_records', 'episodic_details', 'semantic_details', 'procedural_details', 'working_context', 'memory_evidence', 'memory_relationships', 'memory_lifecycle_events', 'memory_write_log', 'memory_conflicts', 'memory_conflict_resolutions']
+    GUARDED = ['memory_records', 'episodic_details', 'semantic_details', 'procedural_details', 'working_context', 'memory_evidence', 'memory_relationships', 'memory_lifecycle_events', 'memory_write_log', 'memory_conflicts', 'memory_conflict_resolutions', 'memory_reverifications']
     MR_GUARDED_COLUMNS = ['client_id', 'memory_type', 'topic', 'subject', 'title', 'content', 'value_text', 'corrects_value', 'certainty', 'source_role', 'status', 'confidence', 'event_date', 'valid_from', 'valid_to', 'version_no', 'supersedes_id', 'origin', 'model', 'content_hash', 'verification', 'verification_basis', 'observed_at', 'temporal_status', 'source_class', 'created_by', 'request_id', 'operation_id', 'row_version', 'memory_id', 'created_at']
     IMMUTABLE_COLUMNS = ['memory_id', 'client_id', 'memory_type', 'topic', 'subject', 'title', 'content', 'value_text', 'corrects_value', 'certainty', 'origin', 'content_hash', 'created_at', 'created_by', 'source_class', 'operation_id', 'event_date', 'supersedes_id', 'verification', 'verification_basis']
-    UPDATE_GUARDED = ("episodic_details", "semantic_details", "procedural_details", "working_context", "memory_evidence", "memory_relationships", "memory_conflicts", "memory_conflict_resolutions")
+    UPDATE_GUARDED = ("episodic_details", "semantic_details", "procedural_details", "working_context", "memory_evidence", "memory_relationships", "memory_conflicts", "memory_conflict_resolutions", "memory_reverifications")
 
     repaired_triggers: dict = {}
 
@@ -294,6 +294,8 @@ class MemoryStore:
                 if version < 122:
                     for s in self._script("122_cmf_memory_conflict_resolutions.sql"):
                         self.execute(s)
+                for s in self._script("124_cmf_memory_reverifications.sql"):      # idempotent, runs on every init (no version bump: older databases pick the table up here)
+                    self.execute(s)
                 self._install_guards()
                 self._ensure_slot_index()
                 if version < int(self.MIGRATION):
@@ -440,6 +442,11 @@ class MemoryStore:
         self._require_boundary()
         self.boundary.support(memory_id, client_id=client_id, evidence=dict(ev), principal=principal)
 
+    def reverify_legacy(self, *, principal, client_id: Optional[str] = None) -> dict:
+        """Re-check rows that predate the integrity boundary and record the ones that pass (append-only; see migration 124).  Needs an explicit operator Principal."""
+        self._require_boundary()
+        return self.boundary.reverify_legacy(principal=principal, client_id=client_id)
+
     def insert_memory(self, rec: dict, details: dict, evidence: Sequence[dict] = (), actor: str = "", reason: str = "created", *, principal=None,
                       idempotency_key: Optional[str] = None) -> tuple[str, bool]:
         """Persist one memory through the integrity boundary (authorization -> provenance -> integrity -> temporal conflicts -> idempotency -> ONE transaction).
@@ -517,6 +524,10 @@ class MemoryStore:
         cols = list(r)
         self.execute(f"INSERT INTO {{S}}memory_conflict_resolutions ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})", [r[c] for c in cols])
 
+    def _p_reverification(self, r: dict) -> None:
+        cols = list(r)
+        self.execute(f"INSERT INTO {{S}}memory_reverifications ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))}) ON CONFLICT DO NOTHING", [r[c] for c in cols])
+
     def _p_log(self, r: dict) -> None:
         cols = list(r)
         self.execute(f"INSERT INTO {{S}}memory_write_log ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})", [r[c] for c in cols])
@@ -590,9 +601,13 @@ class MemoryStore:
             return [r["memory_id"] for r in rows]
 
     # ------------------------------------------------------------------ reads
-    _SELECT = ("SELECT m.*, e.interaction_id, e.turn_index, e.event_ts, e.speaker_role, e.event_type, s.slot_key, s.basis, s.supporting_episodes, "
+    # a legacy row that was re-verified by the integrity boundary (memory_reverifications) reads as 'verified'; the stored column itself is immutable and is never edited
+    EFFECTIVE_VERIFICATION = "COALESCE(rv.verification, m.verification)"
+    _SELECT = ("SELECT m.*, COALESCE(rv.verification, m.verification) AS verification, COALESCE(rv.verification_basis, m.verification_basis) AS verification_basis, "
+               "e.interaction_id, e.turn_index, e.event_ts, e.speaker_role, e.event_type, s.slot_key, s.basis, s.supporting_episodes, "
                "p.procedure_name, p.steps, p.topics AS proc_topics, p.keywords AS proc_keywords, p.approval_status, p.approver, p.source_ref, "
                "w.session_id, w.plan_id, w.derived_from_id, w.expires_at FROM {S}memory_records m "
+               "LEFT JOIN {S}memory_reverifications rv ON rv.memory_id=m.memory_id "
                "LEFT JOIN {S}episodic_details e ON e.memory_id=m.memory_id LEFT JOIN {S}semantic_details s ON s.memory_id=m.memory_id "
                "LEFT JOIN {S}procedural_details p ON p.memory_id=m.memory_id LEFT JOIN {S}working_context w ON w.memory_id=m.memory_id")
 
