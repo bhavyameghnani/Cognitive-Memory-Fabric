@@ -17,6 +17,31 @@ TASK_HINTS = [("followup_review", r"\b(unresolved|follow.?up|open (items|questio
               ("forecast_feasibility", r"\b(can|could|should|is it possible|sufficient|enough|afford)\b"), ("calculation", r"\b(calculate|how much|ratio|allocation|concentration|return)\b")]
 
 
+SOURCE_TOOL = "get_source_evidence"
+# an explicit conversation-source reference: an interaction id AND a turn reference.  Generic: no ids or clients are hard-coded.
+_INTERACTION_RX = re.compile(r"\bINT-\d+\b", re.I)
+_TURN_RX = re.compile(r"\bturns?\s*#?\s*\d+\b", re.I)
+
+
+def names_source_turns(text: str) -> bool:
+    return bool(_INTERACTION_RX.search(text) and _TURN_RX.search(text))
+
+
+# A request for the HISTORY OF A SUBJECT as the conversations record it (a chronology / timeline, source meetings, conversation turns, verbatim text).  Memory holds persisted summaries, not the
+# turns, so such a request is a history task whose evidence comes from get_source_evidence; it is not a portfolio review.
+_CHRONOLOGY_RX = re.compile(r"\b(?:chronolog\w*|timeline|sequence of events|source meetings?|source conversations?|conversation[- ]turns?|conversation evidence|source evidence|turn[- ]level|verbatim)\b", re.I)
+# tools that are relevant to a chronology request ONLY when the request itself asks for what they return
+_TOOL_NEED_RX = {"get_client_profile": r"\bprofile\b|\bincome\b|\bexpenses\b|\bdependants?\b", "get_client_portfolio": r"\bportfolio\b|\bholdings?\b|\bpositions?\b|\bwhat (?:she|he|they) owns?\b",
+                 "get_portfolio_history": r"portfolio history|\bsnapshots?\b", "get_client_goals": r"\bgoals?\b|\bobjectives?\b", "get_client_liabilities": r"\bliabilit\w*|\bdebts?\b|\bmortgages?\b|\bloans?\b",
+                 "calculate_asset_allocation": r"\ballocation\b", "calculate_portfolio_concentration": r"concentrat\w*", "compare_portfolio_snapshots": r"\bcompar\w*",
+                 "calculate_portfolio_returns": r"\breturns?\b|\bperformance\b", "calculate_liquidity_ratio": r"\bliquidity\b", "calculate_goal_funding_gap": r"funding gap|\bshortfall\b",
+                 "get_market_data": r"\bmarket\b"}
+
+
+def is_source_chronology(text: str) -> bool:
+    return bool(_CHRONOLOGY_RX.search(text or ""))
+
+
 class PlanValidationError(ValueError):
     pass
 
@@ -85,6 +110,34 @@ class Planner:
         if not clients:
             missing.append("client not identified: ask the advisor which client the request is about")
         subs = list(out.subtasks)
+        task_type, needs_history, needs_calc = out.task_type, out.needs_history, out.needs_calculation
+        if is_source_chronology(text) and SOURCE_TOOL in available_tools:
+            # The subject and intent of this request are decided from its own words, not from the model's guess: the topics come from the request, the task is a history task, and only
+            # get_source_evidence (plus a tool the request itself asks for) is needed.  An unrelated portfolio review is never substituted.
+            asked = [t for t in tools if t != SOURCE_TOOL and re.search(_TOOL_NEED_RX.get(t, r"(?!x)x"), text, re.I)]
+            topics = infer_topics(text) or topics
+            if task_type != "history":
+                notes.append(f"task type {task_type} replaced by history: the request asks for a chronology of what the conversations record")
+            task_type, needs_history, needs_calc = "history", True, False
+            dropped_tools = [t for t in tools if t != SOURCE_TOOL and t not in asked]
+            if dropped_tools:
+                notes.append("tools not asked for by a chronology request were dropped: " + ", ".join(dropped_tools))
+            tools = [SOURCE_TOOL] + asked
+            notes.append(f"{SOURCE_TOOL} planned: a chronology comes from the conversation record (search_text finds the turns, then each turn is retrieved with its interaction id and turn index)")
+            if not any(s.agent == "tool_selector" for s in subs):
+                prior = [s.id for s in subs if s.agent != "report_agent"]
+                subs.insert(len([s for s in subs if s.agent != "report_agent"]),
+                            Subtask(id="T9", description="Find and retrieve the relevant source conversation turns with get_source_evidence", agent="tool_selector", depends_on=prior[-1:]))
+        # Memory holds persisted memories, not raw turns: an explicit request for source turns must reach the Tool Selector even if the model routed it to memory only.
+        if names_source_turns(text) and SOURCE_TOOL in available_tools:
+            if SOURCE_TOOL not in tools:
+                tools.append(SOURCE_TOOL)
+                notes.append(f"{SOURCE_TOOL} added: the request names specific conversation turns")
+            if not any(s.agent == "tool_selector" for s in subs):
+                prior = [s.id for s in subs if s.agent != "report_agent"]
+                subs.insert(len([s for s in subs if s.agent != "report_agent"]),
+                            Subtask(id="T9", description="Retrieve the requested source conversation turns with get_source_evidence", agent="tool_selector", depends_on=prior[-1:]))
+                notes.append("tool_selector subtask added for source-turn retrieval")
         reports = [s for s in subs if s.agent == "report_agent"]
         others = [s for s in subs if s.agent != "report_agent"]
         if not reports:
@@ -96,14 +149,14 @@ class Planner:
         subs = [s.model_copy(update={"id": idmap[s.id], "depends_on": [idmap[d] for d in s.depends_on if d in idmap]}) for s in others]
         rep_desc = reports[-1].description if reports else "Write the advisor-ready report from memory, evidence and tool results"
         subs.append(Subtask(id=f"T{len(subs) + 1}", description=rep_desc, agent="report_agent", depends_on=[s.id for s in subs]))
-        if "calculation" in out.task_type or out.needs_calculation:
+        if "calculation" in task_type or needs_calc:
             if not tools:
                 missing.append("calculation requested but no suitable tool was identified")
         deps = {s.id: list(s.depends_on) for s in subs}
         order, levels = self._topo(deps)
         return ExecutionPlan(
-            request_id=rid, plan_id=f"PLAN-{rid}-r{revision}", request_text=text, client_ids=clients, user_intent=out.user_intent, task_type=out.task_type,
-            time_period=out.time_period, needs_history=out.needs_history, needs_calculation=out.needs_calculation, subtasks=subs,
+            request_id=rid, plan_id=f"PLAN-{rid}-r{revision}", request_text=text, client_ids=clients, user_intent=out.user_intent, task_type=task_type,
+            time_period=out.time_period, needs_history=needs_history, needs_calculation=needs_calc, subtasks=subs,
             required_memory_categories=list(dict.fromkeys(out.required_memory_categories)) or ["episodic", "semantic"], memory_topics=topics,
             required_data=out.required_data, required_tools=tools, dependencies=deps, execution_order=order,
             parallelizable_tasks=[lv for lv in levels if len(lv) > 1], missing_information=missing, success_criteria=out.success_criteria,

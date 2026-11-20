@@ -88,7 +88,33 @@ All tools: read-only; arguments `client_id` (string, must be in the plan and all
 | | `calculate_liquidity_ratio` | cash (and cash plus daily-liquid) / monthly expenses | client_id, as_of_date? | monthly_expenses (valid on the date), cash months, target months, shortfall, by liquidity category | holdings + `client_expense_history` | known future expenses are not in the data |
 | | `calculate_goal_funding_gap` | **simple** gap = target - resources | client_id, goal_id?, goal_type?, as_of_date?, resources_basis in {investable_portfolio, cash_equivalents} | goals[target, resources, simple_gap, coverage %, provenance], skipped | goals + snapshots | not a projection (no growth, inflation, contributions, drawdown, taxes) |
 | Market data | `get_market_data` | the synthetic shared market path | as_of_date? | monthly equity and bond returns | `ref_market_path` | fictional; not real market data |
-| Evidence | `get_source_evidence` | evidence for a record or a conversation turn | client_id, entity_type+entity_id or interaction_id+turn_index | evidence[excerpt, kind, verified_in_conversations] or the turn text | `data_evidence_links` + `conversations.csv` | only verified references |
+| Evidence | `get_source_evidence` | evidence for a record, the text of conversation turns, or a search of where a phrase occurs | client_id and exactly ONE mode: (1) entity_type+entity_id, (2) interaction_id+turn_index, (3) interaction_id+turn_indices (up to 12 turns of one meeting), (4) search_text | (1) evidence[excerpt, kind, verified_in_conversations]; (2) turn{interaction_id, turn_index, speaker, text}; (3) turns[...] of one meeting; (4) search{query, total, truncated, matches[interaction_id, turn_index, speaker, date, cue]} | `data_evidence_links` + `conversations.csv` | text is synthetic; a search returns references only and never shows what was decided or agreed |
+
+### D.1 `get_source_evidence`: modes, discovery and the retrieval budget
+The four modes are mutually exclusive; mixing them is a schema error that the validator rejects. Every mode is limited to the plan's client: a turn that belongs to another client is "not found".
+* **Entity evidence** (`entity_type`, `entity_id`): the evidence links stored for one operational record (goal, holding, transaction, ...). Needs an id that is already known; it is empty for anything else.
+* **Conversation turn** (`interaction_id`, `turn_index`) and **conversation turns** (`interaction_id`, `turn_indices`, at most 12 turns of ONE meeting, one call): the exact text, recorded speaker and date of
+  each turn. The Report Agent turns each returned turn into one `conversation_evidence` item that keeps interaction id, turn index, speaker, date and provenance, and the verifier checks it against the
+  conversation record. Nothing about a turn is filled in.
+* **Search** (`search_text`, at least 3 characters): which turns of this client's own conversations contain the phrase (whole words, case-insensitive; a possessive such as `Lakeshore's` matches). It returns
+  references only, oldest first, at most 50, with `total` and `truncated`. `cue: "correction"` marks turns whose wording suggests a correction or retraction; it is a hint for deciding what to read first and
+  is never evidence that anything was corrected. A search is a discovery aid: it is not report evidence.
+
+**Source discovery (code, not the model).** A 3B model cannot know interaction ids, and it guessed entity ids (trace REQ-a7c3eee5: four guesses, four empty results). When the Planner has chosen
+`get_source_evidence`, the plan has one client, the request asks for a chronology or source turns (the Planner's own test: chronology, timeline, source meetings, conversation turns, verbatim) and names no interaction turn, the Tool Selector therefore runs discovery before its first model call (`agents/tool_selector/source_discovery.py`):
+1. *Subject.* Candidate phrases (1-3 words) are taken from the request; function words, the request's own framing words ("prepare", "chronology", "corrections", ...) and the client's name are excluded. A
+   candidate must occur in this client's turns. It is scored by how much the client talks about it times how rare it is across all conversations, so capitalisation is not needed: a sentence-initial subject and a
+   lowercase one are found alike. Candidates that find exactly the same turns keep the most specific wording; a candidate whose turns another chosen phrase already finds is not searched. At most 3 searches.
+2. *Search* each chosen phrase. A failed or truncated search is reported.
+3. *Retrieve* every matching turn, ONE call PER MEETING (`turn_indices`), oldest meeting first. One call per meeting is what lets a whole chronology fit the harness tool-call limit (12).
+4. *Budget.* If the matching meetings exceed the calls left (`max_executions` minus the searches), meetings are ranked: the earliest and the latest are always kept, then meetings with a correction cue on a turn
+   about the main subject, then the strongest match, then the most recent. Every meeting not retrieved, and every turn cut from a meeting with more than 12 matches, is named in `missing_information` as
+   `Not retrieved: <interaction> (<date>; matching turn(s) <n>) because <reason>` (reason: the tool-call budget, or the retrieval call failed). It reaches the report as "Missing information".
+5. Every interaction id and turn index comes from a search result. If the request contains nothing that matches the client's conversations, no turn is retrieved and that is stated.
+
+Token budgets: tool results do not pass through the model. The Tool Selector prompt carries only a truncated digest per call, and the Report Agent shows the model its first 16 evidence items; the code writes every
+retrieved turn (up to 24) into the report as a source-record finding, and says so when more exist. Limitations: the correction cue is vocabulary-based; a subject that shares no wording with the conversations
+(a paraphrase) is not found; the cut-off between "main subject" and "secondary phrase" is a score ratio, not a judgement of relevance.
 
 **Do not build** (no data source exists; they would force invented results): `get_pending_actions`, `calculate_risk_metrics`, `calculate_rebalancing_scenarios`, `search_market_research`, `search_economic_indicators`, `search_client_documents`. State this in the catalogue documentation.
 

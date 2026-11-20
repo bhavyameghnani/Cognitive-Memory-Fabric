@@ -1,0 +1,8 @@
+access_policy_id,applies_to,permitted_roles,agent_access,third_party_grants,note,assumption
+SYN-ACC-MTG,Meetings,client_self|assigned_advisor,delegated,honoured,participants may read; an explicit grant is needed for anyone else,synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-CAL,Calls,assigned_advisor,delegated,honoured,telephony transcripts are advisor-held in this experiment; the client is not a default reader,synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-EML,Email threads,client_self|assigned_advisor,delegated,honoured,"a third-party correspondent reads a thread only through an explicit, dated grant",synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-CHT,Chat conversations,client_self|assigned_advisor,delegated,not_honoured,client-scoped channel: third-party grants are not honoured,synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-RESTRICTED,modifier on flagged source records,client_self|assigned_advisor,none,not_honoured,"record-level restriction (named non-client employees), intersected with the channel policy so it can only narrow access: no agent access, no third-party grants",synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-CRM-ACT,CRM Activity records,assigned_advisor,delegated,not_honoured,derived layer: own policy; never inherits the source record's readers or grants,synthetic experimental policy; not a vendor or regulatory rule
+SYN-ACC-CRM-NOTE,CRM Notes and Summaries,assigned_advisor,none,not_honoured,"derived layer: advisor-typed text, human assigned advisor only",synthetic experimental policy; not a vendor or regulatory rule

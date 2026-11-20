@@ -6,7 +6,7 @@ import re
 from typing import Optional
 
 from schemas.plan import ExecutionPlan
-from schemas.report import Claim, EvidenceItem, Finding
+from schemas.report import Claim, EvidenceItem, Finding, is_source_turn
 from agents.report.validate import withheld_ref
 
 EXPLORATORY = ("exploratory", "hypothetical")
@@ -65,6 +65,8 @@ def check_claim(c: Claim, evidence: list[EvidenceItem], allowed_clients: set[str
         return "evidence belongs to a client outside the plan"
     if e.source_class in ("operational_data", "tool_calculation"):
         return "tool values belong in the financial analysis, not in client-state claims"
+    if is_source_turn(e):
+        return "a source conversation turn records what was said; it cannot establish a current, superseded, exploratory or recommendation memory claim"
     if c.status == "current":
         if not (is_current_item(e) or backs_current(e, evidence)):
             return f"a current claim must cite the active semantic memory; {e.ref} is {e.status}/{e.certainty}/{e.memory_type}"

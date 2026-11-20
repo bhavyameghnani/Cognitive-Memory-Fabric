@@ -129,6 +129,8 @@ export interface AskResult {
   report: AdvisorReport;
   retrieved_memory_ids: string[];
   agent_run: AgentRun | null;
+  /** false while the answer is held for approval: the API then deliberately returns no memory ids */
+  released?: boolean;
 }
 
 export interface AgentRun {

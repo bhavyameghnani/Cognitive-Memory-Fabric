@@ -1,0 +1,1087 @@
+{
+  "agreement_from_discourse_opener": {
+    "count": 84,
+    "examples": [
+      "INT-001#T1",
+      "INT-003#T11",
+      "INT-003#T7",
+      "INT-004#T13",
+      "INT-005#T11",
+      "INT-006#T11"
+    ],
+    "note": "",
+    "total": 453
+  },
+  "amount_ref_truncated_m": {
+    "count": 70,
+    "examples": [
+      "EML-012",
+      "EML-018",
+      "EML-020",
+      "EML-047",
+      "INT-003#T9",
+      "INT-004#T11"
+    ],
+    "note": "",
+    "total": 166
+  },
+  "answers_cross_segment": {
+    "count": 143,
+    "examples": [
+      "CHM-0013->CHM-0012",
+      "CHM-0016->CHM-0015",
+      "EML-003->EML-002",
+      "EML-014->EML-013",
+      "INT-003#T11->INT-003#T10",
+      "INT-003#T13->INT-003#T12"
+    ],
+    "total": 692
+  },
+  "answers_to_multi_question_turn": {
+    "count": 13,
+    "total": 692
+  },
+  "commitment_i_have_to_think": {
+    "count": 1,
+    "examples": [
+      "INT-033#T12"
+    ],
+    "note": "",
+    "total": 116
+  },
+  "correction_labels_only_via_sorry": {
+    "count": 7,
+    "examples": [
+      "INT-012#T3",
+      "INT-015#T3",
+      "INT-023#T2",
+      "INT-045#T2",
+      "INT-065#T2",
+      "INT-113#T2"
+    ],
+    "note": "correction labels whose only cue is an apology",
+    "total": 21
+  },
+  "corrects_date_check": {
+    "note": "system corrects links vs the earlier message the text names by date (candidate evidence, not ground truth)",
+    "rows": [
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-023#T1",
+        "turn_id": "INT-023#T2",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-045#T1",
+        "turn_id": "INT-045#T2",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-049#T1",
+        "turn_id": "INT-049#T4",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-113#T1",
+        "turn_id": "INT-113#T2",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-139#T1",
+        "turn_id": "INT-139#T2",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": [
+          "EML-005"
+        ],
+        "explicit_date_reference": "February 10",
+        "system_target": "EML-009",
+        "turn_id": "EML-015",
+        "verdict": "system target DISAGREES"
+      },
+      {
+        "date_implied": [
+          "EML-018"
+        ],
+        "explicit_date_reference": "March 12",
+        "system_target": "EML-019",
+        "turn_id": "EML-020",
+        "verdict": "system target DISAGREES"
+      },
+      {
+        "date_implied": [
+          "EML-012",
+          "EML-014"
+        ],
+        "explicit_date_reference": "February 18",
+        "system_target": "EML-014",
+        "turn_id": "EML-022",
+        "verdict": "system target is one of several same-day candidates"
+      },
+      {
+        "date_implied": [
+          "EML-001"
+        ],
+        "explicit_date_reference": "January 26",
+        "system_target": "EML-001",
+        "turn_id": "EML-028",
+        "verdict": "system target agrees"
+      },
+      {
+        "date_implied": [
+          "EML-024"
+        ],
+        "explicit_date_reference": "March 31",
+        "system_target": "EML-024",
+        "turn_id": "EML-034",
+        "verdict": "system target agrees"
+      },
+      {
+        "date_implied": [
+          "EML-032"
+        ],
+        "explicit_date_reference": "May 5",
+        "system_target": "EML-033",
+        "turn_id": "EML-039",
+        "verdict": "system target DISAGREES"
+      },
+      {
+        "date_implied": [
+          "EML-010"
+        ],
+        "explicit_date_reference": "February 12",
+        "system_target": "EML-030",
+        "turn_id": "EML-050",
+        "verdict": "system target DISAGREES"
+      },
+      {
+        "date_implied": [
+          "EML-062"
+        ],
+        "explicit_date_reference": "June 18",
+        "system_target": "EML-062",
+        "turn_id": "EML-066",
+        "verdict": "system target agrees"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "EML-061",
+        "turn_id": "EML-068",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-051#T5",
+        "turn_id": "INT-051#T6",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-065#T1",
+        "turn_id": "INT-065#T2",
+        "verdict": "no dated reference in text"
+      },
+      {
+        "date_implied": null,
+        "explicit_date_reference": null,
+        "system_target": "INT-122#T10",
+        "turn_id": "INT-122#T11",
+        "verdict": "no dated reference in text"
+      }
+    ]
+  },
+  "corrects_summary": {
+    "by_verdict": {
+      "no dated reference in text": 9,
+      "system target DISAGREES": 4,
+      "system target agrees": 3,
+      "system target is one of several same-day candidates": 1
+    },
+    "total": 17
+  },
+  "decision_labels_on_advisor_turns": {
+    "count": 75,
+    "examples": [
+      "EML-001",
+      "EML-017",
+      "EML-024",
+      "EML-030",
+      "EML-034",
+      "EML-040"
+    ],
+    "note": "advisor-spoken: recap or recommendation, not a first-hand decision",
+    "total": 97
+  },
+  "decision_the_decision_is_yours": {
+    "count": 2,
+    "examples": [
+      "EML-017",
+      "INT-046#T5"
+    ],
+    "note": "",
+    "total": 97
+  },
+  "information_only_turns": {
+    "count": 1038,
+    "examples": [
+      "CHM-0002",
+      "CHM-0006",
+      "CHM-0009",
+      "CHM-0010",
+      "CHM-0014",
+      "CHM-0018"
+    ],
+    "note": "",
+    "total": 2548
+  },
+  "label_distribution": {
+    "dialogue_acts": {
+      "agreement": 453,
+      "commitment": 116,
+      "correction": 21,
+      "decision": 97,
+      "deferral_unresolved": 101,
+      "information": 1038,
+      "proposal": 183,
+      "question": 761,
+      "rejection": 84,
+      "social": 28,
+      "suggestion": 27
+    },
+    "segment_topics": {
+      "business_and_equity_events": 23,
+      "estate_and_trusts": 63,
+      "family_and_education": 24,
+      "follow_up_commitments": 19,
+      "general_discussion": 11,
+      "goals_and_planning": 42,
+      "housing_and_debt": 58,
+      "insurance_and_care": 49,
+      "liquidity_and_cash": 76,
+      "portfolio_allocation": 137,
+      "retirement_planning": 98,
+      "scheduling_and_admin": 31,
+      "tax": 50
+    }
+  },
+  "question_label_with_one_embedded_question_mark": {
+    "count": 77,
+    "examples": [
+      "EML-057",
+      "INT-001#T1",
+      "INT-002#T1",
+      "INT-002#T13",
+      "INT-003#T1",
+      "INT-005#T1"
+    ],
+    "note": "",
+    "total": 761
+  },
+  "rejection_from_courtesy_no": {
+    "count": 2,
+    "examples": [
+      "CHM-0011",
+      "EML-075"
+    ],
+    "note": "",
+    "total": 84
+  },
+  "rejection_from_preference_statement": {
+    "count": 24,
+    "examples": [
+      "INT-003#T6",
+      "INT-020#T4",
+      "INT-035#T6",
+      "INT-038#T4",
+      "INT-041#T6",
+      "INT-047#T4"
+    ],
+    "note": "",
+    "total": 84
+  },
+  "relations_cross_segment": {
+    "count": 156,
+    "total": 810
+  },
+  "segments": {
+    "chats_split": 4,
+    "confidence_le_0_4": 253,
+    "email_threads_split": 8,
+    "general_discussion": 11,
+    "mixed_topic": 33,
+    "single_turn": 33,
+    "total": 681,
+    "unreviewed": 681
+  },
+  "temporal_ref_modal_may": {
+    "count": 19,
+    "examples": [
+      "EML-035",
+      "EML-051",
+      "EML-078",
+      "INT-013#T13",
+      "INT-023#T11",
+      "INT-040#T9"
+    ],
+    "note": "lower-case 'may' counted as the month",
+    "total": 27
+  },
+  "topic_cue_breadth": {
+    "cues": {
+      "business_and_equity_events:acquisition": {
+        "top_forms": {
+          "acquisition": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 1
+      },
+      "business_and_equity_events:business": {
+        "top_forms": {
+          "business": 40
+        },
+        "turns": 37,
+        "whole_word_turns": 37
+      },
+      "business_and_equity_events:letter of intent": {
+        "top_forms": {
+          "letter of intent": 6
+        },
+        "turns": 5,
+        "whole_word_turns": 5
+      },
+      "business_and_equity_events:proceeds": {
+        "top_forms": {
+          "proceeds": 37
+        },
+        "turns": 35,
+        "whole_word_turns": 35
+      },
+      "business_and_equity_events:startup": {
+        "top_forms": {
+          "startup": 4
+        },
+        "turns": 4,
+        "whole_word_turns": 4
+      },
+      "business_and_equity_events:tender offer": {
+        "top_forms": {
+          "tender offer": 3
+        },
+        "turns": 3,
+        "whole_word_turns": 3
+      },
+      "business_and_equity_events:valuation": {
+        "top_forms": {
+          "valuation": 8
+        },
+        "turns": 8,
+        "whole_word_turns": 8
+      },
+      "business_and_equity_events:vesting": {
+        "top_forms": {
+          "harvesting": 1,
+          "investing": 16,
+          "reinvesting": 1,
+          "vesting": 10
+        },
+        "turns": 27,
+        "whole_word_turns": 9
+      },
+      "estate_and_trusts:beneficiar": {
+        "top_forms": {
+          "beneficiaries": 5,
+          "beneficiary": 21
+        },
+        "turns": 23,
+        "whole_word_turns": 0
+      },
+      "estate_and_trusts:death certificate": {
+        "top_forms": {
+          "death certificate": 5,
+          "death certificates": 3
+        },
+        "turns": 8,
+        "whole_word_turns": 5
+      },
+      "estate_and_trusts:elder-law": {
+        "top_forms": {
+          "elder-law": 5
+        },
+        "turns": 5,
+        "whole_word_turns": 5
+      },
+      "estate_and_trusts:estate": {
+        "top_forms": {
+          "estate": 32
+        },
+        "turns": 32,
+        "whole_word_turns": 32
+      },
+      "estate_and_trusts:inherit": {
+        "top_forms": {
+          "inherit": 2,
+          "inheritance": 2,
+          "inherited": 9,
+          "inherits": 1
+        },
+        "turns": 14,
+        "whole_word_turns": 2
+      },
+      "estate_and_trusts:power of attorney": {
+        "top_forms": {
+          "power of attorney": 8
+        },
+        "turns": 7,
+        "whole_word_turns": 7
+      },
+      "estate_and_trusts:trust": {
+        "top_forms": {
+          "mistrust": 1,
+          "trust": 10,
+          "trusting": 2
+        },
+        "turns": 12,
+        "whole_word_turns": 9
+      },
+      "estate_and_trusts:will": {
+        "top_forms": {
+          "will": 134,
+          "wills": 1
+        },
+        "turns": 118,
+        "whole_word_turns": 118
+      },
+      "family_and_education:529": {
+        "top_forms": {
+          "529": 5,
+          "529s": 1
+        },
+        "turns": 6,
+        "whole_word_turns": 5
+      },
+      "family_and_education:childcare": {
+        "top_forms": {
+          "childcare": 29
+        },
+        "turns": 26,
+        "whole_word_turns": 26
+      },
+      "family_and_education:college": {
+        "top_forms": {
+          "college": 15
+        },
+        "turns": 14,
+        "whole_word_turns": 14
+      },
+      "family_and_education:daughter": {
+        "top_forms": {
+          "daughter": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 1
+      },
+      "family_and_education:grandchild": {
+        "top_forms": {
+          "grandchildren": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 0
+      },
+      "family_and_education:parental leave": {
+        "top_forms": {
+          "parental leave": 18
+        },
+        "turns": 17,
+        "whole_word_turns": 17
+      },
+      "family_and_education:school": {
+        "top_forms": {
+          "school": 8,
+          "schools": 4
+        },
+        "turns": 12,
+        "whole_word_turns": 8
+      },
+      "family_and_education:son": {
+        "top_forms": {
+          "comparison": 14,
+          "reason": 11,
+          "reasonable": 1
+        },
+        "turns": 23,
+        "whole_word_turns": 0
+      },
+      "family_and_education:tuition": {
+        "top_forms": {
+          "tuition": 47
+        },
+        "turns": 40,
+        "whole_word_turns": 40
+      },
+      "follow_up_commitments:by friday": {
+        "top_forms": {
+          "by friday": 2
+        },
+        "turns": 2,
+        "whole_word_turns": 2
+      },
+      "follow_up_commitments:follow-up": {
+        "top_forms": {
+          "follow-up": 20,
+          "follow-ups": 2
+        },
+        "turns": 22,
+        "whole_word_turns": 20
+      },
+      "follow_up_commitments:i'll send": {
+        "top_forms": {
+          "i'll send": 15
+        },
+        "turns": 15,
+        "whole_word_turns": 15
+      },
+      "follow_up_commitments:next call": {
+        "top_forms": {
+          "next call": 2
+        },
+        "turns": 2,
+        "whole_word_turns": 2
+      },
+      "follow_up_commitments:next step": {
+        "top_forms": {
+          "next step": 9,
+          "next steps": 2
+        },
+        "turns": 11,
+        "whole_word_turns": 9
+      },
+      "follow_up_commitments:next week": {
+        "top_forms": {
+          "next week": 3
+        },
+        "turns": 3,
+        "whole_word_turns": 3
+      },
+      "follow_up_commitments:schedule": {
+        "top_forms": {
+          "schedule": 6,
+          "scheduled": 1
+        },
+        "turns": 7,
+        "whole_word_turns": 6
+      },
+      "follow_up_commitments:send me": {
+        "top_forms": {
+          "send me": 12
+        },
+        "turns": 12,
+        "whole_word_turns": 12
+      },
+      "goals_and_planning:budget": {
+        "top_forms": {
+          "budget": 21,
+          "budgeted": 1
+        },
+        "turns": 21,
+        "whole_word_turns": 20
+      },
+      "goals_and_planning:goal": {
+        "top_forms": {
+          "goal": 2,
+          "goals": 4
+        },
+        "turns": 6,
+        "whole_word_turns": 2
+      },
+      "goals_and_planning:income need": {
+        "top_forms": {
+          "income needs": 2
+        },
+        "turns": 2,
+        "whole_word_turns": 0
+      },
+      "goals_and_planning:plan": {
+        "top_forms": {
+          "plan": 127,
+          "planning": 1,
+          "plans": 1
+        },
+        "turns": 115,
+        "whole_word_turns": 115
+      },
+      "goals_and_planning:scenario": {
+        "top_forms": {
+          "scenario": 11,
+          "scenarios": 10
+        },
+        "turns": 21,
+        "whole_word_turns": 11
+      },
+      "goals_and_planning:spending": {
+        "top_forms": {
+          "spending": 69
+        },
+        "turns": 65,
+        "whole_word_turns": 65
+      },
+      "housing_and_debt:closing": {
+        "top_forms": {
+          "closing": 40
+        },
+        "turns": 32,
+        "whole_word_turns": 32
+      },
+      "housing_and_debt:down payment": {
+        "top_forms": {
+          "down payment": 3
+        },
+        "turns": 3,
+        "whole_word_turns": 3
+      },
+      "housing_and_debt:home": {
+        "top_forms": {
+          "home": 27
+        },
+        "turns": 27,
+        "whole_word_turns": 27
+      },
+      "housing_and_debt:house": {
+        "top_forms": {
+          "house": 55,
+          "household": 4
+        },
+        "turns": 52,
+        "whole_word_turns": 48
+      },
+      "housing_and_debt:loan": {
+        "top_forms": {
+          "loan": 27,
+          "loans": 9
+        },
+        "turns": 31,
+        "whole_word_turns": 26
+      },
+      "housing_and_debt:mortgage": {
+        "top_forms": {
+          "mortgage": 34
+        },
+        "turns": 30,
+        "whole_word_turns": 30
+      },
+      "housing_and_debt:rent": {
+        "top_forms": {
+          "current": 64,
+          "different": 24,
+          "parental": 18,
+          "parents": 3
+        },
+        "turns": 111,
+        "whole_word_turns": 2
+      },
+      "housing_and_debt:student loan": {
+        "top_forms": {
+          "student loan": 2,
+          "student loans": 4
+        },
+        "turns": 5,
+        "whole_word_turns": 2
+      },
+      "insurance_and_care:aide": {
+        "top_forms": {
+          "aide": 13
+        },
+        "turns": 12,
+        "whole_word_turns": 12
+      },
+      "insurance_and_care:care cost": {
+        "top_forms": {
+          "care cost": 1,
+          "care costs": 15,
+          "childcare costs": 8,
+          "medicare costs": 3
+        },
+        "turns": 27,
+        "whole_word_turns": 1
+      },
+      "insurance_and_care:claim": {
+        "top_forms": {
+          "claim": 8,
+          "claiming": 12
+        },
+        "turns": 16,
+        "whole_word_turns": 8
+      },
+      "insurance_and_care:disability": {
+        "top_forms": {
+          "disability": 28
+        },
+        "turns": 22,
+        "whole_word_turns": 22
+      },
+      "insurance_and_care:insurance": {
+        "top_forms": {
+          "insurance": 53
+        },
+        "turns": 51,
+        "whole_word_turns": 51
+      },
+      "insurance_and_care:medicare": {
+        "top_forms": {
+          "medicare": 14
+        },
+        "turns": 13,
+        "whole_word_turns": 13
+      },
+      "insurance_and_care:premium": {
+        "top_forms": {
+          "premium": 2,
+          "premiums": 1
+        },
+        "turns": 3,
+        "whole_word_turns": 2
+      },
+      "liquidity_and_cash:buffer": {
+        "top_forms": {
+          "buffer": 4
+        },
+        "turns": 4,
+        "whole_word_turns": 4
+      },
+      "liquidity_and_cash:cash": {
+        "top_forms": {
+          "cash": 165
+        },
+        "turns": 152,
+        "whole_word_turns": 152
+      },
+      "liquidity_and_cash:cash flow": {
+        "top_forms": {
+          "cash flow": 17
+        },
+        "turns": 17,
+        "whole_word_turns": 17
+      },
+      "liquidity_and_cash:liquid": {
+        "top_forms": {
+          "illiquid": 1,
+          "liquid": 8,
+          "liquidity": 26
+        },
+        "turns": 33,
+        "whole_word_turns": 8
+      },
+      "liquidity_and_cash:months of": {
+        "top_forms": {
+          "months of": 24
+        },
+        "turns": 24,
+        "whole_word_turns": 24
+      },
+      "liquidity_and_cash:reserve": {
+        "top_forms": {
+          "preserved": 1,
+          "reserve": 95,
+          "reserved": 4,
+          "reserves": 1
+        },
+        "turns": 91,
+        "whole_word_turns": 86
+      },
+      "liquidity_and_cash:savings account": {
+        "top_forms": {
+          "savings account": 4
+        },
+        "turns": 4,
+        "whole_word_turns": 4
+      },
+      "portfolio_allocation:allocation": {
+        "top_forms": {
+          "allocation": 18
+        },
+        "turns": 18,
+        "whole_word_turns": 18
+      },
+      "portfolio_allocation:bond": {
+        "top_forms": {
+          "bond": 27,
+          "bonds": 25
+        },
+        "turns": 49,
+        "whole_word_turns": 26
+      },
+      "portfolio_allocation:bonds": {
+        "top_forms": {
+          "bonds": 25
+        },
+        "turns": 23,
+        "whole_word_turns": 23
+      },
+      "portfolio_allocation:concentrat": {
+        "top_forms": {
+          "concentrate": 2,
+          "concentrated": 1,
+          "concentration": 6
+        },
+        "turns": 9,
+        "whole_word_turns": 0
+      },
+      "portfolio_allocation:diversif": {
+        "top_forms": {
+          "diversification": 3,
+          "diversified": 2,
+          "diversifier": 2,
+          "diversifies": 3
+        },
+        "turns": 9,
+        "whole_word_turns": 0
+      },
+      "portfolio_allocation:equities": {
+        "top_forms": {
+          "equities": 84
+        },
+        "turns": 81,
+        "whole_word_turns": 81
+      },
+      "portfolio_allocation:equity": {
+        "top_forms": {
+          "equity": 62
+        },
+        "turns": 60,
+        "whole_word_turns": 60
+      },
+      "portfolio_allocation:fund": {
+        "top_forms": {
+          "fund": 77,
+          "funding": 18,
+          "funds": 10,
+          "refund": 2
+        },
+        "turns": 107,
+        "whole_word_turns": 75
+      },
+      "portfolio_allocation:index": {
+        "top_forms": {
+          "index": 22
+        },
+        "turns": 22,
+        "whole_word_turns": 22
+      },
+      "portfolio_allocation:portfolio": {
+        "top_forms": {
+          "portfolio": 146,
+          "portfolios": 2
+        },
+        "turns": 143,
+        "whole_word_turns": 141
+      },
+      "portfolio_allocation:rebalanc": {
+        "top_forms": {
+          "rebalance": 5,
+          "rebalancing": 1
+        },
+        "turns": 6,
+        "whole_word_turns": 0
+      },
+      "portfolio_allocation:risk profile": {
+        "top_forms": {
+          "risk profile": 8
+        },
+        "turns": 8,
+        "whole_word_turns": 8
+      },
+      "portfolio_allocation:shares": {
+        "top_forms": {
+          "shares": 51
+        },
+        "turns": 45,
+        "whole_word_turns": 45
+      },
+      "portfolio_allocation:stock": {
+        "top_forms": {
+          "stock": 31,
+          "stocks": 28
+        },
+        "turns": 55,
+        "whole_word_turns": 29
+      },
+      "portfolio_allocation:volatility": {
+        "top_forms": {
+          "volatility": 10
+        },
+        "turns": 10,
+        "whole_word_turns": 10
+      },
+      "retirement_planning:401": {
+        "top_forms": {
+          "401": 21,
+          "401k": 1
+        },
+        "turns": 21,
+        "whole_word_turns": 20
+      },
+      "retirement_planning:annuity": {
+        "top_forms": {
+          "annuity": 17
+        },
+        "turns": 17,
+        "whole_word_turns": 17
+      },
+      "retirement_planning:installment": {
+        "top_forms": {
+          "installment": 3,
+          "installments": 22
+        },
+        "turns": 22,
+        "whole_word_turns": 3
+      },
+      "retirement_planning:ira": {
+        "top_forms": {
+          "ira": 9,
+          "miracle": 1
+        },
+        "turns": 9,
+        "whole_word_turns": 8
+      },
+      "retirement_planning:lump sum": {
+        "top_forms": {
+          "lump sum": 12
+        },
+        "turns": 11,
+        "whole_word_turns": 11
+      },
+      "retirement_planning:pension": {
+        "top_forms": {
+          "pension": 35
+        },
+        "turns": 30,
+        "whole_word_turns": 30
+      },
+      "retirement_planning:retention bonus": {
+        "top_forms": {
+          "retention bonus": 9
+        },
+        "turns": 8,
+        "whole_word_turns": 8
+      },
+      "retirement_planning:retire": {
+        "top_forms": {
+          "retire": 13,
+          "retired": 1,
+          "retirement": 94,
+          "retires": 1
+        },
+        "turns": 103,
+        "whole_word_turns": 10
+      },
+      "retirement_planning:retirement": {
+        "top_forms": {
+          "retirement": 94
+        },
+        "turns": 93,
+        "whole_word_turns": 93
+      },
+      "retirement_planning:rollover": {
+        "top_forms": {
+          "rollover": 8
+        },
+        "turns": 8,
+        "whole_word_turns": 8
+      },
+      "retirement_planning:social security": {
+        "top_forms": {
+          "social security": 26
+        },
+        "turns": 24,
+        "whole_word_turns": 24
+      },
+      "scheduling_and_admin:portal": {
+        "top_forms": {
+          "portal": 122
+        },
+        "turns": 120,
+        "whole_word_turns": 120
+      },
+      "scheduling_and_admin:scanned": {
+        "top_forms": {
+          "scanned": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 1
+      },
+      "tax:bracket": {
+        "top_forms": {
+          "bracket": 6
+        },
+        "turns": 4,
+        "whole_word_turns": 4
+      },
+      "tax:capital gain": {
+        "top_forms": {
+          "capital gains": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 0
+      },
+      "tax:cpa": {
+        "top_forms": {
+          "cpa": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 1
+      },
+      "tax:estimated payment": {
+        "top_forms": {
+          "estimated payments": 1
+        },
+        "turns": 1,
+        "whole_word_turns": 0
+      },
+      "tax:tax": {
+        "top_forms": {
+          "tax": 125,
+          "taxable": 6,
+          "taxed": 3,
+          "taxes": 21
+        },
+        "turns": 137,
+        "whole_word_turns": 113
+      },
+      "tax:withhold": {
+        "top_forms": {
+          "withhold": 1,
+          "withholding": 4,
+          "withholds": 8
+        },
+        "turns": 13,
+        "whole_word_turns": 1
+      }
+    },
+    "note": "turns firing each cue and the surface forms matched; stems such as 'retire' legitimately match 'retirement', but 'rent'->'current' or 'son '->'reason' do not"
+  },
+  "turns_with_3plus_acts": {
+    "count": 40,
+    "examples": [
+      "EML-022",
+      "INT-001#T1",
+      "INT-020#T1",
+      "INT-023#T13",
+      "INT-026#T11",
+      "INT-030#T7"
+    ],
+    "note": "",
+    "total": 2548
+  }
+}

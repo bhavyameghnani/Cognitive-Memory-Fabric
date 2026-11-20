@@ -1,0 +1,465 @@
+[
+  {
+    "kd_id": "KD-01",
+    "title": "Boilerplate 'Sorry' triggers correction",
+    "why_wrong": "The cue 'sorry, i|that' matches apologies and scheduling courtesy; no earlier statement is corrected.",
+    "expected": "No correction act and no corrects relation (social/apology).",
+    "cases": [
+      {
+        "turn_id": "INT-023#T2",
+        "reproduced": true,
+        "system": "answers -> INT-023#T1 [rule_v1:adjacent_question]; corrects -> INT-023#T1 [rule_v1:correction_cue+shared_token]   [target text: Hi Sofia, it's lovely to see you. How have things been since January 30? Today the topic is loan comparison and parental]",
+        "text": "Yes! Loan comparison and parental leave planning, perfect. Sorry, I'm squeezing this between meetings.",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-023"
+      },
+      {
+        "turn_id": "INT-045#T2",
+        "reproduced": true,
+        "system": "answers -> INT-045#T1 [rule_v1:adjacent_question]; corrects -> INT-045#T1 [rule_v1:correction_cue+shared_token]   [target text: Hi Sofia. I'm glad we could fit this in. How are you? On February 26 we covered markets and buying the dip; today the to]",
+        "text": "Yes! Last check-in before the baby and keeping the employer match, perfect. Sorry, I'm squeezing this between meetings.",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-045"
+      },
+      {
+        "turn_id": "INT-065#T2",
+        "reproduced": true,
+        "system": "corrects -> INT-065#T1 [rule_v1:correction_cue+shared_token]   [target text: Good morning, Sofia. Take your time. We've got plenty of it. Last time, on March 16, we focused on guardianship and your]",
+        "text": "Yes! Insurance estimate and how much cover is enough, perfect. Sorry, I'm squeezing this between meetings.",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-065"
+      },
+      {
+        "turn_id": "INT-113#T2",
+        "reproduced": true,
+        "system": "answers -> INT-113#T1 [rule_v1:adjacent_question]; corrects -> INT-113#T1 [rule_v1:correction_cue+shared_token]   [target text: Hello Sofia. Before the agenda, how are you doing? Since May 19, when we focused on saving for Lucia's education, the ne]",
+        "text": "Yes! Wills and guardianship follow-up, perfect. Sorry, I'm squeezing this between meetings.",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-113"
+      },
+      {
+        "turn_id": "INT-139#T2",
+        "reproduced": true,
+        "system": "answers -> INT-139#T1 [rule_v1:adjacent_question]; corrects -> INT-139#T1 [rule_v1:correction_cue+shared_token]   [target text: Hi Sofia. I'm glad we could fit this in. How are you? We last spoke on June 17, about reworked budget. For today I have ]",
+        "text": "Yes! The house fund and the childcare budget, perfect. Sorry, I'm squeezing this between meetings.",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-139"
+      },
+      {
+        "turn_id": "INT-012#T3",
+        "reproduced": true,
+        "system": "dialogue_act=['question', 'correction']",
+        "text": "I'm sorry, that sounds unsettling. Has anything changed in your role or compensation?",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-012"
+      },
+      {
+        "turn_id": "INT-015#T3",
+        "reproduced": true,
+        "system": "dialogue_act=['question', 'correction']",
+        "text": "I'm sorry, that's a lot to carry. How much of the cost falls to you each month?",
+        "speaker": "Daniel Okafor",
+        "channel": "Calls",
+        "container_id": "INT-015"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 7
+  },
+  {
+    "kd_id": "KD-02",
+    "title": "Email corrections linked to the wrong earlier message",
+    "why_wrong": "The rule links to the nearest earlier turn sharing a long word; the text names a dated earlier email (see diagnostics: date-implied targets).",
+    "expected": "Target = the earlier message the text explicitly names by date (human to confirm).",
+    "cases": [
+      {
+        "turn_id": "EML-022",
+        "reproduced": true,
+        "system": "corrects -> EML-014 [rule_v1:correction_cue+shared_token]; replies_to -> EML-014 [in_reply_to_header]   [target text: I'll send it once I've re-read the letter.\n\nDaniel]",
+        "text": "Lucas,\n\nA correction to my February 18 email, where I wrote that you're planning to sell part of your shares. As you told me today, you said you might and you haven't decided; you're waiting for my comparison. The comparison is overdue and I owe it to you. I'll send it by Friday, April 3.\n\nDaniel",
+        "speaker": "Daniel Okafor",
+        "channel": "Email",
+        "container_id": "THR-005"
+      },
+      {
+        "turn_id": "EML-020",
+        "reproduced": true,
+        "system": "corrects -> EML-019 [rule_v1:correction_cue+shared_token]; replies_to -> EML-019 [in_reply_to_header]   [target text: Daniel, thanks. My lawyer says the redlines will take another week. Send me the cash-at-closing model as soon as you hav]",
+        "text": "Rebecca,\n\nA correction to my March 12 email, where I wrote \"following your acceptance of the offer\". That was wrong. You told me you are inclined to accept; you have not signed the letter of intent and your lawyer is still negotiating. I have corrected my record today.\n\nThe model is attached. Cash at closing is about $13.5 million after tax and fees.\n\nDaniel",
+        "speaker": "Daniel Okafor",
+        "channel": "Email",
+        "container_id": "THR-006"
+      },
+      {
+        "turn_id": "EML-039",
+        "reproduced": true,
+        "system": "corrects -> EML-033 [rule_v1:correction_cue+shared_token]; replies_to -> EML-033 [in_reply_to_header]   [target text: Priya, thanks. I'll forward the breakdown as soon as the program office sends it. Ren is still waiting to hear whether h]",
+        "text": "Dear Kenji,\n\nA correction to my May 5 email. The $14,000 is not additional tuition. As you explained on today's call, it covers the program fee, flights and housing; Ren's normal tuition is paid separately and is already in your cash flow. I've corrected the file note and dated it today. My May 5 email is unchanged in the record.\n\nBest regards,\nPriya",
+        "speaker": "Priya Nair",
+        "channel": "Email",
+        "container_id": "THR-008"
+      },
+      {
+        "turn_id": "EML-068",
+        "reproduced": true,
+        "system": "corrects -> EML-061 [rule_v1:correction_cue+shared_token]; replies_to -> EML-061 [in_reply_to_header]   [target text: Thanks. I haven't opened it properly. The escrow dispute is eating my week.\n\nRebecca]",
+        "text": "Rebecca,\n\nA correction after yesterday's call. Version 1 assumed your salary stops at closing. You told me section six of the draft keeps you in a paid consulting role for the twelve months after closing, at your current salary. Version 2 reflects that: portfolio withdrawals begin only after those twelve months, and the spending account is larger than it needs to be.\n\nMy recommendation is to resize the spending account. I haven't changed anything.\n\nDaniel",
+        "speaker": "Daniel Okafor",
+        "channel": "Email",
+        "container_id": "THR-015"
+      },
+      {
+        "turn_id": "EML-015",
+        "reproduced": true,
+        "system": "corrects -> EML-009 [rule_v1:correction_cue+shared_token]; replies_to -> EML-009 [in_reply_to_header]   [target text: Grace, please don't worry about the number yet. It comes from a summary, not from the plan's own letter. Once the letter]",
+        "text": "Dear Grace,\n\nA correction to my February 10 email. I wrote that the survivor payment looked like about half of Samuel's pension. I had read the company's summary too loosely. The form actually gives sixty percent, payable for life, plus an optional lump sum that I haven't evaluated yet. A one-page summary of the form is attached.\n\nKind regards,\nPriya",
+        "speaker": "Priya Nair",
+        "channel": "Email",
+        "container_id": "THR-003"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 5
+  },
+  {
+    "kd_id": "KD-03",
+    "title": "'No apology needed' labelled rejection",
+    "why_wrong": "'No' opening a courtesy phrase is not a rejection of anything.",
+    "expected": "social",
+    "cases": [
+      {
+        "turn_id": "CHM-0011",
+        "reproduced": true,
+        "system": "dialogue_act=['rejection']",
+        "text": "No apology needed! I hope you're getting some sleep. We can talk about house timing whenever you're ready. Nothing is due.",
+        "speaker": "Elena Rossi",
+        "channel": "Chat",
+        "container_id": "CHT-003"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-04",
+    "title": "Discourse openers labelled agreement",
+    "why_wrong": "'Good morning', 'Good question', 'Right now' open a turn; none agrees with the previous turn.",
+    "expected": "No agreement act (INT-008#T2 'Sure, but I reserve the right to disagree' is at most hedged agreement).",
+    "cases": [
+      {
+        "turn_id": "INT-001#T1",
+        "reproduced": true,
+        "system": "dialogue_act=['question', 'proposal', 'agreement']",
+        "text": "Good morning, Kenji. I've put the numbers for today on one page. Shall we begin? Since this is the start of our review cycle, I'd like to take stock of where things are and what you want from this year. The agenda I have is retirement timing and income needs.",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-001"
+      },
+      {
+        "turn_id": "INT-003#T11",
+        "reproduced": true,
+        "system": "dialogue_act=['agreement']",
+        "text": "Good question. They adjust with inflation, which matters over a long retirement.",
+        "speaker": "Elena Rossi",
+        "channel": "Calls",
+        "container_id": "INT-003"
+      },
+      {
+        "turn_id": "INT-003#T7",
+        "reproduced": true,
+        "system": "dialogue_act=['question', 'agreement']",
+        "text": "Right now about thirty-five percent of the portfolio is in equities. Is that still comfortable?",
+        "speaker": "Elena Rossi",
+        "channel": "Calls",
+        "container_id": "INT-003"
+      },
+      {
+        "turn_id": "INT-008#T2",
+        "reproduced": true,
+        "system": "dialogue_act=['agreement']",
+        "text": "Sure, but I reserve the right to disagree with half of it.",
+        "speaker": "Lucas Moreau",
+        "channel": "Meetings",
+        "container_id": "INT-008"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 4
+  },
+  {
+    "kd_id": "KD-05",
+    "title": "'I'll have to think about that' labelled commitment",
+    "why_wrong": "It is a deferral, not an undertaking to do a specific thing.",
+    "expected": "deferral",
+    "cases": [
+      {
+        "turn_id": "INT-033#T12",
+        "reproduced": true,
+        "system": "dialogue_act=['commitment']",
+        "text": "I'll have to think about that.",
+        "speaker": "Peg Sullivan",
+        "channel": "Calls",
+        "container_id": "INT-033"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-06",
+    "title": "'The decision is yours' labelled decision",
+    "why_wrong": "It hands the decision to the client; nobody has decided.",
+    "expected": "No decision (advisor declines to decide).",
+    "cases": [
+      {
+        "turn_id": "EML-017",
+        "reproduced": true,
+        "system": "dialogue_act=['decision', 'commitment']",
+        "text": "Grace, good question, and I would rather answer it in person. The survivor pension is one input. I haven't recommended for or against an annuity, and the decision is yours. We'll talk before you decide.\n\nPriya",
+        "speaker": "Priya Nair",
+        "channel": "Email",
+        "container_id": "THR-003"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-07",
+    "title": "Advisor recaps read as client decisions",
+    "why_wrong": "The speaker is the advisor reporting what the client decided; the label has no maker or status. EML-001's recap was later corrected by EML-028 as overstating what the client said.",
+    "expected": "decision_status = reported_by_other; the decision-maker and confirmation need independent evidence (the client's own turn).",
+    "cases": [
+      {
+        "turn_id": "INT-010#T17",
+        "reproduced": true,
+        "system": "dialogue_act=['decision', 'commitment']",
+        "text": "Nothing from you today. If I think a trade is warranted, I'll bring it to you first, and nothing happens without your agreement. Let me record the outcomes. You've decided to proceed with the agreed portfolio review. The working plan I'm recording is a growth-oriented portfolio at about 75 percent equities. From your side, you'll send over the plan summary for your Northgate deferred compensation account. I'll book us for Friday, January 16, if that suits you.",
+        "speaker": "Priya Nair",
+        "channel": "Calls",
+        "container_id": "INT-010"
+      },
+      {
+        "turn_id": "INT-022#T23",
+        "reproduced": true,
+        "system": "dialogue_act=['decision']",
+        "text": "To summarise today in order: You've decided to keep the mortgage as it is and hold the cash as a cushion, rather than pay the mortgage down early. The working plan I'm recording is a working assumption of six months of base salary as severance for liquidity planning, to be replaced if the real terms become known. I'll book us for Monday, February 9, if that suits you. I'll put a written summary in the portal today.",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-022"
+      },
+      {
+        "turn_id": "EML-001",
+        "reproduced": true,
+        "system": "dialogue_act=['decision', 'suggestion']",
+        "text": "Hi Sofia,\n\nFollowing Friday's call about buying a home and where the down payment should sit. You've decided to buy within two years, so I'd suggest we build a separate house fund and keep it in cash or short-term holdings rather than in equities. Your 401(k) and the employer match stay as they are.\n\nWarm regards,\nElena",
+        "speaker": "Elena Rossi",
+        "channel": "Email",
+        "container_id": "THR-001"
+      },
+      {
+        "turn_id": "EML-024",
+        "reproduced": true,
+        "system": "dialogue_act=['decision']",
+        "text": "Dear Peg,\n\nFollowing our call yesterday, I'm writing it down in plain words so you have it.\n\n1. You have decided not to lend Brian $80,000, because of the cost of Frank's care.\n2. You will call Brian yourself this weekend.\n3. You'd also like to help Brian with a few hundred dollars toward his equipment.\n\nKind regards,\nElena",
+        "speaker": "Elena Rossi",
+        "channel": "Email",
+        "container_id": "THR-007"
+      },
+      {
+        "turn_id": "EML-030",
+        "reproduced": true,
+        "system": "dialogue_act=['decision']",
+        "text": "Dear Grace,\n\nFollowing today's call: you have decided to keep the mortgage in place for now. The insurance payout stays in the money-market and short-term Treasury holdings while we plan.\n\nKind regards,\nPriya",
+        "speaker": "Priya Nair",
+        "channel": "Email",
+        "container_id": "THR-004"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 5
+  },
+  {
+    "kd_id": "KD-08",
+    "title": "Modal 'will'/'may' and in-word cues trigger topic or temporal labels",
+    "why_wrong": "'will ' (modal) fires estate_and_trusts; 'May' matches the modal 'may'; 'rent' matches 'current/different'; 'son ' matches 'reason/comparison'.",
+    "expected": "No such topic / no date reference in these turns.",
+    "cases": [
+      {
+        "turn_id": "INT-034#T11",
+        "reproduced": true,
+        "system": "topic cue scores={'portfolio_allocation': 2, 'estate_and_trusts': 1, 'tax': 1}; segment topic=portfolio_allocation",
+        "text": "Not today. I'm comfortable with where it sits, and any proposal will come to you in writing before I trade. So, to be clear: You're still weighing selling some Moreau Labs founder shares in the secondary offer, which I've recorded as an idea and not an instruction. From my side, I'll compare selling none, half or all of the offered founder shares, including the tax. Does Monday, February 23 work for the next one?",
+        "speaker": "Daniel Okafor",
+        "channel": "Meetings",
+        "container_id": "INT-034"
+      },
+      {
+        "turn_id": "EML-051",
+        "reproduced": true,
+        "system": "temporal_ref=['today', 'may']",
+        "text": "Dear Peg,\n\nFollowing today's call: you have decided against Maplewood Commons for now, because Frank wants to stay at home. You may revisit it if his needs change. No deposit will be paid.\n\nKind regards,\nElena",
+        "speaker": "Elena Rossi",
+        "channel": "Email",
+        "container_id": "THR-011"
+      },
+      {
+        "turn_id": "INT-141#T17",
+        "reproduced": true,
+        "system": "topic cue scores={'retirement_planning': 3, 'estate_and_trusts': 3, 'housing_and_debt': 1, 'follow_up_commitments': 1, 'scheduling_and_admin': 1}; segment topic=retirement_planning",
+        "text": "My notes from today read as follows. No decisions were needed today. We went through follow-ups on forms and estate documents and everything is on track. From your side, you'll get Mariko's Social Security statement to complete the survivor analysis and send over your current will and the beneficiary designations on your retirement accounts. Let's pencil in Thursday, June 25 for our next meeting. I'll put a written summary in the portal today.",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-141"
+      },
+      {
+        "turn_id": "INT-026#T12",
+        "reproduced": true,
+        "system": "topic cue scores={'family_and_education': 1}; segment topic=family_and_education",
+        "text": "It doesn't bother me much. Is there any reason it should?",
+        "speaker": "Sofia Alvarez",
+        "channel": "Meetings",
+        "container_id": "INT-026"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 4
+  },
+  {
+    "kd_id": "KD-09",
+    "title": "'portal' alone triggers scheduling_and_admin",
+    "why_wrong": "A document upload portal is not scheduling or administration of the engagement.",
+    "expected": "Topic judged by the content of the turn (human).",
+    "cases": [
+      {
+        "turn_id": "INT-107#T11",
+        "reproduced": true,
+        "system": "topic cue scores={'tax': 2, 'family_and_education': 1, 'scheduling_and_admin': 1}; segment topic=tax",
+        "text": "For the record, here is what we established. We agreed to hold off on the deferred compensation payout election until the tax comparison is ready. From your side, you'll ask Hannah Park to estimate the tax on the three payout options. Let's pencil in Friday, May 29 for our next meeting. I'll put a written summary in the portal today.",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-107"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-10",
+    "title": "Questions linked to answers across segment boundaries",
+    "why_wrong": "The answers relation ignores segmentation, and segmentation splits question from answer.",
+    "expected": "A question and its answer belong to one exchange (human to confirm).",
+    "cases": [
+      {
+        "turn_id": "INT-003#T11",
+        "reproduced": true,
+        "system": "answers -> INT-003#T10; segments SEG-INT-003-04 vs SEG-INT-003-03",
+        "text": "Good question. They adjust with inflation, which matters over a long retirement.",
+        "speaker": "Elena Rossi",
+        "channel": "Calls",
+        "container_id": "INT-003"
+      },
+      {
+        "turn_id": "INT-003#T13",
+        "reproduced": true,
+        "system": "answers -> INT-003#T12; segments SEG-INT-003-05 vs SEG-INT-003-04",
+        "text": "Nothing from you today. If I think a trade is warranted, I'll bring it to you first, and nothing happens without your agreement. Here's what I'm taking away. Please stop me if I've got anything wrong. The working plan I'm recording is preserving capital while covering the gap between about six thousand three hundred in pension and Social Security and spending of about eight thousand nine hundred a month. The working plan I'm recording is keeping equities at about 35 percent of the portfolio. Let's pencil in Monday, January 12 for our next meeting.",
+        "speaker": "Elena Rossi",
+        "channel": "Calls",
+        "container_id": "INT-003"
+      },
+      {
+        "turn_id": "INT-009#T15",
+        "reproduced": true,
+        "system": "answers -> INT-009#T14; segments SEG-INT-009-05 vs SEG-INT-009-04",
+        "text": "Not today. I'm comfortable with where it sits, and any proposal will come to you in writing before I trade. I'd like to make sure we're on the same page. The working plan I'm recording is treating the survivor amount of Frank's pension as unconfirmed, with you believing it is about half. I'll book us for Monday, January 26, if that suits you. I'll put a written summary in the portal today.",
+        "speaker": "Elena Rossi",
+        "channel": "Calls",
+        "container_id": "INT-009"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 3
+  },
+  {
+    "kd_id": "KD-11",
+    "title": "Amount regex truncates '$1.46 million' to '$1.46 m'",
+    "why_wrong": "Regex alternation matches 'm' before 'million', so the extracted amount loses its unit.",
+    "expected": "The full amount including 'million' (extraction accuracy).",
+    "cases": [
+      {
+        "turn_id": "EML-012",
+        "reproduced": true,
+        "system": "amount_ref=['$1.15 m']",
+        "text": "Lucas,\n\nFollowing up on yesterday's call.\n\n- The liquid portfolio is about $1.15 million. Your startup stake is a large part of your net worth but can't easily be sold.\n- You're planning to sell part of your Moreau Labs shares in the tender, so I'll compare three cases (none, half, or all of the offered shares) and check the tax treatment with your accountant.\n\nThe deadline is in the offer letter; I'll send you the date.\n\nDaniel",
+        "speaker": "Daniel Okafor",
+        "channel": "Email",
+        "container_id": "THR-005"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-12",
+    "title": "Question label from an embedded greeting question",
+    "why_wrong": "'Shall we begin?' inside a long agenda opener yields question + proposal + agreement.",
+    "expected": "social/agenda opening",
+    "cases": [
+      {
+        "turn_id": "INT-001#T1",
+        "reproduced": true,
+        "system": "dialogue_act=['question', 'proposal', 'agreement']",
+        "text": "Good morning, Kenji. I've put the numbers for today on one page. Shall we begin? Since this is the start of our review cycle, I'd like to take stock of where things are and what you want from this year. The agenda I have is retirement timing and income needs.",
+        "speaker": "Priya Nair",
+        "channel": "Meetings",
+        "container_id": "INT-001"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 1
+  },
+  {
+    "kd_id": "KD-13",
+    "title": "Acts the rules cannot see",
+    "why_wrong": "No request act; a question without '?' is missed; 'Nothing is decided' is not marked as deferral.",
+    "expected": "question / request / deferral respectively.",
+    "cases": [
+      {
+        "turn_id": "CHM-0056",
+        "reproduced": true,
+        "system": "dialogue_act=['information'] (no 'question')",
+        "text": "Did I say the aide comes five days now since Frank fell",
+        "speaker": "Peg Sullivan",
+        "channel": "Chat",
+        "container_id": "CHT-016"
+      },
+      {
+        "turn_id": "CHM-0076",
+        "reproduced": true,
+        "system": "dialogue_act=['information'] (no 'question')",
+        "text": "Fine. Please send me the signed copy once it's in.",
+        "speaker": "Priya Nair",
+        "channel": "Chat",
+        "container_id": "CHT-021"
+      },
+      {
+        "turn_id": "CHM-0008",
+        "reproduced": true,
+        "system": "dialogue_act=['agreement'] (no 'deferral_unresolved')",
+        "text": "Understood. Nothing is decided.",
+        "speaker": "Daniel Okafor",
+        "channel": "Chat",
+        "container_id": "CHT-002"
+      }
+    ],
+    "reproduced_all": true,
+    "reproduced_n": 3
+  }
+]

@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 from harness.claim_extraction import discriminators, extract_claims, stem
 from schemas.claims import ClaimVerification, Modality, Outcome, Period, PeriodKind, Polarity, Reason, StructuredClaim
-from schemas.report import EvidenceItem
+from schemas.report import EvidenceItem, is_source_turn
 
 # strength of assertion.  HYPOTHETICAL / EXPLORATORY / UNCERTAIN are one tier on purpose: "we discussed retiring at 60" is faithfully supported by "what if I retired at 60?".
 RANK = {Modality.HYPOTHETICAL: 1, Modality.EXPLORATORY: 1, Modality.UNCERTAIN: 1, Modality.RECOMMENDED: 2, Modality.REPORTED: 3, Modality.ESTIMATED: 3, Modality.CONFIRMED: 4, None: 4}
@@ -117,7 +117,7 @@ def _leaf_unit(terms: list[str]) -> Optional[str]:
 
 # ------------------------------------------------------------------------------------------------------------------ building the evidence side
 def build_bundle(item: EvidenceItem, *, conv: Any, tools: Any, names: dict[str, str]) -> Bundle:
-    if item.tool_execution_id:
+    if item.tool_execution_id and not is_source_turn(item):      # a retrieved source turn is checked against the conversation record itself (below)
         return _tool_bundle(item, tools)
     b = Bundle(item=item, client_id=item.client_id, source_id=item.memory_id or (f"{item.interaction_id}#{item.turn_index}" if item.interaction_id else item.ref))
     if item.interaction_id is None or item.turn_index is None or not item.excerpt:
@@ -134,6 +134,8 @@ def build_bundle(item: EvidenceItem, *, conv: Any, tools: Any, names: dict[str, 
         b.problems.append((Reason.QUOTE_NOT_IN_SOURCE, "the quoted excerpt is not text of the original source"))
         return b
     b.quote = item.excerpt
+    if is_source_turn(item):                                         # the turn number is a field of the verified source record, so a statement may cite it ("turn 13")
+        b.rendered_values.append((Decimal(item.turn_index), None))
     qfacts = extract_claims(item.excerpt, names, handle=item.ref, source_id=b.source_id)
     status_hist = item.status in ("superseded", "expired") or bool(item.valid_to)
     cert_mod = CERTAINTY_MODALITY.get((item.certainty or "").lower())

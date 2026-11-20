@@ -159,7 +159,8 @@ class Loop(unittest.TestCase):
     def test_stop_after_two_idle_iterations(self):
         st, _, _ = run([decide(call("get_client_profile", client_id=K)), decide(call("get_client_profile", client_id=K)), decide(call("get_client_profile", client_id=K)),
                         decide(call("get_client_goals", client_id=K))])
-        self.assertEqual((st.stop_reason, st.iterations, st.completion_status), ("no_new_valid_call", 3, "partial"))
+        # P7: a turn made only of duplicates of SUCCESSFUL calls ends the loop at once (it used to wait for a second idle turn)
+        self.assertEqual((st.stop_reason, st.iterations, st.completion_status), ("no_new_valid_call", 2, "complete"))
         self.assertEqual(len(st.successes()), 1)
 
     def test_empty_call_tools_is_retried(self):
@@ -176,6 +177,45 @@ class Loop(unittest.TestCase):
         st, _, llm = run([finish()], p=plan(clients=()))
         self.assertEqual((st.completion_status, st.stop_reason, len(llm.calls)), ("failed", "no_client_in_plan", 0))
         self.assertTrue(st.missing_information)
+
+
+class DuplicateOnlyStop(unittest.TestCase):
+    def test_duplicate_only_turn_after_successes_stops_immediately(self):
+        st, _, llm = run([decide(call("get_client_profile", client_id=K), call("get_client_goals", client_id=K)),
+                          decide(call("get_client_profile", client_id=K), call("get_client_goals", client_id=K)), decide(call("get_client_liabilities", client_id=K))])
+        self.assertEqual((st.stop_reason, st.iterations, st.completion_status), ("no_new_valid_call", 2, "complete"))
+        self.assertEqual(len(llm.calls), 2)                                   # no third model call
+        self.assertEqual([e.status for e in st.executions], ["success", "success", "duplicate", "duplicate"])
+
+    def test_duplicate_only_stop_keeps_reported_gaps(self):
+        st, _, _ = run([decide(call("get_client_profile", client_id=K)), decide(call("get_client_profile", client_id=K), missing=["no projection tool"])])
+        self.assertEqual((st.stop_reason, st.completion_status, st.missing_information), ("no_new_valid_call", "partial", ["no projection tool"]))
+
+    def test_mixed_duplicate_and_rejected_turn_does_not_stop_early(self):
+        st, _, _ = run([decide(call("get_client_profile", client_id=K)), decide(call("get_client_profile", client_id=K), call("get_client_goals", client_id=R)),
+                        decide(call("get_client_goals", client_id=K)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["success", "duplicate", "rejected", "success"])
+        self.assertEqual(st.stop_reason, "model_finished")
+
+    def test_failed_calls_are_not_duplicates_and_keep_the_retry_path(self):
+        st, _, _ = run([decide(call("get_client_portfolio", client_id=K, as_of_date="2026-07-31")),
+                        decide(call("get_client_portfolio", client_id=K, as_of_date="2026-07-31")),            # identical failed call: rejected, not "duplicate"
+                        decide(call("get_client_portfolio", client_id=K, as_of_date="2026-06-30")), finish()])
+        self.assertEqual([e.status for e in st.executions], ["error", "rejected", "success"])
+        self.assertEqual(st.stop_reason, "model_finished")
+
+    def test_invalid_arguments_and_unknown_tools_keep_the_retry_path(self):
+        st, _, _ = run([decide(call("get_client_profile", client_id=K)), decide(call("run_sql", query="x"), call("calculate_asset_allocation", client_id=K, group_by="colour")),
+                        decide(call("get_client_goals", client_id=K)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["success", "rejected", "rejected", "success"])
+
+    def test_duplicate_only_turn_with_no_earlier_success_does_not_trigger_the_stop(self):
+        class Boom(Toolbox):
+            async def call(self, name, arguments):
+                raise RuntimeError("down")
+        st, _, _ = run([decide(call("get_client_profile", client_id=K)), decide(call("get_client_profile", client_id=K)), finish()], toolbox=Boom())
+        self.assertNotEqual(st.completion_status, "complete")
+        self.assertEqual(len(st.successes()), 0)
 
 
 class Fallback(unittest.TestCase):
@@ -301,6 +341,105 @@ class Scenarios(unittest.TestCase):
         dims = {e.arguments["dimension"] for e in st.executions if e.tool == "calculate_portfolio_concentration"}
         self.assertEqual(dims, {"issuer", "sector", "instrument"})
         self.assertTrue(all(e.arguments["client_id"] == R for e in st.executions))
+
+
+class _EvidenceToolbox(Toolbox):
+    """Records every call that reaches the toolbox. get_source_evidence is simulated (no DB ids needed): the mixed mode fails like the real service
+    ('no turn 0 of 0'), valid single-mode calls succeed with a real envelope borrowed from get_client_profile; 'HANG' times out."""
+    def __init__(self):
+        super().__init__()
+        self.seen = []
+
+    async def call(self, name, arguments):
+        self.seen.append((name, dict(arguments)))
+        if name != "get_source_evidence":
+            return await super().call(name, arguments)
+        a = arguments
+        if a.get("entity_id") == "HANG":
+            await asyncio.sleep(5)
+        if ("interaction_id" in a or "turn_index" in a) and ("entity_type" in a or "entity_id" in a):
+            from agents.tool_selector.toolbox import ToolCallError
+            raise ToolCallError(f"no turn {a.get('turn_index')} of {a.get('interaction_id')} for {a['client_id']}")
+        return await super().call("get_client_profile", {"client_id": a["client_id"]})
+
+
+MIXED = dict(client_id=R, entity_type="goal", entity_id="GOAL-1", interaction_id="0", turn_index=0)
+ENTITY = dict(client_id=R, entity_type="goal", entity_id="GOAL-1")
+CONVO = dict(client_id=R, interaction_id="INT-1", turn_index=2)
+
+
+class SourceEvidenceModes(unittest.TestCase):
+    P = plan(clients=(R,))
+
+    def go(self, script, cfg=None, tb=None):
+        tb = tb or _EvidenceToolbox()
+        st, tr, llm = run(script, p=self.P, toolbox=tb, cfg=cfg)
+        return st, tb, llm
+
+    def test_entity_mode_accepted(self):
+        st, tb, _ = self.go([decide(call("get_source_evidence", **ENTITY)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["success"])
+        self.assertEqual(len(tb.seen), 1)
+
+    def test_conversation_mode_accepted(self):
+        st, tb, _ = self.go([decide(call("get_source_evidence", **CONVO)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["success"])
+        self.assertEqual(len(tb.seen), 1)
+
+    def test_prompt_explains_exclusive_modes(self):
+        from agents.tool_selector.prompts import SELECTOR
+        for part in ("mutually exclusive", "entity_type, entity_id", "Omit interaction_id and turn_index", "interaction_id, turn_index",
+                     "Omit entity_type and entity_id", "Never invent", "Never repeat a failed call unchanged", "missing_information"):
+            self.assertIn(part, SELECTOR)
+        self.assertIn("entity_type", SELECTOR.split("Entity evidence")[1].split("Conversation evidence")[0])
+        _, _, llm = self.go([finish()])
+        self.assertIn("mutually exclusive", llm.calls[0]["system"])
+
+    def test_identical_failed_call_not_executed_again(self):
+        st, tb, llm = self.go([decide(call("get_source_evidence", **MIXED)), decide(call("get_source_evidence", **MIXED)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["error", "rejected"])
+        self.assertIn("failed", st.executions[1].error)
+        self.assertIn("correct the arguments or choose another tool", st.executions[1].error)
+        self.assertEqual(len(tb.seen), 1)                      # the repeat never reached the toolbox
+        self.assertIn("identical arguments and failed", llm.calls[2]["user"])  # the model is told why
+
+    def test_batch_duplicate_of_failing_call_runs_once_then_is_rejected(self):
+        st, tb, _ = self.go([decide(call("get_source_evidence", **MIXED), call("get_source_evidence", **MIXED)),
+                             decide(call("get_source_evidence", **MIXED)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["error", "duplicate", "rejected"])
+        self.assertEqual(len(tb.seen), 1)
+
+    def test_corrected_call_after_failure_executes(self):
+        st, tb, _ = self.go([decide(call("get_source_evidence", **MIXED)), decide(call("get_source_evidence", **ENTITY)), decide(call("get_source_evidence", **CONVO)), finish()])
+        self.assertEqual([e.status for e in st.executions], ["error", "success", "success"])
+        self.assertEqual(len(tb.seen), 3)
+        self.assertEqual(st.completion_status, "complete")
+
+    def test_identical_timeout_call_not_executed_repeatedly(self):
+        hang = dict(client_id=R, entity_type="goal", entity_id="HANG")
+        st, tb, _ = self.go([decide(call("get_source_evidence", **hang)), decide(call("get_source_evidence", **hang)), finish()], cfg=SelectorConfig(call_timeout_s=0.05))
+        self.assertEqual([e.status for e in st.executions], ["timeout", "rejected"])
+        self.assertEqual(len(tb.seen), 1)
+
+    def test_rejected_calls_are_not_recorded_as_failures(self):
+        from agents.tool_selector.validator import CallValidator
+        from schemas.tools import PlannedCall
+        cat = [{"name": "get_source_evidence", "description": "", "input_schema": {"type": "object", "properties": {"client_id": {"type": "string"}, "entity_type": {"type": "string"}},
+                                                                                   "required": ["client_id"]}}]
+        v = CallValidator(cat, [K])
+        bad = PlannedCall(tool="get_source_evidence", arguments={"client_id": R})   # client not in plan
+        self.assertEqual(v.validate(bad, set())[0], "rejected")
+        self.assertEqual(v.failed, set())
+        v.record_failure("get_source_evidence", {"client_id": K, "entity_type": ""})   # cleaned arguments produce the same key
+        self.assertEqual(v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K}), set())[0], "rejected")
+        self.assertEqual(v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K, "entity_type": "goal"}), set())[0], "ok")
+
+    def test_success_duplicate_and_scope_checks_unchanged(self):
+        st, tb, _ = self.go([decide(call("get_source_evidence", **ENTITY)), decide(call("get_source_evidence", **ENTITY),
+                                                                                  call("get_source_evidence", **{**ENTITY, "client_id": K})), finish()])
+        self.assertEqual([e.status for e in st.executions], ["success", "duplicate", "rejected"])
+        self.assertIn("not in the plan", st.executions[2].error)
+        self.assertEqual(len(tb.seen), 1)
 
 
 if __name__ == "__main__":

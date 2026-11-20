@@ -111,5 +111,39 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual(ExecutionPlan.model_validate_json(p.model_dump_json()), p)
 
 
+class SourceTurnRouting(unittest.TestCase):
+    REQ = "For Rebecca, retrieve the exact source turns INT-052 turn 13 and INT-058 turn 5 about the business sale"
+
+    def test_explicit_source_turns_reach_the_tool_selector(self):
+        from orchestration.pipeline import plan_order
+        p, _ = plan_with(self.REQ, out(memory_topics=["business_sale"]))     # the model routed it to memory only, tools: []
+        self.assertIn("get_source_evidence", p.required_tools)
+        self.assertEqual(plan_order(p), ["memory_orchestrator", "tool_selector"])
+        self.assertEqual(p.subtasks[-1].agent, "report_agent")
+        self.assertTrue(any("source" in n for n in p.planner_notes))
+
+    def test_model_chosen_routing_is_kept_when_already_correct(self):
+        subs = [{"id": "T1", "description": "fetch the turns", "agent": "tool_selector"}, {"id": "T2", "description": "write the report", "agent": "report_agent", "depends_on": ["T1"]}]
+        p, _ = plan_with(self.REQ, out(required_tools=["get_source_evidence"], subtasks=subs))
+        self.assertEqual(p.required_tools, ["get_source_evidence"])
+        self.assertEqual([s.agent for s in p.subtasks], ["tool_selector", "report_agent"])
+
+    def test_memory_only_retrieval_is_not_forced_through_tools(self):
+        from orchestration.pipeline import plan_order
+        for text in ("What did Rebecca say about selling the company?", "Rebecca asked about INT-052 in general terms", "What was discussed on turn 3?"):
+            p, _ = plan_with(text, out())
+            self.assertEqual(p.required_tools, [], text)
+            self.assertEqual(plan_order(p), ["memory_orchestrator"], text)
+
+    def test_no_tool_added_when_the_catalogue_lacks_it(self):
+        p, _ = plan_with(self.REQ, out(), tools=[t for t in TOOLS if t != "get_source_evidence"])
+        self.assertNotIn("get_source_evidence", p.required_tools)
+
+    def test_planner_prompt_distinguishes_memory_from_source_turns(self):
+        from llm.prompts import PLANNER
+        self.assertIn("never raw conversation turns", PLANNER)
+        self.assertIn("get_source_evidence", PLANNER)
+
+
 if __name__ == "__main__":
     unittest.main()

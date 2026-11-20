@@ -71,6 +71,23 @@ def _mem_item(kind: str, m: MemoryItem, cls: str, conflicted: Optional[dict] = N
                         valid_to=m.valid_to, client_id=m.client_id, memory_type=m.memory_type, event_date=m.event_date)
 
 
+def _source_turns(env) -> list[dict]:
+    """The turns of a conversation-mode get_source_evidence result (one turn, or several turns of one meeting), each only when it carries everything needed to cite it (nothing is filled in)."""
+    if env.tool != "get_source_evidence" or not isinstance(env.data, dict) or not env.client_id:
+        return []
+    raw = [env.data["turn"]] if isinstance(env.data.get("turn"), dict) else [t for t in (env.data.get("turns") or [])]
+    return [t for t in raw if isinstance(t, dict) and t.get("interaction_id") and isinstance(t.get("turn_index"), int) and t.get("speaker") and t.get("text")]
+
+
+def _turn_item(ex, env, t: dict) -> EvidenceItem:
+    prov = f"{env.provenance.source}{', synthetic' if env.provenance.synthetic else ''}"
+    head = (f"Source conversation turn {t['interaction_id']} turn {t['turn_index']}, recorded speaker {t['speaker']} ({prov} record; "
+            f"shows what the turn contains, not that it is true): ")
+    return EvidenceItem(ref="", source_class="conversation_evidence", description=trunc(head + str(t["text"]), STORE_CHARS), interaction_id=str(t["interaction_id"]),
+                        turn_index=t["turn_index"], excerpt=str(t["text"]), speaker=str(t["speaker"]), provenance=prov, event_date=env.as_of, tool_execution_id=ex.id,
+                        synthetic=bool(env.provenance.synthetic), client_id=env.client_id)
+
+
 def build_evidence(plan: ExecutionPlan, memory: dict[str, MemoryContext], tools: ToolSelectorState) -> tuple[list[EvidenceItem], dict]:
     """Order: current memory -> tool results -> superseded history -> recent events. Returns (items with handles, removal record)."""
     allowed = set(plan.client_ids) or set(memory)
@@ -123,6 +140,12 @@ def build_evidence(plan: ExecutionPlan, memory: dict[str, MemoryContext], tools:
         env = ex.result
         if env.client_id and env.client_id not in allowed:
             removed["ownership_removed"].append(f"{ex.id} (client {env.client_id})")
+            continue
+        if env.tool == "get_source_evidence" and isinstance(env.data, dict) and "search" in env.data:
+            continue                                           # a search lists WHERE a phrase occurs; it is a discovery aid, not evidence of anything (the retrieved turns are the evidence)
+        turns = _source_turns(env)
+        if turns:                                              # conversation-mode get_source_evidence: source records, not operational values
+            tool_items.extend(_turn_item(ex, env, t) for t in turns)
             continue
         calc = env.tool.startswith(("calculate_", "compare_"))
         data = trunc(json.dumps(env.data, default=str, ensure_ascii=False), 380)

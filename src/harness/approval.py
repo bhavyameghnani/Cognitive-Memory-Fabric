@@ -38,6 +38,24 @@ class ApprovalRequired(PermissionError):
 
 SUITABILITY_Q = re.compile(r"\b(should|recommend\w*|suitab\w*|appropriate for|advis(?:e|able)|rebalanc\w*|switch|sell|buy|invest in|can (?:he|she|they|the client) afford|is it (?:safe|wise))\b", re.I)
 
+# A PROHIBITION of advice ("do not make investment recommendations, suitability judgments or forecasts", "without any recommendation") is not a request for advice.  Only this closed shape is
+# removed before the keyword test: a negator, an optional giving-verb, then a list made ONLY of advice nouns (with their adjectives).  "Don't hesitate to recommend a sale", "do not
+# recommend X" (a verb), "should I sell" and any sentence that merely contains a negation all keep their trigger words and still need approval.
+_ADVICE_ITEM = (r"(?:(?:investment|trading|trade|transaction|suitability|financial|portfolio|tax|legal|specific|personal)\s+)*"
+                r"(?:recommendations?|advice|judg(?:e)?ments?|decisions?|conclusions?|forecasts?|predictions?|projections?|opinions?|suggestions?|assessments?)")
+_ADVICE_LIST = rf"{_ADVICE_ITEM}(?:(?:\s*,\s*(?:and\s+|or\s+)?|\s+(?:and|or)\s+){_ADVICE_ITEM})*"
+_PROHIBITION = re.compile(rf"\b(?:(?:please\s+)?(?:do not|don't|never|must not|mustn't)\s+(?:make|give|provide|offer|include|draw|reach|render|issue|state|express|add)\s+(?:any\s+)?"
+                          rf"|without\s+(?:(?:making|giving|providing|including|offering)\s+)?(?:any\s+)?|no\s+){_ADVICE_LIST}", re.I)
+
+
+def without_prohibitions(text: str) -> str:
+    return _PROHIBITION.sub(" ", text or "")
+
+
+def asks_for_advice(request_text: str) -> bool:
+    """Does the REQUEST ask for an advice-type answer?  Keyword test on the request with explicit prohibitions of advice removed."""
+    return bool(SUITABILITY_Q.search(without_prohibitions(request_text)))
+
 
 @dataclass(frozen=True)
 class ApprovalProposal:
@@ -70,7 +88,7 @@ class ApprovalPolicy:
 
     def classify_report(self, plan, request_text: str) -> list:
         out = []
-        if getattr(plan, "task_type", "") == "forecast_feasibility" or SUITABILITY_Q.search(request_text or ""):
+        if getattr(plan, "task_type", "") == "forecast_feasibility" or asks_for_advice(request_text):
             out.append(RiskCategory.SUITABILITY_CONCLUSION)
         return [c for c in out if self.needs(c)]
 

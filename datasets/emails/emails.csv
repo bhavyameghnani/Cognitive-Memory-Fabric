@@ -1,0 +1,418 @@
+email_id,thread_id,message_id,client_id,advisor_id,message_seq,timestamp,sender_id,sender_name,sender_email,to_ids,to_emails,cc_ids,cc_emails,subject,body,in_reply_to,references,attachment_refs,channel,source_platform,source_type,consent_status,data_classification,includes_third_party
+EML-001,THR-001,<EML-001.THR-001@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,1,2026-01-26T11:00:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,Buying a home - summary of Friday's call,"Hi Sofia,
+
+Following Friday's call about buying a home and where the down payment should sit. You've decided to buy within two years, so I'd suggest we build a separate house fund and keep it in cash or short-term holdings rather than in equities. Your 401(k) and the employer match stay as they are.
+
+Warm regards,
+Elena",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-002,THR-001,<EML-002.THR-001@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,2,2026-01-26T20:30:00,CLIENT-003,Sofia Alvarez,sofia.alvarez@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Buying a home - summary of Friday's call,"Thanks Elena!! Reading on my phone, will go through it properly this weekend. Quick question: it's fine to leave the 401k exactly as is in the meantime?
+
+Sofia",<EML-001.THR-001@exchange.synthetic.example>,<EML-001.THR-001@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-003,THR-001,<EML-003.THR-001@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,3,2026-01-27T08:45:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,RE: Buying a home - summary of Friday's call,"Yes, the 401(k) and the match stay exactly as they are.
+
+Elena",<EML-002.THR-001@exchange.synthetic.example>,<EML-001.THR-001@exchange.synthetic.example> <EML-002.THR-001@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-004,THR-002,<EML-004.THR-002@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,1,2026-02-10T09:05:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,,,Early retirement scenarios - summary of Monday's call,"Dear Kenji,
+
+Thank you for your time yesterday. A short summary of the three scenarios I ran:
+
+- Retire at 65: the plan funds $15,000 a month with a comfortable margin, even with modest returns.
+- Retire at 63: it still works, but the margin is thinner.
+- Retire at 60: it only works if the portfolio performs near its historical average. The gap is mostly healthcare (about $2,800 a month for private cover for the two of you until Medicare) and five fewer years of contributions.
+
+I described 60 as feasible with trade-offs and not recommended on current numbers. As discussed, you'd like to retire at 60, so the next step is to price what part-time consulting income would need to be against your spending target.
+
+Best regards,
+Priya",,,scenario_summary_2026-02-09.pdf,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-005,THR-003,<EML-005.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,1,2026-02-10T10:00:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,Samuel's pension and the inherited account - what we covered,"Dear Grace,
+
+Thank you for speaking with me yesterday. I know some of those papers are hard to face, and there's no rush beyond what we agreed.
+
+A short summary:
+1. Death certificates: you have two and have ordered more.
+2. The pension letter from Samuel's employer hasn't arrived yet. I need it for the next calculation.
+3. Samuel's retirement account: you can roll it into your own or keep it as an inherited account. There is no deadline, but I'll prepare a plain-English comparison.
+4. From the company's summary, the pension survivor payment looks like about half of Samuel's pension.
+
+Kind regards,
+Priya",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-006,THR-003,<EML-006.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,2,2026-02-10T16:45:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Samuel's pension and the inherited account - what we covered,"Thank you Priya. You are very patient. I am worried that half might not be enough. I will look for the letter again this weekend.
+
+Grace",<EML-005.THR-003@exchange.synthetic.example>,<EML-005.THR-003@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-007,THR-002,<EML-007.THR-002@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,2,2026-02-10T18:40:00,CLIENT-001,Kenji Tanaka,kenji.tanaka@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Early retirement scenarios - summary of Monday's call,"Priya,
+
+Thanks. The healthcare gap is bigger than I had assumed. I'd like to see what part-time consulting at 60 would have to earn. Let me think about it over the next few weeks.
+
+Kenji",<EML-004.THR-002@exchange.synthetic.example>,<EML-004.THR-002@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-008,THR-002,<EML-008.THR-002@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,3,2026-02-11T08:20:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,,,RE: Early retirement scenarios - summary of Monday's call,"Kenji,
+
+Happy to model that. I'll send a range of consulting-income levels before our next meeting. No decision is needed from you now.
+
+Priya",<EML-007.THR-002@exchange.synthetic.example>,<EML-004.THR-002@exchange.synthetic.example> <EML-007.THR-002@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-009,THR-003,<EML-009.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,3,2026-02-11T08:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Samuel's pension and the inherited account - what we covered,"Grace, please don't worry about the number yet. It comes from a summary, not from the plan's own letter. Once the letter arrives we will know.
+
+Priya",<EML-006.THR-003@exchange.synthetic.example>,<EML-005.THR-003@exchange.synthetic.example> <EML-006.THR-003@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-010,THR-004,<EML-010.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,1,2026-02-12T09:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,Paying off the mortgage - the numbers,"Dear Grace,
+
+Following yesterday's conversation about the mortgage. Paying it off would use a large part of the insurance payout and leave less in reserve. For now I have set the payout aside, labelled as reserved for paying off the mortgage, while we look at the numbers together.
+
+Kind regards,
+Priya",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-011,THR-004,<EML-011.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,2,2026-02-12T15:20:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Paying off the mortgage - the numbers,"Thank you Priya. I wish it were paid off. It is all I think about at night. But I do not want to do anything yet.
+
+Grace",<EML-010.THR-004@exchange.synthetic.example>,<EML-010.THR-004@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-012,THR-005,<EML-012.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,1,2026-02-18T09:10:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,Tender offer - what I will compare,"Lucas,
+
+Following up on yesterday's call.
+
+- The liquid portfolio is about $1.15 million. Your startup stake is a large part of your net worth but can't easily be sold.
+- You're planning to sell part of your Moreau Labs shares in the tender, so I'll compare three cases (none, half, or all of the offered shares) and check the tax treatment with your accountant.
+
+The deadline is in the offer letter; I'll send you the date.
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-013,THR-005,<EML-013.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,2,2026-02-18T11:42:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Tender offer - what I will compare,"ok thx. what's the deadline again?
+
+Lucas",<EML-012.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-014,THR-005,<EML-014.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,3,2026-02-18T13:05:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,RE: Tender offer - what I will compare,"I'll send it once I've re-read the letter.
+
+Daniel",<EML-013.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example> <EML-013.THR-005@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-015,THR-003,<EML-015.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,4,2026-03-10T09:40:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Samuel's pension and the inherited account - what we covered,"Dear Grace,
+
+A correction to my February 10 email. I wrote that the survivor payment looked like about half of Samuel's pension. I had read the company's summary too loosely. The form actually gives sixty percent, payable for life, plus an optional lump sum that I haven't evaluated yet. A one-page summary of the form is attached.
+
+Kind regards,
+Priya",<EML-009.THR-003@exchange.synthetic.example>,<EML-005.THR-003@exchange.synthetic.example> <EML-006.THR-003@exchange.synthetic.example> <EML-009.THR-003@exchange.synthetic.example>,survivor_form_summary.pdf,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-016,THR-003,<EML-016.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,5,2026-03-10T14:20:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Samuel's pension and the inherited account - what we covered,"Oh thank you Priya. That is better news. I will tell Folake tonight. Does it mean I do not need the annuity?
+
+Grace",<EML-015.THR-003@exchange.synthetic.example>,<EML-005.THR-003@exchange.synthetic.example> <EML-006.THR-003@exchange.synthetic.example> <EML-009.THR-003@exchange.synthetic.example> <EML-015.THR-003@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-017,THR-003,<EML-017.THR-003@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,6,2026-03-11T09:05:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Samuel's pension and the inherited account - what we covered,"Grace, good question, and I would rather answer it in person. The survivor pension is one input. I haven't recommended for or against an annuity, and the decision is yours. We'll talk before you decide.
+
+Priya",<EML-016.THR-003@exchange.synthetic.example>,<EML-005.THR-003@exchange.synthetic.example> <EML-006.THR-003@exchange.synthetic.example> <EML-009.THR-003@exchange.synthetic.example> <EML-015.THR-003@exchange.synthetic.example> <EML-016.THR-003@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-018,THR-006,<EML-018.THR-006@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,1,2026-03-12T10:10:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,"Lakeshore - first offer, summary and next steps","Rebecca,
+
+Summary of yesterday's meeting on the first Lakeshore offer. The headline is $24 million under the proposed letter of intent. I still owe you a model of the cash you'd receive at closing alone, which I'll send as soon as it's done.
+
+Following your acceptance of the offer, the immediate next steps are:
+1. Your lawyer finishes the redlines on the letter of intent.
+2. I update your suitability assessment, because reinvested proceeds would change your risk profile.
+3. We pencil in a meeting once the redlines are back.
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-019,THR-006,<EML-019.THR-006@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,2,2026-03-12T17:30:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,"RE: Lakeshore - first offer, summary and next steps","Daniel, thanks. My lawyer says the redlines will take another week. Send me the cash-at-closing model as soon as you have it.
+
+Rebecca",<EML-018.THR-006@exchange.synthetic.example>,<EML-018.THR-006@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-020,THR-006,<EML-020.THR-006@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,3,2026-03-24T14:30:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,"RE: Lakeshore - first offer, summary and next steps","Rebecca,
+
+A correction to my March 12 email, where I wrote ""following your acceptance of the offer"". That was wrong. You told me you are inclined to accept; you have not signed the letter of intent and your lawyer is still negotiating. I have corrected my record today.
+
+The model is attached. Cash at closing is about $13.5 million after tax and fees.
+
+Daniel",<EML-019.THR-006@exchange.synthetic.example>,<EML-018.THR-006@exchange.synthetic.example> <EML-019.THR-006@exchange.synthetic.example>,cash_at_closing_model.xlsx,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-021,THR-006,<EML-021.THR-006@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,4,2026-03-24T15:02:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,"RE: Lakeshore - first offer, summary and next steps","Thanks for fixing that. Keep it that way until I sign: inclined, not accepted.
+
+Rebecca",<EML-020.THR-006@exchange.synthetic.example>,<EML-018.THR-006@exchange.synthetic.example> <EML-019.THR-006@exchange.synthetic.example> <EML-020.THR-006@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-022,THR-005,<EML-022.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,4,2026-03-27T10:30:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,RE: Tender offer - what I will compare,"Lucas,
+
+A correction to my February 18 email, where I wrote that you're planning to sell part of your shares. As you told me today, you said you might and you haven't decided; you're waiting for my comparison. The comparison is overdue and I owe it to you. I'll send it by Friday, April 3.
+
+Daniel",<EML-014.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example> <EML-013.THR-005@exchange.synthetic.example> <EML-014.THR-005@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-023,THR-005,<EML-023.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,5,2026-03-27T12:10:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Tender offer - what I will compare,"yeah. don't let it slip pls
+
+Lucas",<EML-022.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example> <EML-013.THR-005@exchange.synthetic.example> <EML-014.THR-005@exchange.synthetic.example> <EML-022.THR-005@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-024,THR-007,<EML-024.THR-007@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,1,2026-03-31T10:15:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,Brian - your decision about the loan,"Dear Peg,
+
+Following our call yesterday, I'm writing it down in plain words so you have it.
+
+1. You have decided not to lend Brian $80,000, because of the cost of Frank's care.
+2. You will call Brian yourself this weekend.
+3. You'd also like to help Brian with a few hundred dollars toward his equipment.
+
+Kind regards,
+Elena",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-025,THR-007,<EML-025.THR-007@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,2,2026-03-31T16:30:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Brian - your decision about the loan,"Dear Elena,
+
+Thank you for writing it down. That is what we talked about. I will call Brian on Saturday.
+
+Peg",<EML-024.THR-007@exchange.synthetic.example>,<EML-024.THR-007@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-026,THR-005,<EML-026.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,6,2026-04-03T16:40:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,RE: Tender offer - what I will compare,"Lucas,
+
+The comparison is attached. In short:
+
+- Sell none: you keep all the upside; the tax payments and reserve come from other sources.
+- Sell half (about $75,000): covers your reserve and the next tax payments and leaves most of your stake intact.
+- Sell all: removes the single-company risk, but you give up the upside and probably pay more tax this year.
+
+My suggestion is half. That is a recommendation, not a decision. Please check the tax treatment with your accountant.
+
+Daniel",<EML-023.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example> <EML-013.THR-005@exchange.synthetic.example> <EML-014.THR-005@exchange.synthetic.example> <EML-022.THR-005@exchange.synthetic.example> <EML-023.THR-005@exchange.synthetic.example>,tender_comparison.pdf,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-027,THR-005,<EML-027.THR-005@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,7,2026-04-03T21:20:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Tender offer - what I will compare,"ok reading it. need to ask my accountant about tax first. not deciding yet
+
+Lucas",<EML-026.THR-005@exchange.synthetic.example>,<EML-012.THR-005@exchange.synthetic.example> <EML-013.THR-005@exchange.synthetic.example> <EML-014.THR-005@exchange.synthetic.example> <EML-022.THR-005@exchange.synthetic.example> <EML-023.THR-005@exchange.synthetic.example> <EML-026.THR-005@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-028,THR-001,<EML-028.THR-001@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,4,2026-04-13T10:20:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,RE: Buying a home - summary of Friday's call,"Hi Sofia,
+
+A correction after Friday's call. My January 26 email said you had decided to buy within two years. That overstated what you told me. As you explained on April 10, you are considering a purchase within about two years, with no commitment, and you have decided not to start a house search until the autumn. I have recorded both.
+
+Warm regards,
+Elena",<EML-003.THR-001@exchange.synthetic.example>,<EML-001.THR-001@exchange.synthetic.example> <EML-002.THR-001@exchange.synthetic.example> <EML-003.THR-001@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-029,THR-001,<EML-029.THR-001@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,5,2026-04-13T12:05:00,CLIENT-003,Sofia Alvarez,sofia.alvarez@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Buying a home - summary of Friday's call,"Yes, that's right. Though honestly the ""autumn"" part is soft. Mateo has been approached about a role elsewhere, and if that goes anywhere everything changes. I'll tell you more on Thursday.
+
+Sofia",<EML-028.THR-001@exchange.synthetic.example>,<EML-001.THR-001@exchange.synthetic.example> <EML-002.THR-001@exchange.synthetic.example> <EML-003.THR-001@exchange.synthetic.example> <EML-028.THR-001@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-030,THR-004,<EML-030.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,3,2026-04-24T14:10:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Paying off the mortgage - the numbers,"Dear Grace,
+
+Following today's call: you have decided to keep the mortgage in place for now. The insurance payout stays in the money-market and short-term Treasury holdings while we plan.
+
+Kind regards,
+Priya",<EML-011.THR-004@exchange.synthetic.example>,<EML-010.THR-004@exchange.synthetic.example> <EML-011.THR-004@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-031,THR-004,<EML-031.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,4,2026-04-25T09:00:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Paying off the mortgage - the numbers,"Yes that is right. Thank you.
+
+Grace",<EML-030.THR-004@exchange.synthetic.example>,<EML-010.THR-004@exchange.synthetic.example> <EML-011.THR-004@exchange.synthetic.example> <EML-030.THR-004@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-032,THR-008,<EML-032.THR-008@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,1,2026-05-05T10:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,,,Cash earmark for Ren's semester in Seoul,"Dear Kenji,
+
+Confirming what we agreed on May 4. I've earmarked $14,000 from your cash for Ren's possible semester in Seoul next spring. If he isn't accepted, the money returns to your general reserve. I've recorded the earmark as additional tuition for the semester.
+
+When the program sends its cost breakdown, please forward it to me.
+
+Best regards,
+Priya",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-033,THR-008,<EML-033.THR-008@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,2,2026-05-05T19:15:00,CLIENT-001,Kenji Tanaka,kenji.tanaka@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Cash earmark for Ren's semester in Seoul,"Priya, thanks. I'll forward the breakdown as soon as the program office sends it. Ren is still waiting to hear whether he's accepted.
+
+Kenji",<EML-032.THR-008@exchange.synthetic.example>,<EML-032.THR-008@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-034,THR-007,<EML-034.THR-007@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,3,2026-05-08T11:50:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,RE: Brian - your decision about the loan,"Dear Peg,
+
+A correction to my March 31 email. Helping Brian with equipment is not something you decided. As you told me today, it was only a thought, and nothing has been offered. My March 31 email stays in the record as sent.
+
+Kind regards,
+Elena",<EML-025.THR-007@exchange.synthetic.example>,<EML-024.THR-007@exchange.synthetic.example> <EML-025.THR-007@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-035,THR-007,<EML-035.THR-007@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,4,2026-05-08T14:15:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Brian - your decision about the loan,"Thank you dear. It is only a thought. I may think about it again when things settle.
+
+Peg",<EML-034.THR-007@exchange.synthetic.example>,<EML-024.THR-007@exchange.synthetic.example> <EML-025.THR-007@exchange.synthetic.example> <EML-034.THR-007@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-036,THR-009,<EML-036.THR-009@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,1,2026-05-19T15:30:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,Disability cover - what to ask your broker,"Lucas,
+
+Following today's call. With irregular income, disability cover matters more for you than most. Next step: please send me your current health and disability policy summaries, and ask your broker to quote for disability cover. I'm not recommending a specific product.
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-037,THR-010,<EML-037.THR-010@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,1,2026-05-20T09:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,EXT-001,hannah.park@cpa.example,CLIENT-001,kenji.tanaka@client.example,Deferred compensation payout - request for tax comparison,"Dear Hannah,
+
+Kenji asked me on our May 19 call to ask you to compare the tax cost of his three deferred-compensation payout options: (a) a lump sum at 63, (b) five equal annual payments, or (c) ten equal annual payments. The plan summary is attached. I have shared only what you need for this comparison, and not his portfolio details.
+
+Please base the estimate on retirement at 63. Kenji has not yet chosen an option, so please treat this as a comparison only.
+
+Best regards,
+Priya Nair",,,deferred_comp_options.pdf,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-038,THR-009,<EML-038.THR-009@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,2,2026-05-20T10:20:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Disability cover - what to ask your broker,"will dig up the summaries. i want the cover but i'm not buying anything yet
+
+Lucas",<EML-036.THR-009@exchange.synthetic.example>,<EML-036.THR-009@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-039,THR-008,<EML-039.THR-008@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,3,2026-05-29T14:05:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,,,RE: Cash earmark for Ren's semester in Seoul,"Dear Kenji,
+
+A correction to my May 5 email. The $14,000 is not additional tuition. As you explained on today's call, it covers the program fee, flights and housing; Ren's normal tuition is paid separately and is already in your cash flow. I've corrected the file note and dated it today. My May 5 email is unchanged in the record.
+
+Best regards,
+Priya",<EML-033.THR-008@exchange.synthetic.example>,<EML-032.THR-008@exchange.synthetic.example> <EML-033.THR-008@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-040,THR-011,<EML-040.THR-011@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,1,2026-05-29T15:20:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,Maplewood Commons - what the contract says,"Dear Peg,
+
+Following our call. A short summary of the Maplewood Commons contract:
+- The entrance fee is $380,000, and eighty percent is refundable to the estate.
+- The monthly fee can rise.
+- My recommendation is that an elder-law attorney reviews it before you decide.
+
+You told me you want to talk to Frank first. The decision is on hold until you have.
+
+Kind regards,
+Elena",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-041,THR-008,<EML-041.THR-008@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,4,2026-05-29T16:05:00,CLIENT-001,Kenji Tanaka,kenji.tanaka@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Cash earmark for Ren's semester in Seoul,"That's right. The program's cost breakdown still hasn't arrived. I'll forward it when it does.
+
+Kenji",<EML-039.THR-008@exchange.synthetic.example>,<EML-032.THR-008@exchange.synthetic.example> <EML-033.THR-008@exchange.synthetic.example> <EML-039.THR-008@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-042,THR-011,<EML-042.THR-011@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,2,2026-05-30T09:30:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Maplewood Commons - what the contract says,"Dear Elena,
+
+Thank you. I have not talked with Frank yet. He has had a tired week. Please send me the names of the attorneys.
+
+Peg",<EML-040.THR-011@exchange.synthetic.example>,<EML-040.THR-011@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-043,THR-011,<EML-043.THR-011@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,3,2026-06-01T09:00:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,RE: Maplewood Commons - what the contract says,"Dear Peg,
+
+I'll mail you a short list of two elder-law attorneys today. The choice of whom to call is yours.
+
+Elena",<EML-042.THR-011@exchange.synthetic.example>,<EML-040.THR-011@exchange.synthetic.example> <EML-042.THR-011@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-044,THR-010,<EML-044.THR-010@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,2,2026-06-01T16:10:00,EXT-001,Hannah Park,hannah.park@cpa.example,ADVISOR-001,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,RE: Deferred compensation payout - request for tax comparison,"Dear Priya, dear Kenji,
+
+Estimates, based on a retirement age of 63 and the income shown on the 2025 return:
+
+- Lump sum at 63: pushes the year into a high bracket.
+- Five annual installments: keeps you in a lower bracket than the lump sum.
+- Ten annual installments: saves a little more tax than five, but the balance stays with the company for longer.
+
+These are estimates only; nothing is final until the election is filed.
+
+Hannah Park",<EML-037.THR-010@exchange.synthetic.example>,<EML-037.THR-010@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-045,THR-010,<EML-045.THR-010@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,3,2026-06-01T20:05:00,CLIENT-001,Kenji Tanaka,kenji.tanaka@client.example,ADVISOR-001,priya.nair@advisory.example,EXT-001,hannah.park@cpa.example,RE: Deferred compensation payout - request for tax comparison,"Thank you both. I'm leaning toward five installments, but I'll confirm on Wednesday's call. Please don't treat it as final yet.
+
+Kenji",<EML-044.THR-010@exchange.synthetic.example>,<EML-037.THR-010@exchange.synthetic.example> <EML-044.THR-010@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-046,THR-010,<EML-046.THR-010@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,4,2026-06-03T12:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,EXT-001,hannah.park@cpa.example,RE: Deferred compensation payout - request for tax comparison,"Dear Kenji,
+
+Following this morning's call: your decision to elect five annual installments starting at 63 is recorded. Please send me the draft election form so I can comment before you submit it. Hannah, no further action is needed beyond keeping your estimate on file.
+
+Best regards,
+Priya",<EML-045.THR-010@exchange.synthetic.example>,<EML-037.THR-010@exchange.synthetic.example> <EML-044.THR-010@exchange.synthetic.example> <EML-045.THR-010@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-047,THR-012,<EML-047.THR-012@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,1,2026-06-03T14:20:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,"Retention pool for key employees - an idea, not a decision","Rebecca,
+
+Following today's call. The idea you raised is a retention pool of $1 million to $1.2 million, taken from your proceeds, for Luis and the six supervisors. On my rough estimate the after-tax cost to you is about $700,000; please have your accountant check that figure.
+
+You have not raised it with Lakeshore. My suggestion is to take it to your lawyer before the staff announcement so nobody is surprised. This is an idea, not a decision.
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-048,THR-012,<EML-048.THR-012@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,2,2026-06-04T07:40:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,"RE: Retention pool for key employees - an idea, not a decision","Agreed, it's an idea. I haven't decided and I haven't spoken to Lakeshore. My lawyer is away until Monday.
+
+Rebecca",<EML-047.THR-012@exchange.synthetic.example>,<EML-047.THR-012@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-049,THR-012,<EML-049.THR-012@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,3,2026-06-04T09:15:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,"RE: Retention pool for key employees - an idea, not a decision","Understood. I'll keep it as an open idea. If Lakeshore agreed to fund part of it, your cost would fall. Let's hear your lawyer first.
+
+Daniel",<EML-048.THR-012@exchange.synthetic.example>,<EML-047.THR-012@exchange.synthetic.example> <EML-048.THR-012@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-050,THR-004,<EML-050.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,5,2026-06-08T11:30:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Paying off the mortgage - the numbers,"Dear Grace,
+
+A correction. The insurance payout is not reserved for paying off the mortgage; my February 12 email labelled it that way when what you had expressed was a wish. As you described on June 5, the money is for Folake's tuition (part of it, so you feel safe) and for a gift to Tobi of up to $15,000. That amount is a ceiling, not an instruction.
+
+Kind regards,
+Priya",<EML-031.THR-004@exchange.synthetic.example>,<EML-010.THR-004@exchange.synthetic.example> <EML-011.THR-004@exchange.synthetic.example> <EML-030.THR-004@exchange.synthetic.example> <EML-031.THR-004@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-051,THR-011,<EML-051.THR-011@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,4,2026-06-08T15:05:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,RE: Maplewood Commons - what the contract says,"Dear Peg,
+
+Following today's call: you have decided against Maplewood Commons for now, because Frank wants to stay at home. You may revisit it if his needs change. No deposit will be paid.
+
+Kind regards,
+Elena",<EML-043.THR-011@exchange.synthetic.example>,<EML-040.THR-011@exchange.synthetic.example> <EML-042.THR-011@exchange.synthetic.example> <EML-043.THR-011@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-052,THR-013,<EML-052.THR-013@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,1,2026-06-08T15:20:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,Beneficiary forms and Folake's share,"Dear Grace,
+
+Following today's call about beneficiary forms. Two things:
+1. You told me Tobi and Folake will be equal beneficiaries and that you are sending the signed forms back. Once they arrive I will check them against your wishes.
+2. Whether Folake's share should be held in a trust is an open question. I'm not recommending either way yet; I'd like an estate attorney's view first.
+
+Kind regards,
+Priya",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-053,THR-004,<EML-053.THR-004@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,6,2026-06-08T15:40:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Paying off the mortgage - the numbers,"Yes. Thank you for fixing it. I will think about how to explain it to Tobi.
+
+Grace",<EML-050.THR-004@exchange.synthetic.example>,<EML-010.THR-004@exchange.synthetic.example> <EML-011.THR-004@exchange.synthetic.example> <EML-030.THR-004@exchange.synthetic.example> <EML-031.THR-004@exchange.synthetic.example> <EML-050.THR-004@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-054,THR-011,<EML-054.THR-011@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,5,2026-06-08T17:30:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Maplewood Commons - what the contract says,"That is right dear. Thank you.
+
+Peg",<EML-051.THR-011@exchange.synthetic.example>,<EML-040.THR-011@exchange.synthetic.example> <EML-042.THR-011@exchange.synthetic.example> <EML-043.THR-011@exchange.synthetic.example> <EML-051.THR-011@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-055,THR-013,<EML-055.THR-013@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,2,2026-06-09T10:05:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Beneficiary forms and Folake's share,"Dear Priya, I posted two of the three forms this morning. I cannot find the third. I will keep looking.
+
+Grace",<EML-052.THR-013@exchange.synthetic.example>,<EML-052.THR-013@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-056,THR-013,<EML-056.THR-013@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,3,2026-06-09T11:00:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Beneficiary forms and Folake's share,"Grace, that's fine. If you can't find it, I can send you a request form to sign so we can get a copy from the provider. Please tell me which account it belongs to.
+
+Priya",<EML-055.THR-013@exchange.synthetic.example>,<EML-052.THR-013@exchange.synthetic.example> <EML-055.THR-013@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-057,THR-014,<EML-057.THR-014@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,1,2026-06-11T14:00:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,EXT-002,dennis.hall@accountancy.example,CLIENT-006,peg.sullivan@client.example,Required distribution and the church gift,"Dear Dennis,
+
+As Peg asked, I'm coordinating with you on this year's required distribution. My understanding, from our earlier discussions and today's call with Peg:
+
+- The required distribution for 2026 is about $31,000.
+- A $6,000 qualified charitable distribution to the church counts toward it.
+- The remaining $25,000 would be taken monthly from July to December, with 12 percent withheld, as you suggested.
+
+Could you confirm, and tell me anything that needs to happen in a particular order?
+
+Elena Rossi",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-058,THR-014,<EML-058.THR-014@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,2,2026-06-12T09:45:00,EXT-002,Dennis Hall,dennis.hall@accountancy.example,ADVISOR-003,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,RE: Required distribution and the church gift,"Dear Elena, dear Peg,
+
+Confirmed. Withholding at 12 percent is fine. The charitable distribution must go directly from the IRA custodian to the church, so please don't have Peg withdraw the cash first.
+
+Dennis Hall",<EML-057.THR-014@exchange.synthetic.example>,<EML-057.THR-014@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-059,THR-014,<EML-059.THR-014@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,3,2026-06-12T11:00:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,EXT-002,dennis.hall@accountancy.example,RE: Required distribution and the church gift,"Dear Dennis and Elena,
+
+I want the six thousand to go to the church. And the rest monthly as you said.
+
+Peg",<EML-058.THR-014@exchange.synthetic.example>,<EML-057.THR-014@exchange.synthetic.example> <EML-058.THR-014@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,true
+EML-060,THR-015,<EML-060.THR-015@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,1,2026-06-15T16:30:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,Post-closing cash-flow model,"Rebecca,
+
+As promised, the first version of the post-closing model. It assumes your salary stops at closing and that the portfolio funds your spending from that point. The spending account is sized at 18 months of spending.
+
+Please read the assumptions page; that's where I'd most like a second pair of eyes.
+
+Daniel",,,post_closing_cashflow_v1.xlsx,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-061,THR-015,<EML-061.THR-015@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,2,2026-06-16T08:10:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Post-closing cash-flow model,"Thanks. I haven't opened it properly. The escrow dispute is eating my week.
+
+Rebecca",<EML-060.THR-015@exchange.synthetic.example>,<EML-060.THR-015@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-062,THR-016,<EML-062.THR-016@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,1,2026-06-18T09:30:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,Reworked budget with childcare,"Hi Sofia,
+
+Following Wednesday's call, the reworked monthly budget is attached. I've used the $40,000 in the house fund as a cushion for the childcare gap while we see how the fees settle. Your 401(k) match is untouched.
+
+Warm regards,
+Elena",,,reworked_budget_2026-06.xlsx,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-063,THR-009,<EML-063.THR-009@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,3,2026-06-18T15:00:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,RE: Disability cover - what to ask your broker,"Lucas,
+
+As asked on today's call, a reminder: please send the policy summaries this week. You told me your broker says quotes will take about three weeks, so the sooner he has them the better. Nothing is bought or decided.
+
+Daniel",<EML-038.THR-009@exchange.synthetic.example>,<EML-036.THR-009@exchange.synthetic.example> <EML-038.THR-009@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-064,THR-016,<EML-064.THR-016@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,2,2026-06-18T21:15:00,CLIENT-003,Sofia Alvarez,sofia.alvarez@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Reworked budget with childcare,"Thanks Elena, I'll look at it over the weekend. Lucia has a cold!!
+
+Sofia",<EML-062.THR-016@exchange.synthetic.example>,<EML-062.THR-016@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-065,THR-009,<EML-065.THR-009@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,4,2026-06-19T09:00:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Disability cover - what to ask your broker,"found two of the three. the health one i have to request from the insurer. will do
+
+Lucas",<EML-063.THR-009@exchange.synthetic.example>,<EML-036.THR-009@exchange.synthetic.example> <EML-038.THR-009@exchange.synthetic.example> <EML-063.THR-009@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-066,THR-016,<EML-066.THR-016@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,3,2026-06-22T11:10:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,RE: Reworked budget with childcare,"Hi Sofia,
+
+A correction to my June 18 email. The $40,000 in the house fund is not a childcare cushion; it remains house money. The childcare gap will be covered by trimming your brokerage contributions by about $800 a month, with the 401(k) match untouched.
+
+I can't change the contribution instruction until you confirm it by reply.
+
+Warm regards,
+Elena",<EML-064.THR-016@exchange.synthetic.example>,<EML-062.THR-016@exchange.synthetic.example> <EML-064.THR-016@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-067,THR-016,<EML-067.THR-016@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,4,2026-06-22T13:40:00,CLIENT-003,Sofia Alvarez,sofia.alvarez@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Reworked budget with childcare,"Confirming: reduce my brokerage contributions by $800 a month starting in July. The match stays. The house fund stays.
+
+Sofia",<EML-066.THR-016@exchange.synthetic.example>,<EML-062.THR-016@exchange.synthetic.example> <EML-064.THR-016@exchange.synthetic.example> <EML-066.THR-016@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-068,THR-015,<EML-068.THR-015@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,3,2026-06-24T09:00:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,RE: Post-closing cash-flow model,"Rebecca,
+
+A correction after yesterday's call. Version 1 assumed your salary stops at closing. You told me section six of the draft keeps you in a paid consulting role for the twelve months after closing, at your current salary. Version 2 reflects that: portfolio withdrawals begin only after those twelve months, and the spending account is larger than it needs to be.
+
+My recommendation is to resize the spending account. I haven't changed anything.
+
+Daniel",<EML-061.THR-015@exchange.synthetic.example>,<EML-060.THR-015@exchange.synthetic.example> <EML-061.THR-015@exchange.synthetic.example>,post_closing_cashflow_v2.xlsx,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-069,THR-015,<EML-069.THR-015@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,4,2026-06-24T11:25:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Post-closing cash-flow model,"Good. Resize it after the escrow is settled, not before.
+
+Rebecca",<EML-068.THR-015@exchange.synthetic.example>,<EML-060.THR-015@exchange.synthetic.example> <EML-061.THR-015@exchange.synthetic.example> <EML-068.THR-015@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-070,THR-017,<EML-070.THR-017@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,1,2026-04-22T11:40:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-001,kenji.tanaka@client.example,,,Teams link,"Dear Kenji,
+
+The Teams link for our video meetings is unchanged, in case you need it again. No reply needed.
+
+Priya",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-071,THR-017,<EML-071.THR-017@exchange.synthetic.example>,CLIENT-001,ADVISOR-001,2,2026-04-22T12:05:00,CLIENT-001,Kenji Tanaka,kenji.tanaka@client.example,ADVISOR-001,priya.nair@advisory.example,,,RE: Teams link,"Thanks Priya, I have it.
+
+Kenji",<EML-070.THR-017@exchange.synthetic.example>,<EML-070.THR-017@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-072,THR-018,<EML-072.THR-018@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,1,2026-05-12T09:10:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-003,sofia.alvarez@client.example,,,Secure portal link,"Hi Sofia,
+
+The secure-portal link I sent earlier has expired. I have sent a fresh one in a separate message. Nothing else is needed from you.
+
+Elena",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-073,THR-018,<EML-073.THR-018@exchange.synthetic.example>,CLIENT-003,ADVISOR-003,2,2026-05-12T09:42:00,CLIENT-003,Sofia Alvarez,sofia.alvarez@client.example,ADVISOR-003,elena.rossi@advisory.example,,,RE: Secure portal link,"Got it, thank you. I was able to log in.
+
+Sofia",<EML-072.THR-018@exchange.synthetic.example>,<EML-072.THR-018@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-074,THR-019,<EML-074.THR-019@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,1,2026-06-19T16:20:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-005,lucas.moreau@client.example,,,Out of the office Monday,"Lucas,
+
+A quick note that I am out of the office on Monday and back on Tuesday. I will answer messages then.
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-075,THR-019,<EML-075.THR-019@exchange.synthetic.example>,CLIENT-005,ADVISOR-002,2,2026-06-19T16:48:00,CLIENT-005,Lucas Moreau,lucas.moreau@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Out of the office Monday,"No problem. Thanks for letting me know.
+
+Lucas",<EML-074.THR-019@exchange.synthetic.example>,<EML-074.THR-019@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-076,THR-020,<EML-076.THR-020@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,1,2026-05-14T15:05:00,CLIENT-004,Grace Adeyemi,grace.adeyemi@client.example,ADVISOR-001,priya.nair@advisory.example,,,Scanned pages,"Dear Priya,
+
+I scanned the pages and uploaded them to the portal this afternoon. Could you let me know that they arrived?
+
+Grace",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-077,THR-020,<EML-077.THR-020@exchange.synthetic.example>,CLIENT-004,ADVISOR-001,2,2026-05-14T15:40:00,ADVISOR-001,Priya Nair,priya.nair@advisory.example,CLIENT-004,grace.adeyemi@client.example,,,RE: Scanned pages,"Hello Grace,
+
+Yes, they arrived and they are readable. Thank you.
+
+Priya",<EML-076.THR-020@exchange.synthetic.example>,<EML-076.THR-020@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-078,THR-021,<EML-078.THR-021@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,1,2026-06-19T17:30:00,CLIENT-006,Peg Sullivan,peg.sullivan@client.example,ADVISOR-003,elena.rossi@advisory.example,,,Our next call,"Elena dear,
+
+Something may come up and I may need to move our next call a little. May I tell you nearer the time?
+
+Peg",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-079,THR-021,<EML-079.THR-021@exchange.synthetic.example>,CLIENT-006,ADVISOR-003,2,2026-06-19T18:05:00,ADVISOR-003,Elena Rossi,elena.rossi@advisory.example,CLIENT-006,peg.sullivan@client.example,,,RE: Our next call,"Of course, Peg. Just let me know when you can.
+
+Elena",<EML-078.THR-021@exchange.synthetic.example>,<EML-078.THR-021@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-080,THR-022,<EML-080.THR-022@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,1,2026-06-26T10:20:00,ADVISOR-002,Daniel Okafor,daniel.okafor@advisory.example,CLIENT-002,rebecca.holloway@client.example,,,Next review,"Rebecca,
+
+I would like to find a time for our next review. Would the week of July 6 suit you?
+
+Daniel",,,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false
+EML-081,THR-022,<EML-081.THR-022@exchange.synthetic.example>,CLIENT-002,ADVISOR-002,2,2026-06-26T11:05:00,CLIENT-002,Rebecca Holloway,rebecca.holloway@client.example,ADVISOR-002,daniel.okafor@advisory.example,,,RE: Next review,"That week works for me. Please send whichever day suits you.
+
+Rebecca",<EML-080.THR-022@exchange.synthetic.example>,<EML-080.THR-022@exchange.synthetic.example>,,Email,Exchange mailbox,synthetic_email,synthetic,client-confidential,false

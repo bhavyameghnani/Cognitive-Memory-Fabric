@@ -1,6 +1,8 @@
 """Topic vocabulary and keyword routing used by the Planner (client-independent, deterministic)."""
 from __future__ import annotations
 
+import re
+
 TOPICS = ["retirement_age", "retirement_income", "asset_allocation", "risk_tolerance", "liquidity_reserve", "education_funding",
           "housing_property", "debt_mortgage", "business_sale", "concentrated_position", "investment_trade", "tax_planning",
           "insurance_estate", "family_support", "care_costs", "income_cashflow", "other"]
@@ -15,7 +17,7 @@ TOPIC_KEYWORDS: dict[str, list[str]] = {
     "education_funding": ["tuition", "college", "graduate school", "529", "education", "school"],
     "housing_property": ["house", "home purchase", "down payment", "downsiz", "maplewood", "entrance fee", "property"],
     "debt_mortgage": ["mortgage", "loan", "student loan", "pay off", "paid off", "interest rate"],
-    "business_sale": ["sell the company", "selling the company", "whether to sell", "holloway", "sell to", "the company", "lakeshore", "sale proceeds", "offer", "employee ownership", "seller note", "earn-out", "rollover", "secondary", "tender", "founders' shares"],
+    "business_sale": ["letter of intent", "sell the company", "selling the company", "whether to sell", "holloway", "sell to", "the company", "lakeshore", "sale proceeds", "offer", "employee ownership", "seller note", "earn-out", "rollover", "secondary", "tender", "founders' shares"],
     "concentrated_position": ["vantora", "northgate", "single company", "concentration", "vested shares", "company shares", "employer"],
     "investment_trade": ["sell", "buy", "purchase", "trim", "crypto", "fund", "step into", "bought"],
     "tax_planning": ["tax", "estimated", "withholding", "safe harbor", "safe-harbour", "qualified charitable"],
@@ -33,7 +35,8 @@ def _norm_text(text: str) -> str:
 def _score(text: str, kws: list[str]) -> int:
     """Phrase hits weigh double so 'employee ownership' beats a stray 'cash'."""
     t = _norm_text(text)
-    return sum((2 if " " in k else 1) for k in kws if k in t)
+    # a keyword matches from the START of a word (stems such as 'retire' still match 'retirement'), never inside one: 'reserve' must not match 'preserve'
+    return sum((2 if " " in k else 1) for k in kws if re.search(r"(?<![a-z0-9])" + re.escape(k), t))
 
 
 def topic_hits(text: str) -> list[str]:

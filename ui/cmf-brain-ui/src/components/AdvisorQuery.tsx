@@ -66,7 +66,7 @@ export const AdvisorQuery: React.FC<Props> = ({ suggestions, result, onResult, o
       {report && !busy && (
         <div className="flex flex-col gap-4 border-t border-slate-800 pt-4">
           <p className="text-sm text-slate-100 leading-relaxed">{report.summary}</p>
-          <p className="text-[11px] text-slate-500 font-mono">{result!.retrieved_memory_ids.length} memories retrieved · highlighted on the brain · {report.request_id}</p>
+          <p className="text-[11px] text-slate-500 font-mono">{result!.released === false ? 'Memory details are withheld until the answer is approved' : `${result!.retrieved_memory_ids.length} memories retrieved · highlighted on the brain`} · {report.request_id}</p>
           <Findings title="Key findings" items={report.key_findings} />
           <Findings title="Historical context" items={report.historical_context} />
           <Findings title="Financial analysis" items={report.financial_analysis} />

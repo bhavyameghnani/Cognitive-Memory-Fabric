@@ -1,0 +1,114 @@
+scenario_id,client_id,sequence_no,channel,source_id,record_origin,source_timestamp,link_basis,storyline_note
+SCN-C1-01,CLIENT-001,1,Meetings,INT-027,original,2026-02-09T08:30:00,origin,origin: scenario results; 60 feasible but not recommended
+SCN-C1-01,CLIENT-001,2,Email,THR-002,generated,2026-02-10T09:05:00,explicit_reference,advisor email overstates exploration as a wish to retire at 60; client reply is tentative
+SCN-C1-01,CLIENT-001,3,Calls,INT-049,original,2026-03-04T08:30:00,shared_topic_only,"client corrects: exploring only, 65 is still the planning date"
+SCN-C1-01,CLIENT-001,4,Chat,CHT-001,generated,2026-03-05T07:50:00,explicit_reference,client asks for confirmation the corrected note says 65
+SCN-C1-01,CLIENT-001,5,Meetings,INT-074,original,2026-04-16T08:15:00,shared_topic_only,63 raised as a maybe after the retention bonus
+SCN-C1-01,CLIENT-001,6,Meetings,MTG-004,generated,2026-04-28T08:00:00,explicit_reference,63 under serious consideration; planning date still 65; decision promised for May 1
+SCN-C1-01,CLIENT-001,7,Meetings,INT-090,original,2026-05-01T08:15:00,shared_topic_only,client decides 63
+SCN-C1-02,CLIENT-001,1,Calls,INT-091,original,2026-05-04T08:15:00,origin,"origin: earmark of $14,000"
+SCN-C1-02,CLIENT-001,2,Email,THR-008,generated,2026-05-05T10:30:00,explicit_reference,advisor email labels it additional tuition; later corrected in same thread
+SCN-C1-02,CLIENT-001,3,Calls,INT-114,original,2026-05-29T08:00:00,shared_topic_only,client corrects the purpose
+SCN-C1-02,CLIENT-001,4,Chat,CHT-014,generated,2026-06-01T07:45:00,explicit_reference,client checks the correction was made; acceptance still pending
+SCN-C1-03,CLIENT-001,1,Meetings,INT-107,original,2026-05-19T08:15:00,origin,"origin: options listed, no decision, client asks for CPA estimate"
+SCN-C1-03,CLIENT-001,2,Email,THR-010,generated,2026-05-20T09:30:00,explicit_reference,advisor shares plan summary with the client's CPA; tentative client lean; decision recorded Jun 3
+SCN-C1-03,CLIENT-001,3,Meetings,INT-120,original,2026-06-03T08:30:00,shared_topic_only,client decides five installments from 63
+SCN-C1-03,CLIENT-001,4,Meetings,MTG-008,generated,2026-06-10T08:00:00,explicit_reference,form review; beneficiary partly open; submission pending
+SCN-C1-03,CLIENT-001,5,Chat,CHT-021,generated,2026-06-12T18:20:00,explicit_reference,CPA confirmation forwarded; submission planned; signed copy pending
+SCN-C2-01,CLIENT-002,1,Meetings,INT-052,original,2026-03-11T11:00:00,origin,origin: first offer
+SCN-C2-01,CLIENT-002,2,Email,THR-006,generated,2026-03-12T10:10:00,explicit_reference,advisor email says offer accepted; correction and client confirmation of 'inclined' on Mar 24
+SCN-C2-01,CLIENT-002,3,Meetings,INT-058,original,2026-03-24T11:00:00,shared_topic_only,"client corrects the record: inclined, not signed"
+SCN-C2-01,CLIENT-002,4,Meetings,INT-077,original,2026-04-17T11:15:00,shared_topic_only,"walk-away floor of 22M stated as current position, not decision"
+SCN-C2-01,CLIENT-002,5,Calls,INT-078,original,2026-04-20T11:00:00,shared_topic_only,second thoughts about timing
+SCN-C2-01,CLIENT-002,6,Chat,CHT-007,generated,2026-04-20T18:45:00,explicit_reference,client wavers by chat; refuses to decide by text
+SCN-C2-01,CLIENT-002,7,Meetings,INT-083,original,2026-04-22T11:15:00,shared_topic_only,client decides to sell
+SCN-C2-02,CLIENT-002,1,Calls,INT-121,original,2026-06-03T11:00:00,origin,"origin: idea of a $1.0-1.2M pool, undecided"
+SCN-C2-02,CLIENT-002,2,Email,THR-012,generated,2026-06-03T14:20:00,explicit_reference,advisor email restates idea; client agrees it is undecided
+SCN-C2-02,CLIENT-002,3,Chat,CHT-018,generated,2026-06-09T12:10:00,explicit_reference,lawyer thinks worth raising; client undecided on amount; advisor suggests no number in writing
+SCN-C2-02,CLIENT-002,4,Meetings,MTG-012,generated,2026-06-15T11:00:00,shared_topic_only,both restate that the pool is not decided and not in the model
+SCN-C2-03,CLIENT-002,1,Meetings,INT-130,original,2026-06-11T11:15:00,origin,advisor states income stops at closing
+SCN-C2-03,CLIENT-002,2,Meetings,MTG-012,generated,2026-06-15T11:00:00,explicit_reference,"model walkthrough; client says 'seen', not 'reviewed'"
+SCN-C2-03,CLIENT-002,3,Email,THR-015,generated,2026-06-15T16:30:00,explicit_reference,v1 model assumes no salary; correction and v2 model
+SCN-C2-03,CLIENT-002,4,Calls,INT-142,original,2026-06-23T11:00:00,shared_topic_only,client corrects: paid consultant for 12 months
+SCN-C2-04,CLIENT-002,1,Calls,INT-038,original,2026-02-19T11:15:00,origin,"origin: $85k account, funding gap"
+SCN-C2-04,CLIENT-002,2,Meetings,MTG-005,generated,2026-05-05T11:00:00,explicit_reference,two funding versions requested; 529 suggestion left open
+SCN-C2-05,CLIENT-002,1,Meetings,INT-126,original,2026-06-08T11:30:00,origin,origin: $55k pre-signing costs and source of funds
+SCN-C2-05,CLIENT-002,2,Chat,CHT-020,generated,2026-06-12T09:20:00,explicit_reference,client confirms both payments were made from the cash account
+SCN-C3-01,CLIENT-003,1,Calls,INT-017,original,2026-01-23T08:00:00,origin,origin: might buy in a couple of years
+SCN-C3-01,CLIENT-003,2,Email,THR-001,generated,2026-01-26T11:00:00,explicit_reference,advisor email states decision; correction and softened autumn plan on Apr 13
+SCN-C3-01,CLIENT-003,3,Chat,CHT-003,generated,2026-03-24T22:40:00,explicit_reference,late-night musing about the house; nothing due
+SCN-C3-01,CLIENT-003,4,Meetings,INT-071,original,2026-04-10T08:00:00,shared_topic_only,client corrects; decides no house search until autumn
+SCN-C3-01,CLIENT-003,5,Meetings,INT-147,original,2026-06-26T08:00:00,shared_topic_only,half-year review restates the arc
+SCN-C3-02,CLIENT-003,1,Meetings,INT-045,original,2026-03-02T08:00:00,origin,origin: manager hint about four days
+SCN-C3-02,CLIENT-003,2,Calls,INT-075,original,2026-04-16T08:30:00,shared_topic_only,Mateo's job possibility and relocation
+SCN-C3-02,CLIENT-003,3,Chat,CHT-008,generated,2026-04-22T12:15:00,shared_topic_only,recruiter call: exploratory only
+SCN-C3-02,CLIENT-003,4,Meetings,MTG-003,generated,2026-04-27T08:00:00,explicit_reference,four-day week as scenario only; childcare fees to follow
+SCN-C3-02,CLIENT-003,5,Chat,CHT-009,generated,2026-04-27T20:30:00,explicit_reference,client asks not to record four days as a plan
+SCN-C3-02,CLIENT-003,6,Calls,INT-100,original,2026-05-11T08:00:00,shared_topic_only,Mateo still deciding whether to interview
+SCN-C3-03,CLIENT-003,1,Meetings,INT-131,original,2026-06-12T08:00:00,origin,back to work and childcare costs
+SCN-C3-03,CLIENT-003,2,Meetings,MTG-009,generated,2026-06-15T08:00:00,explicit_reference,advisor suggests house fund as one option; client says do not record as done
+SCN-C3-03,CLIENT-003,3,Calls,INT-134,original,2026-06-17T08:00:00,shared_topic_only,reworked budget
+SCN-C3-03,CLIENT-003,4,Email,THR-016,generated,2026-06-18T09:30:00,explicit_reference,advisor email treats house fund as cushion; correction and client's explicit instruction
+SCN-C3-03,CLIENT-003,5,Meetings,INT-139,original,2026-06-22T08:00:00,shared_topic_only,client corrects: house fund remains house money
+SCN-C3-04,CLIENT-003,1,Calls,INT-108,original,2026-05-19T08:30:00,origin,origin: saving for Lucia's education
+SCN-C3-04,CLIENT-003,2,Chat,CHT-012,generated,2026-05-21T21:10:00,explicit_reference,advisor suggestion; client defers
+SCN-C3-04,CLIENT-003,3,Meetings,INT-147,original,2026-06-26T08:00:00,shared_topic_only,529 decision listed as open item
+SCN-C4-01,CLIENT-004,1,Calls,INT-029,original,2026-02-09T13:00:00,origin,origin: pension letter outstanding
+SCN-C4-01,CLIENT-004,2,Email,THR-003,generated,2026-02-10T10:00:00,explicit_reference,advisor email says about half; later correction to 60 percent
+SCN-C4-01,CLIENT-004,3,Meetings,INT-050,original,2026-03-09T09:30:00,shared_topic_only,advisor corrects 60 percent; annuity question raised
+SCN-C4-01,CLIENT-004,4,Meetings,MTG-001,generated,2026-03-18T09:30:00,explicit_reference,form walkthrough; tentative preference for monthly income; lump sum not evaluated
+SCN-C4-01,CLIENT-004,5,Chat,CHT-004,generated,2026-03-25T19:20:00,explicit_reference,client anxious about annuity salesman; no action
+SCN-C4-01,CLIENT-004,6,Calls,INT-059,original,2026-03-26T09:15:00,shared_topic_only,annuity decision call
+SCN-C4-02,CLIENT-004,1,Calls,INT-097,original,2026-05-08T09:00:00,origin,decision: six steps to a 25 percent target
+SCN-C4-02,CLIENT-004,2,Calls,INT-110,original,2026-05-19T13:15:00,shared_topic_only,"first step quantified (about $24,000)"
+SCN-C4-02,CLIENT-004,3,Chat,CHT-015,generated,2026-06-01T10:45:00,explicit_reference,first step executed on Jun 1
+SCN-C4-02,CLIENT-004,4,Meetings,INT-122,original,2026-06-05T09:00:00,shared_topic_only,first statement reviewed
+SCN-C4-02,CLIENT-004,5,Meetings,INT-128,original,2026-06-10T09:30:00,shared_topic_only,second thoughts; conditional call before Jul 1
+SCN-C4-02,CLIENT-004,6,Chat,CHT-019,generated,2026-06-10T20:15:00,explicit_reference,client asks to stop; advisor restates no decision needed and the conditional call
+SCN-C4-03,CLIENT-004,1,Meetings,INT-030,original,2026-02-11T09:30:00,origin,origin: wish to pay off the mortgage
+SCN-C4-03,CLIENT-004,2,Email,THR-004,generated,2026-02-12T09:30:00,explicit_reference,"advisor email labels payout as reserved for mortgage; client's reply states a wish, not an action; later keep-mortgage confirmation; June correction"
+SCN-C4-03,CLIENT-004,3,Calls,INT-084,original,2026-04-24T09:15:00,shared_topic_only,decision to keep the mortgage
+SCN-C4-03,CLIENT-004,4,Meetings,INT-122,original,2026-06-05T09:00:00,shared_topic_only,client states actual purposes
+SCN-C4-04,CLIENT-004,1,Calls,INT-124,original,2026-06-08T09:00:00,origin,origin: beneficiary forms and Folake's inheritance
+SCN-C4-04,CLIENT-004,2,Email,THR-013,generated,2026-06-08T15:20:00,explicit_reference,forms requested; one form missing
+SCN-C4-04,CLIENT-004,3,Meetings,MTG-010,generated,2026-06-15T09:30:00,explicit_reference,trust explained; attorney suggested; open
+SCN-C4-04,CLIENT-004,4,Meetings,INT-146,original,2026-06-25T13:00:00,shared_topic_only,half-year review lists it as open
+SCN-C5-01,CLIENT-005,1,Meetings,INT-034,original,2026-02-17T09:00:00,origin,"origin: might sell, not decided"
+SCN-C5-01,CLIENT-005,2,Email,THR-005,generated,2026-02-18T09:10:00,explicit_reference,"advisor email states planning to sell; correction, comparison and recommendation (half)"
+SCN-C5-01,CLIENT-005,3,Chat,CHT-002,generated,2026-03-20T13:10:00,explicit_reference,client asks for comparison; maybes stay maybes
+SCN-C5-01,CLIENT-005,4,Calls,INT-062,original,2026-03-27T09:00:00,shared_topic_only,client corrects: has not decided
+SCN-C5-01,CLIENT-005,5,Meetings,MTG-002,generated,2026-04-07T09:00:00,explicit_reference,"advisor recommends half, client undecided; paperwork deadline discussed"
+SCN-C5-01,CLIENT-005,6,Meetings,INT-073,original,2026-04-14T09:00:00,shared_topic_only,"client decides to sell half (about $75,000)"
+SCN-C5-01,CLIENT-005,7,Chat,CHT-006,generated,2026-04-14T17:25:00,explicit_reference,client reports signing; receipt pending
+SCN-C5-02,CLIENT-005,1,Calls,INT-096,original,2026-05-07T09:15:00,origin,"origin: possibility, not a plan"
+SCN-C5-02,CLIENT-005,2,Chat,CHT-011,generated,2026-05-08T08:45:00,explicit_reference,employer might allow remote; still a possibility
+SCN-C5-02,CLIENT-005,3,Meetings,MTG-006,generated,2026-05-26T09:30:00,explicit_reference,two conditions restated; specialist declined; kept as maybe
+SCN-C5-02,CLIENT-005,4,Chat,CHT-013,generated,2026-05-27T19:10:00,explicit_reference,employer says no remote; off for the moment
+SCN-C5-03,CLIENT-005,1,Calls,INT-109,original,2026-05-19T09:00:00,origin,origin: insurance for a self-employed founder
+SCN-C5-03,CLIENT-005,2,Email,THR-009,generated,2026-05-19T15:30:00,explicit_reference,advisor asks for summaries; client wants cover but buys nothing; partial summaries found
+SCN-C5-03,CLIENT-005,3,Chat,CHT-017,generated,2026-06-04T11:00:00,explicit_reference,reminder for summaries
+SCN-C5-03,CLIENT-005,4,Calls,INT-136,original,2026-06-18T09:00:00,shared_topic_only,follow-up: broker needs three weeks
+SCN-C5-03,CLIENT-005,5,Meetings,INT-148,original,2026-06-29T09:00:00,shared_topic_only,half-year review: still pending
+SCN-C6-01,CLIENT-006,1,Meetings,INT-037,original,2026-02-19T10:00:00,origin,"origin: Brian's loan request, undecided"
+SCN-C6-01,CLIENT-006,2,Meetings,INT-063,original,2026-03-30T10:15:00,shared_topic_only,loan declined; equipment help only a thought
+SCN-C6-01,CLIENT-006,3,Email,THR-007,generated,2026-03-31T10:15:00,explicit_reference,email lists equipment help as a wish; ambiguous client acknowledgement; correction May 8
+SCN-C6-01,CLIENT-006,4,Calls,INT-098,original,2026-05-08T10:00:00,shared_topic_only,client confirms equipment help is only a thought
+SCN-C6-01,CLIENT-006,5,Meetings,MTG-011,generated,2026-06-15T10:00:00,shared_topic_only,client again says nothing decided about the equipment
+SCN-C6-02,CLIENT-006,1,Calls,INT-072,original,2026-04-10T10:30:00,origin,origin: only looking
+SCN-C6-02,CLIENT-006,2,Chat,CHT-005,generated,2026-04-11T10:05:00,explicit_reference,deposit worry; nothing due
+SCN-C6-02,CLIENT-006,3,Meetings,INT-092,original,2026-05-04T10:00:00,shared_topic_only,visit; contract not read
+SCN-C6-02,CLIENT-006,4,Chat,CHT-010,generated,2026-05-04T17:10:00,explicit_reference,client felt rushed; nothing to decide
+SCN-C6-02,CLIENT-006,5,Calls,INT-116,original,2026-05-29T10:00:00,shared_topic_only,contract read; decision on hold pending Frank
+SCN-C6-02,CLIENT-006,6,Email,THR-011,generated,2026-05-29T15:20:00,explicit_reference,"contract summary, hold, attorney list, final decision against for now"
+SCN-C6-02,CLIENT-006,7,Meetings,MTG-007,generated,2026-06-04T10:00:00,explicit_reference,questions for the attorney; advisor explicitly not recommending
+SCN-C6-02,CLIENT-006,8,Calls,INT-125,original,2026-06-08T10:30:00,shared_topic_only,client decides against for now
+SCN-C6-03,CLIENT-006,1,Calls,INT-009,original,2026-01-12T10:30:00,origin,origin: survivor amount recorded as unconfirmed
+SCN-C6-03,CLIENT-006,2,Meetings,INT-119,original,2026-06-02T10:30:00,shared_topic_only,client corrects to five aide days
+SCN-C6-03,CLIENT-006,3,Chat,CHT-016,generated,2026-06-03T09:50:00,explicit_reference,client double-checks the correction
+SCN-C6-03,CLIENT-006,4,Meetings,MTG-011,generated,2026-06-15T10:00:00,explicit_reference,model rerun; survivor amount is a stress case only
+SCN-C6-03,CLIENT-006,5,Chat,CHT-022,generated,2026-06-16T16:40:00,explicit_reference,pension papers to be uploaded via the secure portal
+SCN-C6-03,CLIENT-006,6,Calls,INT-145,original,2026-06-25T10:00:00,shared_topic_only,half-year review: survivor amount still unconfirmed
+SCN-C6-04,CLIENT-006,1,Calls,INT-018,original,2026-01-26T10:00:00,origin,origin: client asks advisor to contact accountant
+SCN-C6-04,CLIENT-006,2,Meetings,INT-085,original,2026-04-24T10:00:00,shared_topic_only,"figures confirmed: about $31k, $6k via church"
+SCN-C6-04,CLIENT-006,3,Meetings,INT-129,original,2026-06-11T10:00:00,shared_topic_only,"remaining amount monthly Jul-Dec, 12 percent withheld"
+SCN-C6-04,CLIENT-006,4,Email,THR-014,generated,2026-06-11T14:00:00,explicit_reference,advisor-accountant-client thread; accountant confirms; client instructs

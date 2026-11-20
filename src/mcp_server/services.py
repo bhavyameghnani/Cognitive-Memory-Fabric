@@ -6,6 +6,7 @@ Every public method returns a plain dict with keys tool, client_id, as_of, data,
 """
 from __future__ import annotations
 
+import re as _re
 import threading
 from collections import defaultdict
 from datetime import date
@@ -61,6 +62,12 @@ def pcts(values: list[Decimal]) -> list[Decimal]:
     for i in order[:max(short, 0)]:
         floor[i] += CENT
     return floor
+
+
+MAX_TURNS_PER_CALL = 12     # conversation turns one get_source_evidence call may return
+# vocabulary that suggests a turn corrects, retracts or revises something said earlier.  A RANKING hint for source discovery only (what to read first); never evidence that a correction happened.
+CORRECTION_CUE = _re.compile(r"\b(?:correct(?:ion|ed|ing|s)?|misstat\w*|mistaken|mistake|wrong|retract\w*|overstat\w*|amend\w*|revis(?:e|ed|ion)|actually|earlier (?:note|statement)|"
+                                         r"no longer|instead|rather than|i (?:was|had) (?:wrong|mistaken)|should (?:have )?(?:said|read))\b")
 
 
 class FinancialServices:
@@ -357,11 +364,50 @@ class FinancialServices:
         return self._env("get_market_data", None, as_of_date, {"months": rows}, "ref_market_path (shared synthetic path)",
                          ["Fictional market path; NOT real market data.", "Individual instruments apply a class beta plus seeded noise."])
 
+    def _search_turns(self, conv, client_id: str, search_text: str) -> dict:
+        """DISCOVERY: which turns of this client's own conversations contain a phrase.  Returns references only (interaction id, turn index, speaker, date), oldest first;
+        the text of a turn comes only from the conversation mode, so every excerpt keeps one provenance path."""
+        import re
+        from services.conversations import norm
+        q = norm(search_text or "")
+        if len(q) < 3:
+            raise ServiceError("search_text must be at least 3 characters")
+        rx = re.compile(r"(?<!\w)" + re.escape(q) + r"(?!\w)")
+        hits = sorted((r for r in conv.rows if r["client_id"] == client_id and rx.search(norm(r["utterance"]))), key=lambda r: (r["interaction_datetime"], r["interaction_id"], r["turn_index"]))
+        shown = hits[: self.SEARCH_LIMIT]
+        matches = [{"interaction_id": r["interaction_id"], "turn_index": r["turn_index"], "speaker": r["speaker"], "date": r["interaction_datetime"][:10],
+                    "cue": "correction" if CORRECTION_CUE.search(norm(r["utterance"])) else None} for r in shown]
+        return self._env("get_source_evidence", client_id, None, {"search": {"query": q, "total": len(hits), "truncated": len(hits) > len(shown), "matches": matches}},
+                         "conversations.csv", ["Search returns turn references only, not text or meaning; retrieve a turn with interaction_id and turn_index to read it.",
+                                               "A phrase match does not show what was decided or agreed.",
+                                               "cue 'correction' is a vocabulary hint used only to rank what to read first; it does not show that anything was corrected."], [f"{m['interaction_id']}#{m['turn_index']}" for m in matches])
+
+    SEARCH_LIMIT = 50
+
     def get_source_evidence(self, client_id: str, entity_type: Optional[str] = None, entity_id: Optional[str] = None,
-                            interaction_id: Optional[str] = None, turn_index: Optional[int] = None) -> dict:
+                            interaction_id: Optional[str] = None, turn_index: Optional[int] = None, search_text: Optional[str] = None,
+                            turn_indices: Optional[list] = None) -> dict:
         from services.conversations import shared
         self._client(client_id)
         conv = shared()
+        if search_text is not None:
+            if entity_type or entity_id or interaction_id is not None or turn_index is not None or turn_indices is not None:
+                raise ServiceError("search_text cannot be combined with entity_type, entity_id, interaction_id, turn_index or turn_indices")
+            return self._search_turns(conv, client_id, search_text)
+        if turn_indices is not None:
+            if turn_index is not None or entity_type or entity_id or not interaction_id:
+                raise ServiceError("turn_indices needs interaction_id and cannot be combined with turn_index, entity_type or entity_id")
+            idx = sorted({int(i) for i in turn_indices})
+            if not idx or len(idx) > MAX_TURNS_PER_CALL:
+                raise ServiceError(f"give between 1 and {MAX_TURNS_PER_CALL} turn_indices")
+            rows = [conv.turn(interaction_id, i) for i in idx]
+            missing = [i for i, t in zip(idx, rows) if not t or t["client_id"] != client_id]
+            if missing:
+                raise ServiceError(f"no turn(s) {missing} of {interaction_id} for {client_id}")
+            return self._env("get_source_evidence", client_id, rows[0]["interaction_datetime"][:10],
+                             {"turns": [{"interaction_id": interaction_id, "turn_index": i, "speaker": t["speaker"], "text": t["utterance"]} for i, t in zip(idx, rows)]},
+                             "conversations.csv", ["Conversation text is synthetic; only the referenced turn is returned.", "Only the listed turns of this one meeting are returned; neighbouring turns are not."],
+                             [f"{interaction_id}#{i}" for i in idx])
         if interaction_id is not None or turn_index is not None:
             if interaction_id is None or turn_index is None:
                 raise ServiceError("interaction_id and turn_index must be given together")
@@ -372,7 +418,7 @@ class FinancialServices:
                              {"turn": {"interaction_id": interaction_id, "turn_index": turn_index, "speaker": t["speaker"], "text": t["utterance"]}},
                              "conversations.csv", ["Conversation text is synthetic; only the referenced turn is returned."], [f"{interaction_id}#{turn_index}"])
         if not entity_type or not entity_id:
-            raise ServiceError("give entity_type and entity_id, or interaction_id and turn_index")
+            raise ServiceError("give entity_type and entity_id, interaction_id and turn_index, or search_text")
         rows = [r for r in self.od.get_evidence(entity_type, entity_id) if r["client_id"] == client_id]
         ev = [{"evidence_id": r["evidence_id"], "field": r["field_name"], "kind": r["evidence_kind"], "excerpt": r["excerpt"], "interaction_id": r["interaction_id"],
                "turn_index": r["turn_index"], "speaker": r["speaker"], "note": r["note"],

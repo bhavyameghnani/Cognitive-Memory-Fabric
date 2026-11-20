@@ -11,7 +11,9 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+from agents.planner.agent import is_source_chronology, names_source_turns
 from agents.tool_selector.digest import digest
+from agents.tool_selector.source_discovery import SOURCE_TOOL, meeting_calls, meetings_from, omission_note, plan_meetings, search_calls, source_search_plan
 from agents.tool_selector.prompts import SELECTOR, render_catalogue
 from agents.tool_selector.toolbox import ToolCallError, Toolbox
 from agents.tool_selector.validator import CallValidator, call_key
@@ -40,6 +42,8 @@ class ToolSelector:
         self.llm, self.toolbox = llm, toolbox
         self.tracer = tracer or NullTracer()
         self.cfg = config or SelectorConfig()
+        self._all_duplicate = False
+        self._productive = False
 
     def run_sync(self, request_text: str, plan: ExecutionPlan, memory_summary: dict) -> ToolSelectorState:
         return asyncio.run(self.run(request_text, plan, memory_summary))
@@ -70,6 +74,7 @@ class ToolSelector:
         validator = CallValidator(catalog, plan.client_ids)
         counter = _Counter()
         idle = 0
+        await self._discover_sources(request_text, plan, catalog, validator, state, counter)
         for it in range(1, self.cfg.max_iterations + 1):
             state.iterations = it
             try:
@@ -95,7 +100,12 @@ class ToolSelector:
                                            "partial" if state.missing_information else "complete")
                 return
             valid = await self._process(decision.calls, it, validator, state, counter, catalog)
-            idle = 0 if valid else idle + 1
+            if self._all_duplicate and state.successes():       # every call repeated a SUCCESSFUL one: nothing new can come of another turn (errors, timeouts and rejections are not duplicates)
+                self._merge_missing(state, decision.missing_information)
+                state.stop_reason = "no_new_valid_call"
+                state.completion_status = "partial" if state.missing_information else "complete"
+                return
+            idle = 0 if self._productive else idle + 1
             executed = sum(1 for e in state.executions if e.status in ("success", "error", "timeout"))
             if executed >= self.cfg.max_executions:
                 state.stop_reason, state.completion_status = "max_executions", "partial"
@@ -124,6 +134,12 @@ class ToolSelector:
                  f"ITERATION {it} of {self.cfg.max_iterations}; executions used {done} of {self.cfg.max_executions}; max {self.cfg.max_calls_per_iteration} calls per turn."]
         hist = self._history(state)
         parts.append("RESULTS SO FAR:\n" + hist if hist else "RESULTS SO FAR: none yet.")
+        ok = [f"{e.tool}({json.dumps(e.arguments, separators=(',', ':'))})" for e in state.executions if e.status == "success"]
+        if ok:
+            parts.append("ALREADY SUCCEEDED - never call these again: " + "; ".join(x[:110] for x in ok[-12:]))
+        waiting = [t for t in plan.required_tools if t not in {e.tool for e in state.successes()}]
+        if waiting and state.executions:
+            parts.append(f"PLANNED TOOLS NOT YET SUCCESSFULLY CALLED: {', '.join(waiting)} - call one if the task needs it, otherwise finish.")
         parts.append("Return the JSON decision now.")
         return "\n".join(parts)
 
@@ -149,6 +165,8 @@ class ToolSelector:
             ex = ToolExecution(id=counter.next(state.request_id), iteration=it, tool=c.tool, arguments=dict(c.arguments), status="rejected", rationale=c.rationale)
             verdict, msg, args = validator.validate(c, batch_keys)
             ex.arguments = args or ex.arguments
+            if verdict == "ok" and msg:
+                ex.rationale = (ex.rationale + " | " if ex.rationale else "") + msg
             if verdict == "ok" and n >= (limit or self.cfg.max_calls_per_iteration):
                 verdict, msg = "rejected", f"too many calls in one turn (max {limit or self.cfg.max_calls_per_iteration})"
             if verdict == "ok" and executed + len(to_run) >= self.cfg.max_executions:
@@ -161,6 +179,9 @@ class ToolSelector:
                 self.tracer.event(COMPONENT, "call_duplicate" if verdict == "duplicate" else "call_rejected", id=ex.id, tool=c.tool, arguments=c.arguments, message=msg)
             records.append(ex)
         state.executions.extend(records)
+        self._all_duplicate = bool(records) and all(r.status == "duplicate" for r in records)
+        blocked = len(records) - len(to_run)                                    # calls refused before running (repeats, invalid, over budget)
+        self._productive = bool(to_run) and len(to_run) >= blocked           # one new call does not make a turn productive when most of its calls were repeats or invalid
         if to_run:
             await asyncio.gather(*(self._execute(ex, validator) for ex in to_run))
         return bool(to_run)
@@ -178,9 +199,56 @@ class ToolSelector:
             ex.status, ex.error = "error", str(e)
         except Exception as e:
             ex.status, ex.error = "error", f"{type(e).__name__}: {str(e)[:300]}"
+        if ex.status in ("error", "timeout"):
+            validator.record_failure(ex.tool, ex.arguments)
         ex.duration_ms = int((time.perf_counter() - t0) * 1000)
         self.tracer.event(COMPONENT, "tool_result", id=ex.id, tool=ex.tool, arguments=ex.arguments, status=ex.status, duration_ms=ex.duration_ms,
                           digest=digest(ex.result.model_dump(mode="json"), 300) if ex.result else ex.error)
+
+    async def _discover_sources(self, request_text: str, plan: ExecutionPlan, catalog: list[dict], validator: CallValidator, state: ToolSelectorState, counter: "_Counter") -> None:
+        """A request about what the conversations record needs real interaction ids and turn indices, which the model cannot know.  Find them with the search mode of get_source_evidence, then retrieve
+        every matching turn, one call per MEETING, inside the tool-call budget.  Whatever does not fit is named in missing_information with the reason.  Runs only when the Planner chose
+        get_source_evidence, the request asks for a chronology / source turns (the Planner's own test) and it does not already name interaction turns."""
+        if SOURCE_TOOL not in plan.required_tools or len(plan.client_ids) != 1 or names_source_turns(request_text) or not is_source_chronology(request_text):
+            return
+        by = {t["name"]: t for t in catalog}
+        props = by.get(SOURCE_TOOL, {}).get("input_schema", {}).get("properties", {})
+        if "search_text" not in props or "turn_indices" not in props:
+            return
+        from services.conversations import shared
+        conv = shared()
+        client = plan.client_ids[0]
+        plan_terms = source_search_plan(request_text, client, conv, {v["first_name"] for v in conv.directory().values()})
+        terms = [t for t, _ in plan_terms]
+        if not terms:
+            state.missing_information.append("no searchable subject was found in the request (nothing in it matches this client's conversations), so no source turns were located")
+            self.tracer.event(COMPONENT, "source_discovery", terms=[], searched=0, retrieved=0)
+            return
+        n0 = len(state.executions)
+        await self._process(search_calls(client, terms), 0, validator, state, counter, catalog)
+        found = state.executions[n0:]
+        for e in found:
+            if e.status != "success":
+                state.missing_information.append(f"the source search for {e.arguments.get('search_text')!r} did not run ({e.status}: {str(e.error)[:120]}), so turns that mention it may be missing")
+        meetings, notes = meetings_from(found, dict(plan_terms))
+        state.missing_information.extend(n[0].upper() + n[1:] for n in notes)
+        used = sum(1 for e in state.executions if e.status in ("success", "error", "timeout"))
+        budget = max(self.cfg.max_executions - used, 0)
+        chosen, omitted = plan_meetings(meetings, budget)
+        calls, cut = meeting_calls(client, meetings, chosen)
+        n1 = len(state.executions)
+        if calls:
+            await self._process(calls, 0, validator, state, counter, catalog, limit=len(calls))
+        for e in state.executions[n1:]:
+            if e.status != "success":
+                omitted.append({"interaction_id": e.arguments.get("interaction_id"), "date": meetings.get(e.arguments.get("interaction_id"), {}).get("date", ""),
+                                "turns": e.arguments.get("turn_indices") or [], "reason": f"the retrieval call failed ({e.status}: {str(e.error)[:120]})"})
+        state.missing_information.extend(omission_note(o, self.cfg.max_executions) for o in omitted + cut)
+        if not meetings and not any(e.status != "success" for e in found):
+            state.missing_information.append(f"no turn of this client's conversations mentions {', '.join(repr(t) for t in terms)}")
+        got = sum(len(e.arguments.get("turn_indices") or []) for e in state.executions[n1:] if e.status == "success")
+        self.tracer.event(COMPONENT, "source_discovery", terms=terms, searched=len(found), meetings_found=len(meetings), meetings_retrieved=len(calls), turns_retrieved=got,
+                          budget=budget, omitted=[{"interaction_id": o["interaction_id"], "turns": o["turns"], "reason": o["reason"][:60]} for o in omitted + cut])
 
     async def _fallback(self, plan: ExecutionPlan, catalog: list[dict], validator: CallValidator, state: ToolSelectorState, counter: "_Counter") -> None:
         """Model unavailable on iteration 1: run only the Planner's suggested tools that need nothing but client_id."""

@@ -1,0 +1,75 @@
+{
+  "attributed_to": {
+    "advisor": "The speaker attributes the content to the advisor.",
+    "client": "The speaker attributes the content to the client.",
+    "none": "No attribution.",
+    "self": "The speaker is stating their own position or act.",
+    "third_party": "The speaker attributes it to someone else.",
+    "unresolved": "Cannot tell."
+  },
+  "confidence": {
+    "high": "Clear from the text.",
+    "low": "Weak evidence; consider 'unresolved'.",
+    "medium": "Reasonable but another reading exists."
+  },
+  "correction_evidence": {
+    "explicit_reference": "The text names the earlier statement (by date, medium or quoted content): 'my February 18 email', 'I wrote that ...'.",
+    "none": "No supporting evidence in the text: do NOT give a correction target.",
+    "restated_value": "The turn restates the earlier item with a changed value and signals the change ('actually it is 60%').",
+    "self_repair": "The speaker repairs their own immediately preceding words."
+  },
+  "decision_maker": {
+    "advisor": "The advisor made the choice (rare; advisors recommend).",
+    "client": "The client made the choice.",
+    "joint": "Both parties explicitly agreed.",
+    "none": "No decision is stated in this turn.",
+    "third_party": "Someone else (accountant, lawyer, family member).",
+    "unresolved": "Cannot tell."
+  },
+  "decision_status": {
+    "conditional": "Settled only if a stated condition holds.",
+    "confirmed": "Settled and stated first-hand by the decision-maker or explicitly confirmed by them.",
+    "exploratory": "Being considered, leaning, or hypothetical.",
+    "none": "No decision content.",
+    "recommendation_only": "An advisor's recommendation the client has not accepted.",
+    "reported_by_other": "The speaker REPORTS or recaps a decision attributed to someone else. An advisor's recap is evidence of what the advisor says the client decided, not a confirmed client decision.",
+    "unresolved": "Cannot tell."
+  },
+  "dialogue_acts": {
+    "agreement": "The speaker agrees with something said earlier. A discourse opener ('Good morning', 'Right now', 'Okay so') is NOT agreement.",
+    "answer": "The turn supplies the information a preceding question asked for. Say which question in answers_turn.",
+    "commitment": "The speaker undertakes to do something specific. 'I'll have to think about that' is not a commitment.",
+    "correction": "The speaker states that an earlier statement, record or note (their own or another's) was wrong and gives the right version. Apology alone is not correction.",
+    "decision": "The speaker, FIRST-HAND, states a settled choice made by themselves or jointly with the other party. A choice reported on behalf of someone else is a decision_report: tag decision_status=reported_by_other.",
+    "deferral": "The speaker explicitly leaves something open, undecided or for later ('nothing is decided', 'let's revisit').",
+    "exploration": "The speaker is considering an option without settling it ('I'm thinking about', 'what if', 'leaning toward').",
+    "fact": "The speaker states information, a figure, an event or a status with no other act above.",
+    "other": "A real act not covered above (explain in notes).",
+    "preference": "The speaker states what they want or would rather do, without deciding ('I'd rather keep the cash', 'I don't want to run out of money').",
+    "proposal": "The speaker puts a concrete plan or next step forward for acceptance ('let's schedule', 'shall we').",
+    "question": "The speaker asks for information. A question mark is neither necessary nor sufficient; an embedded or rhetorical '?' is not a question.",
+    "rejection": "The speaker declines or disagrees with a proposal, suggestion or claim. Courtesy phrases ('No problem', 'No apology needed') are not rejection.",
+    "request": "The speaker asks the other party to DO something (send, check, confirm, call) rather than to say something.",
+    "social": "Greeting, thanks, courtesy or boilerplate carrying no planning content.",
+    "suggestion": "The speaker recommends or suggests a course of action without committing anyone to it ('I'd suggest', 'you could').",
+    "unresolved": "Reviewer cannot tell from the evidence. Use alone; the item is excluded from precision/recall and counted separately."
+  },
+  "topics": {
+    "business_and_equity_events": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "estate_and_trusts": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "family_and_education": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "follow_up_commitments": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "general_discussion": "No identifiable planning topic.",
+    "goals_and_planning": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "housing_and_debt": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "insurance_and_care": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "liquidity_and_cash": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "none": "No topic content (pure social turn).",
+    "other": "A real topic outside this list (name it in notes).",
+    "portfolio_allocation": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "retirement_planning": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "scheduling_and_admin": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "tax": "Keyword-lexicon topic (existing taxonomy; may be judged too broad in notes).",
+    "unresolved": "Cannot tell."
+  }
+}

@@ -10,7 +10,8 @@ from schemas.report import EvidenceItem
 from schemas.tools import ToolSelectorState
 
 SYNTHETIC_STATEMENT = ("Operational data and tool calculations come from a synthetic dataset; they are not facts disclosed by the client. "
-                       "Conversation evidence and memories are the client's own statements.")
+                       "Memories record what was said in meetings and carry their own verification status. Source conversation turns come from synthetic meeting records: a turn shows what its "
+                       "recorded speaker (the client, the advisor or another participant) is recorded as saying, not that the statement is true, and not original recordings of a real client.")
 NO_PROJECTION = ("No projection exists: only a simple funding-gap style calculation was available; there is no market-return, tax or "
                  "longevity projection, so feasibility cannot be confirmed.")
 FEASIBILITY_RX = re.compile(r"\b(can|could|should|afford|feasib\w*|enough|sufficient|on track|possible)\b", re.I)

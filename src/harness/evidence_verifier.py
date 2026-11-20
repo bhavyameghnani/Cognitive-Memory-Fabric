@@ -24,7 +24,7 @@ from harness import clause_support
 from harness.claim_extraction import extract_claims
 from harness.claim_matching import Bundle, Context, build_bundle, verify_claim, verify_rendered
 from schemas.claims import ClaimVerification, Outcome, Reason
-from schemas.report import AdvisorReport, EvidenceItem, Finding
+from schemas.report import AdvisorReport, EvidenceItem, Finding, is_source_turn
 
 SECTIONS = ("key_findings", "historical_context", "financial_analysis")
 TOOL_CLASSES = ("operational_data", "tool_calculation")
@@ -241,6 +241,17 @@ class EvidenceVerifier:
         if section in ("key_findings", "historical_context") and all(e.source_class in TOOL_CLASSES for e in items):
             bad.append("a client-state statement cannot rest only on tool/operational results")
             codes.append(Reason.SOURCE_NOT_PERMITTED.value)
+        turns = [e for e in items if is_source_turn(e)]
+        if turns:   # a retrieved source turn records WHAT WAS SAID; it supports a historical statement about the record and nothing about current state
+            if section != "historical_context" and all(is_source_turn(e) for e in items):
+                bad.append("a source conversation turn can support only a historical statement about what the turn records")
+                codes.append(Reason.SOURCE_NOT_PERMITTED.value)
+            elif f.origin not in ("rendered", "tool_code"):
+                from agents.report.validate import source_record_problem
+                why = source_record_problem(f.text, turns)
+                if why:
+                    bad.append(why)
+                    codes.append(Reason.SOURCE_NOT_PERMITTED.value)
         for e in items:
             if e.evidence_class in ("unverified", "contradicted", "open_conflict"):        # P1.5.1: the memory layer's verdict is binding at the report boundary
                 bad.append(f"{e.ref}: the cited memory is {e.evidence_class} and cannot support a finding")
@@ -389,7 +400,7 @@ class EvidenceVerifier:
         for e in items:
             parts += [e.description or "", e.excerpt or "", e.value or "", e.valid_from or "", e.valid_to or "", e.event_date or ""]
             ex = by_id.get(e.tool_execution_id) if e.tool_execution_id else None
-            if ex is not None and ex.result is not None:
+            if ex is not None and ex.result is not None and not is_source_turn(e):      # one call may return several turns: a turn's own excerpt (above) is all that backs it
                 parts += [str(x) for x in _leaves(ex.result.data)] + [str(x) for x in _leaves(ex.arguments)] + [ex.result.as_of or ""]
         return " ".join(parts)
 
@@ -425,6 +436,14 @@ class EvidenceVerifier:
         if bad_s and fallback_summary is not None:
             result.summary_replaced = "summary cited figures/dates not in any evidence"          # the figures themselves are not repeated in the response
             summary = fallback_summary()
+        turns = [e for e in evidence.values() if is_source_turn(e)]
+        if turns:      # the summary is not claim-verified, so with source turns present it gets the source-turn restriction directly: replaced, never echoed
+            from agents.report.validate import source_summary, source_summary_problem
+            if source_summary_problem(summary, turns):
+                summary = fallback_summary() if fallback_summary is not None else ""
+                if not summary or source_summary_problem(summary, turns):          # no safe composed summary: say only what is safe, and say that the rest is not summarised
+                    summary = source_summary(turns, others_omitted=any(not is_source_turn(e) for e in evidence.values()))
+                result.summary_replaced = (result.summary_replaced + "; " if result.summary_replaced else "") + "summary presented a source turn as fact, decision, agreement or current state"
         validation = dict(report.validation)
         validation["harness_evidence"] = dict(counts=result.counts(), outcomes=result.outcome_counts(), mode="structured" if self.structured else "lexical",
                                               summary_replaced=result.summary_replaced, claim_evidence=result.claim_evidence(), findings=result.findings_summary(),

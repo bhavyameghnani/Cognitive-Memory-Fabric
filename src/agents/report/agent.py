@@ -10,12 +10,12 @@ from agents.report.feasibility import feasibility_summary, guard_summary, is_fea
 from agents.report.evidence import build_evidence, prompt_lines, PROMPT_ITEMS
 from agents.report.prompts import REPORT_SYSTEM
 from agents.report.validate import (public_reason, authority_notes, authority_split, NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
-                                    filter_findings, no_evidence_summary)
+                                    filter_findings, no_evidence_summary, source_record_findings, SOURCE_FINDINGS_LIMIT)
 from llm.client import LLMClient, LLMError, StructuredOutputError, generate_structured
 from orchestration.tracing import NullTracer, Tracer
 from schemas.memory import MemoryContext
 from schemas.plan import ExecutionPlan
-from schemas.report import AdvisorReport, Finding, ReportLLMOutput
+from schemas.report import AdvisorReport, Finding, ReportLLMOutput, is_source_turn
 from schemas.tools import ToolSelectorState
 
 
@@ -40,6 +40,9 @@ class ReportAgent:
         evidence, removed = build_evidence(plan, memory, tools)
         assumptions, limitations, uncertainties = assemble(plan, memory, tools, evidence)
         uncertainties = list(uncertainties) + [u for u in authority_notes(evidence) if u not in uncertainties]
+        n_turns = sum(1 for e in evidence if is_source_turn(e))
+        if n_turns > SOURCE_FINDINGS_LIMIT:
+            uncertainties.append(f"{n_turns} source turns were retrieved but only the first {SOURCE_FINDINGS_LIMIT} are written out as findings; all {n_turns} are in the evidence list.")
         self.tracer.event("report", "evidence_built", items=len(evidence), by_class={c: sum(e.source_class == c for e in evidence) for c in {e.source_class for e in evidence}},
                           ownership_removed=len(removed["ownership_removed"]))
         rec: dict = {"model_called": False, "mode": "", "invalid_refs_removed": 0, "findings_dropped": [], "summary_replaced": None,
@@ -63,7 +66,7 @@ class ReportAgent:
         rec.update(claims_total=len(out.claims), claims_accepted=len(claims), claims_rejected=rejected)
         rendered = render_claims(claims, evidence)
         key = rendered["key_findings"] + filter_findings(out.key_findings, evidence, nc, rec)
-        hist = rendered["historical_context"] + filter_findings(out.historical_context, evidence, nc, rec)
+        hist = rendered["historical_context"] + source_record_findings(evidence) + filter_findings(out.historical_context, evidence, nc, rec)
         fin = tool_findings(evidence, tools) + filter_findings(out.financial_analysis, evidence, nc, rec)
         key, m1 = authority_split(key, evidence, rec)
         hist, m2 = authority_split(hist, evidence, rec)
@@ -90,8 +93,8 @@ class ReportAgent:
                 unc.append(u)
         fol = [f for f in out.suggested_followups if not check_prose(f, evidence, nc)] or self._followups(uncertainties, False)
         rec["mode"] = "llm"
-        self.tracer.event("report", "report_written", mode="llm", claims_accepted=len(claims), claims_rejected=len(rejected), dropped=len(rec["findings_dropped"]),
-                          summary_replaced=bool(rec["summary_replaced"]))
+        self.tracer.event("report", "report_written", **{**_why(rec), "mode": "llm", "claims_rejected": len(rejected), "dropped": len(rec["findings_dropped"]),
+                                                         "summary_replaced": bool(rec["summary_replaced"])})
         return AdvisorReport(**base, summary=summary, key_findings=_dedupe(key), historical_context=_dedupe(hist), financial_analysis=_dedupe(fin),
                              uncertainties=unc, suggested_followups=fol[:5], validation=rec)
 
@@ -113,7 +116,7 @@ class ReportAgent:
     def _deterministic(self, base, plan, evidence, uncertainties, rec, mode, tools, request_text) -> AdvisorReport:
         rec["mode"] = mode
         sec = deterministic_sections(evidence)
-        self.tracer.event("report", "report_written", mode=mode)
+        self.tracer.event("report", "report_written", mode=mode, **_why(rec))
         sec["financial_analysis"] = tool_findings(evidence, tools) + sec["financial_analysis"]
         summary = deterministic_summary(evidence, plan)
         if is_feasibility(plan, request_text):
@@ -133,6 +136,19 @@ class ReportAgent:
         if any(u.startswith(("Missing", "Tool error", "No tool results", "Tool ")) for u in unc):
             out.append("Obtain the missing information or tool results listed under uncertainties.")
         return out[:5]
+
+
+def _why(rec: dict) -> dict:
+    """What happened to the model's draft, for the trace: counts and the public reason codes only (never the model's sentences).  Without this a 'nothing valid' report cannot be explained."""
+    def reasons(items):
+        out: dict = {}
+        for x in items:
+            r = str(x.get("reason", ""))[:120]
+            out[r] = out.get(r, 0) + 1
+        return out
+    return dict(model_called=rec.get("model_called"), evidence_items=rec.get("evidence_items"), evidence_in_prompt=rec.get("evidence_in_prompt"), claims_total=rec.get("claims_total"),
+                claims_accepted=rec.get("claims_accepted"), claim_reject_reasons=reasons(rec.get("claims_rejected") or []), findings_dropped=len(rec.get("findings_dropped") or []),
+                finding_drop_reasons=reasons(rec.get("findings_dropped") or []), model_error=rec.get("model_error"))
 
 
 def _dedupe(items: list[Finding]) -> list[Finding]:

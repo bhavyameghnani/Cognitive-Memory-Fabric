@@ -1,0 +1,7 @@
+retention_policy_id,applies_to,review_after_days,policy_label,expiry_modelled,assumption
+SYN-RET-MTG,"Meetings, original and generated",270,meeting transcripts and recordings: review after 270 days,no: review date only,synthetic experimental policy; not a vendor or regulatory rule
+SYN-RET-CAL,Calls,120,call transcripts: review after 120 days,no: review date only,synthetic experimental policy; not a vendor or regulatory rule
+SYN-RET-EML,Email threads,365,email threads: review after 365 days,no: review date only,synthetic experimental policy; not a vendor or regulatory rule
+SYN-RET-CHT,Chat conversations,60,short-lived chat: review after 60 days,no: review date only,synthetic experimental policy; not a vendor or regulatory rule
+SYN-RET-CRM-ACT,CRM Activity records,540,"CRM activity log: own review interval, independent of its source",no: review date only,synthetic experimental policy; not a vendor or regulatory rule
+SYN-RET-CRM-NOTE,CRM Notes and Summaries,720,"advisor-typed CRM text: own review interval, independent of its source",no: review date only,synthetic experimental policy; not a vendor or regulatory rule

@@ -46,6 +46,9 @@ class EvidenceItem(BaseModel):
     temporal_status: Optional[str] = None
     evidence_class: Optional[str] = None
     conflict_ids: list[str] = Field(default_factory=list)
+    # retrieved source conversation turn (get_source_evidence, conversation mode): who is RECORDED as speaking and where the record came from, exactly as the tool returned them
+    speaker: Optional[str] = None
+    provenance: Optional[str] = None
 
 
 class Claim(BaseModel):
@@ -88,3 +91,9 @@ class AdvisorReport(BaseModel):
     limitations: list[str] = Field(default_factory=list)
     suggested_followups: list[str] = Field(default_factory=list)
     validation: dict[str, Any] = Field(default_factory=dict)
+
+
+def is_source_turn(e: "EvidenceItem") -> bool:
+    """A retrieved source conversation turn: a conversation_evidence item that came from a tool execution rather than from a stored memory.  It records WHAT WAS SAID, by whom, in which
+    synthetic source; it is not a memory, so it can never back a current / superseded / exploratory / recommendation claim."""
+    return e.source_class == "conversation_evidence" and bool(e.tool_execution_id) and not e.memory_id

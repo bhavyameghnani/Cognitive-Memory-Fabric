@@ -6,6 +6,8 @@ Configuration (environment variables, nothing hard-coded):
     CMF_LLM_MODEL     default qwen2.5:3b
     CMF_LLM_API_KEY   optional bearer token for a protected endpoint (never logged)
     CMF_LLM_TEMPERATURE / CMF_LLM_NUM_CTX / CMF_LLM_MAX_TOKENS / CMF_LLM_TIMEOUT
+    CMF_LLM_MAX_TOKENS_<AGENT>  per-agent output limit (AGENT = PLANNER | MEMORY | TOOL_SELECTOR | REPORT); overrides CMF_LLM_MAX_TOKENS for that agent.
+                                When neither is set the Report agent gets 1500 (a sourced chronology does not fit in the 700 of the other agents).
 Agents depend only on LLMClient.complete(); they never import an HTTP library.
 """
 from __future__ import annotations
@@ -55,6 +57,21 @@ min(their own timeout, this).  None (no harness) leaves the provider's own timeo
 CALL_ID: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("cmf_llm_call_id", default=None)
 """Correlation id of the provider call in flight; a provider that supports cancellation (`cancel_call(call_id) -> bool`) can map it to its connection."""
 TRUNCATED_FINISH = ("length", "max_tokens")
+REPORT_DEFAULT_MAX_TOKENS = 1500
+
+
+def agent_output_limits(env=None) -> dict:
+    """Per-agent output-token limits from CMF_LLM_MAX_TOKENS_<AGENT>; the Report agent defaults to REPORT_DEFAULT_MAX_TOKENS unless the global CMF_LLM_MAX_TOKENS is set.
+    Agents not in the result use the provider's own max_tokens."""
+    env = os.environ if env is None else env
+    out: dict = {}
+    for a in ("planner", "memory", "tool_selector", "report"):
+        v = env.get(f"CMF_LLM_MAX_TOKENS_{a.upper()}", "").strip()
+        if v:
+            out[a] = int(v)
+    if "report" not in out and not env.get("CMF_LLM_MAX_TOKENS", "").strip():
+        out["report"] = REPORT_DEFAULT_MAX_TOKENS
+    return out
 _CONTEXT_PAT = re.compile(r"context[_ ]length|maximum context|context window|too many tokens|prompt is too long|input length exceeds|exceeds the (?:model|context)", re.I)
 
 
@@ -125,13 +142,14 @@ class OllamaLLM(_UsageMixin):
     temperature: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TEMPERATURE", "0")))
     num_ctx: int = field(default_factory=lambda: int(os.environ.get("CMF_LLM_NUM_CTX", "6144")))
     max_tokens: int = field(default_factory=lambda: int(os.environ.get("CMF_LLM_MAX_TOKENS", "700")))
+    agent_max_tokens: dict = field(default_factory=agent_output_limits)   # per-agent overrides of max_tokens
     timeout: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TIMEOUT", "900")))
     calls: int = 0
     native_timeout = True       # urllib applies a socket timeout (min of this and the harness-derived CALL_TIMEOUT); there is no cooperative cancel_call
 
     def complete(self, agent: str, system: str, user: str, schema: Optional[dict] = None) -> str:
         body: dict[str, Any] = {"model": self.model, "stream": False, "keep_alive": "30m",
-                                "options": {"temperature": self.temperature, "num_ctx": self.num_ctx, "num_predict": self.max_tokens},
+                                "options": {"temperature": self.temperature, "num_ctx": self.num_ctx, "num_predict": self.agent_max_tokens.get(agent, self.max_tokens)},
                                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         if schema is not None:
             body["format"] = schema
@@ -197,6 +215,7 @@ class OpenAILLM(_UsageMixin):
     base_url: str = field(default_factory=lambda: os.environ.get("CMF_OPENAI_BASE_URL", "https://api.openai.com/v1"))
     temperature: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TEMPERATURE", "0")))
     max_tokens: int = field(default_factory=lambda: int(os.environ.get("CMF_LLM_MAX_TOKENS", "1500")))
+    agent_max_tokens: dict = field(default_factory=agent_output_limits)   # per-agent overrides of max_tokens
     timeout: float = field(default_factory=lambda: float(os.environ.get("CMF_LLM_TIMEOUT", "120")))
     calls: int = 0
     native_timeout = True       # see OllamaLLM
@@ -206,7 +225,7 @@ class OpenAILLM(_UsageMixin):
         if not key:
             raise LLMError("OPENAI_API_KEY is not set")
         sys_msg = system + (("\n\nReturn ONLY a JSON object that conforms to this JSON schema:\n" + json.dumps(schema)) if schema else "")
-        body: dict[str, Any] = {"model": self.model, "temperature": self.temperature, "max_tokens": self.max_tokens,
+        body: dict[str, Any] = {"model": self.model, "temperature": self.temperature, "max_tokens": self.agent_max_tokens.get(agent, self.max_tokens),
                                 "messages": [{"role": "system", "content": sys_msg}, {"role": "user", "content": user}]}
         if schema is not None:
             body["response_format"] = {"type": "json_object"}

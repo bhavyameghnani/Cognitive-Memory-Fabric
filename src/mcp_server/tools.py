@@ -88,9 +88,11 @@ def get_market_data(as_of_date: Optional[str] = None) -> str:
 
 
 def get_source_evidence(client_id: str, entity_type: Optional[str] = None, entity_id: Optional[str] = None,
-                        interaction_id: Optional[str] = None, turn_index: Optional[int] = None) -> str:
-    """Evidence for a data record (entity_type such as goal, account, holding, liability, profile, transaction, with entity_id) or the text of a conversation turn (interaction_id with turn_index)."""
-    return _run(SERVICES.get_source_evidence, client_id=client_id, entity_type=entity_type, entity_id=entity_id, interaction_id=interaction_id, turn_index=turn_index)
+                        interaction_id: Optional[str] = None, turn_index: Optional[int] = None, search_text: Optional[str] = None,
+                        turn_indices: Optional[list[int]] = None) -> str:
+    """Evidence for a data record (entity_type such as goal, account, holding, liability, profile, transaction, with entity_id), the text of one conversation turn (interaction_id with turn_index), the text of several turns of one meeting (interaction_id with turn_indices, at most 12), or a search_text phrase that lists which turns mention it (references only)."""
+    return _run(SERVICES.get_source_evidence, client_id=client_id, entity_type=entity_type, entity_id=entity_id, interaction_id=interaction_id, turn_index=turn_index,
+                search_text=search_text, turn_indices=turn_indices)
 
 
 # the one registration table (names fixed so the Planner's tool list matches)

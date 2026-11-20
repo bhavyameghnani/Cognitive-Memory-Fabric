@@ -1,0 +1,13 @@
+meeting_id,client_id,advisor_id,organizer_id,meeting_start_datetime,meeting_end_datetime,duration_minutes,subject,channel,source_platform,meeting_platform,turn_count,source_type,consent_status
+MTG-001,CLIENT-004,ADVISOR-001,ADVISOR-001,2026-03-18T09:30:00,2026-03-18T09:35:34,6,Survivor pension form in plain language; the lump-sum option,Meetings,OneDrive and Teams,OneDrive (uploaded recording),16,synthetic_meeting_transcript,synthetic
+MTG-002,CLIENT-005,ADVISOR-002,ADVISOR-002,2026-04-07T09:00:00,2026-04-07T09:04:26,5,Tender offer: reading the comparison,Meetings,OneDrive and Teams,Teams,14,synthetic_meeting_transcript,synthetic
+MTG-003,CLIENT-003,ADVISOR-003,ADVISOR-003,2026-04-27T08:00:00,2026-04-27T08:04:58,5,Going back to work and the four-day-week idea,Meetings,OneDrive and Teams,Teams,15,synthetic_meeting_transcript,synthetic
+MTG-004,CLIENT-001,ADVISOR-001,ADVISOR-001,2026-04-28T08:00:00,2026-04-28T08:06:22,7,Retirement age: 63 versus 65 with the retention bonus,Meetings,OneDrive and Teams,Teams,16,synthetic_meeting_transcript,synthetic
+MTG-005,CLIENT-002,ADVISOR-002,ADVISOR-002,2026-05-05T11:00:00,2026-05-05T11:05:35,6,Ethan's college funding and the 529 question,Meetings,OneDrive and Teams,Teams,16,synthetic_meeting_transcript,synthetic
+MTG-006,CLIENT-005,ADVISOR-002,ADVISOR-002,2026-05-26T09:30:00,2026-05-26T09:33:39,4,Lisbon: what would make it real,Meetings,OneDrive and Teams,OneDrive (uploaded recording),11,synthetic_meeting_transcript,synthetic
+MTG-007,CLIENT-006,ADVISOR-003,ADVISOR-003,2026-06-04T10:00:00,2026-06-04T10:04:58,5,Maplewood Commons: questions for the elder-law attorney,Meetings,OneDrive and Teams,Teams,16,synthetic_meeting_transcript,synthetic
+MTG-008,CLIENT-001,ADVISOR-001,ADVISOR-001,2026-06-10T08:00:00,2026-06-10T08:05:33,6,Deferred compensation: reviewing the election form,Meetings,OneDrive and Teams,Teams,16,synthetic_meeting_transcript,synthetic
+MTG-009,CLIENT-003,ADVISOR-003,ADVISOR-003,2026-06-15T08:00:00,2026-06-15T08:03:45,4,Childcare fees: first pass at the reworked budget,Meetings,OneDrive and Teams,Teams,11,synthetic_meeting_transcript,synthetic
+MTG-010,CLIENT-004,ADVISOR-001,ADVISOR-001,2026-06-15T09:30:00,2026-06-15T09:34:49,5,Folake's share: held in trust or outright,Meetings,OneDrive and Teams,Teams,14,synthetic_meeting_transcript,synthetic
+MTG-011,CLIENT-006,ADVISOR-003,ADVISOR-003,2026-06-15T10:00:00,2026-06-15T10:04:52,5,Care budget with five aide days; Frank's pension survivor amount,Meetings,OneDrive and Teams,Teams,15,synthetic_meeting_transcript,synthetic
+MTG-012,CLIENT-002,ADVISOR-002,ADVISOR-002,2026-06-15T11:00:00,2026-06-15T11:04:31,5,Life after closing: first pass of the cash-flow model,Meetings,OneDrive and Teams,Teams,14,synthetic_meeting_transcript,synthetic
