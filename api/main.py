@@ -38,6 +38,7 @@ from agents.memory.errors import MemoryWriteRejected, ScopeDenied  # noqa: E402
 from agents.memory.integrity import Principal  # noqa: E402
 from agents.memory.config import GLOBAL_CLIENT  # noqa: E402
 from agents.memory.store import MemoryStore, to_item  # noqa: E402
+from api import datasource  # noqa: E402
 from api.agent_run import build_agent_run  # noqa: E402
 from harness import AuthContext, Harness, HarnessConfig, PermissionDenied, PermissionGate  # noqa: E402
 from harness.approval import ApprovalRequired  # noqa: E402
@@ -236,6 +237,52 @@ def clients(request: Request) -> list[dict]:
         out.append(dict(client_id=cid, first_name=d["first_name"], advisor_id=d["advisor_id"], interactions=d["interactions"], age=p.get("age"),
                         occupation=p.get("occupation"), risk_category=p.get("risk_category"), memories=store().count("memory_records", "client_id=?", (cid,))))
     return out
+
+
+# ---- "Learn about the data" page: the raw multi-channel sources, the CRM layer and the memories derived from them (read-only, same client scoping as /brain)
+def _allowed_clients(auth: Optional[AuthContext]):
+    return None if auth is None else PermissionGate(harness().config, shared().directory).authorized_clients(auth)
+
+
+@app.get("/api/datasource")
+def datasource_overview(request: Request) -> dict:
+    auth = authorize(request, "read_memory")
+    return dict(datasource.overview(), scenarios=datasource.scenarios(_allowed_clients(auth)))
+
+
+@app.get("/api/datasource/tables")
+def datasource_tables(request: Request) -> list[dict]:
+    authorize(request, "read_memory")
+    return datasource.table_keys()
+
+
+@app.get("/api/datasource/tables/{key}")
+def datasource_table(key: str, request: Request, client_id: Optional[str] = None, offset: int = 0, limit: int = 200) -> dict:
+    auth = authorize(request, "read_memory")
+    if client_id and not _owns(auth, client_id):
+        raise HTTPException(404, "unknown client")
+    page = datasource.table_page(key, _allowed_clients(auth), client_id, max(offset, 0), min(max(limit, 1), 500))
+    if page is None:
+        raise HTTPException(404, "unknown table")
+    return page
+
+
+@app.get("/api/datasource/scenarios/{scenario_id}")
+def datasource_scenario(scenario_id: str, request: Request) -> dict:
+    auth = authorize(request, "read_memory")
+    cid = datasource.scenario_client(scenario_id)
+    if cid is None or not _owns(auth, cid):
+        raise HTTPException(404, "unknown scenario")
+    detail = datasource.scenario_detail(scenario_id, shared())
+    sources = {s["source_id"] for s in detail["steps"]}
+    rows = store().records(cid, include_global=False)
+    mems = []
+    for item in _items(rows):
+        hit = [e for e in (item.get("evidence") or []) if e["interaction_id"] in sources]
+        if hit:
+            mems.append(dict(item, evidence=hit))
+    detail["memories"] = mems
+    return detail
 
 
 @app.get("/api/clients/{client_id}/brain")

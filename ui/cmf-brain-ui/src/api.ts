@@ -1,11 +1,7 @@
-import type { AskResult, BrainData, ClientSummary, MemoryDetail } from './types';
+import type { AskResult, BrainData, ClientSummary, DsOverview, DsScenarioDetail, DsTablePage, MemoryDetail } from './types';
 
 // Empty by default: requests go to /api on the same origin and the Vite dev proxy forwards them (VITE_API_PROXY_TARGET).
 const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').replace(/\/$/, '');
-
-// Signed Bearer token, held in module memory only: never logged, never written to storage.
-let token = '';
-export function setToken(value: string) { token = value.trim(); }
 
 export class ApiError extends Error {
   status: number;
@@ -13,9 +9,7 @@ export class ApiError extends Error {
 }
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(BASE + url, { ...init, headers });
+  const res = await fetch(BASE + url, init);
   if (!res.ok) {
     let msg = `${res.status} ${res.statusText}`;
     try { msg = (await res.json()).detail ?? msg; } catch { /* keep status text */ }
@@ -25,6 +19,9 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  datasource: () => call<DsOverview>('/api/datasource'),
+  scenario: (id: string) => call<DsScenarioDetail>(`/api/datasource/scenarios/${id}`),
+  table: (key: string, clientId: string, offset: number) => call<DsTablePage>(`/api/datasource/tables/${key}?offset=${offset}&limit=200${clientId ? `&client_id=${clientId}` : ''}`),
   clients: () => call<ClientSummary[]>('/api/clients'),
   brain: (clientId: string) => call<BrainData>(`/api/clients/${clientId}/brain`),
   memory: (id: string) => call<MemoryDetail>(`/api/memories/${id}`),

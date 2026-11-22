@@ -147,3 +147,16 @@ export interface AgentRun {
   report: { validation: Record<string, unknown>; evidence: number };
   degraded: string[];
 }
+
+export interface DsChannel { channel: string; platform: string; what: string; records: number; unit: string; messages: number | null }
+export interface DsCrm { artifact: string; total: number; automatic: number; manual: number }
+export interface DsScenario { scenario_id: string; client_id: string; advisor_id: string; title: string; arc_summary: string; record_count: string; channels_present: string }
+export interface DsOverview { channels: DsChannel[]; crm: DsCrm[]; original_turns: number; scenarios: DsScenario[] }
+export interface DsMessage { who: string; role: string; at: string; text: string; turn: number }
+export interface DsCrmRecord { crm_record_id: string; type: string; created_at: string; subject: string; text: string; transfer: string }
+export interface DsStep {
+  sequence: number; channel: string; source_id: string; timestamp: string; origin: string; link_basis: string; note: string;
+  source: { title: string; meta: string; messages: DsMessage[] }; crm: DsCrmRecord[];
+}
+export interface DsScenarioDetail { scenario: DsScenario; steps: DsStep[]; memories: MemoryItem[] }
+export interface DsTablePage { key: string; file: string; label: string; columns: string[]; total: number; offset: number; rows: string[][] }
