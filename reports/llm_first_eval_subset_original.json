@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-22 12:54",
+  "generated_at": "2026-11-22 13:42",
   "conversations": 60,
   "transcripts": "data/conversations.csv",
   "client": null,
@@ -9,7 +9,7 @@
   "judge": "gpt-4.1",
   "seconds": 0.4,
   "llm_calls": {
-    "cache_hit": 187
+    "cache_hit": 213
   },
   "cached_tokens_all_runs": {
     "memory_in": 0,
@@ -69,9 +69,9 @@
       "recall": 0.784,
       "found": 58,
       "gold": 74,
-      "certainty_accuracy": 0.854,
+      "certainty_accuracy": 0.792,
       "over_confident": 0,
-      "under_confident": 2,
+      "under_confident": 4,
       "kept_per_meeting": 2.0,
       "unmatched": 63,
       "llm_errors": 0,
@@ -84,30 +84,35 @@
       },
       "certainty_by_kind": {
         "decision": "20/20",
-        "plan": "4/6",
+        "plan": "2/6",
         "tentative": "12/13",
-        "correction": "5/9"
+        "correction": "4/9"
       },
       "confusion": {
         "correction->confirmed": 1,
-        "correction->correction": 5,
+        "correction->correction": 4,
         "correction->exploratory": 3,
+        "correction->unconfirmed": 1,
         "decision->confirmed": 20,
-        "plan->confirmed": 4,
+        "plan->confirmed": 2,
         "plan->hypothetical": 1,
-        "plan->unconfirmed": 1,
+        "plan->unconfirmed": 3,
         "tentative->exploratory": 12,
         "tentative->unconfirmed": 1
       },
       "over_confident_cases": [],
       "bucket_accuracy": {
+        "not_target": {
+          "n": 3,
+          "accuracy": 0.0
+        },
         "agree_all": {
-          "n": 26,
-          "accuracy": 0.962
+          "n": 24,
+          "accuracy": 0.958
         },
         "agree_llms": {
-          "n": 16,
-          "accuracy": 0.875
+          "n": 15,
+          "accuracy": 0.867
         },
         "regex_hedge": {
           "n": 3,
@@ -169,9 +174,9 @@
       "recall": 0.892,
       "found": 66,
       "gold": 74,
-      "certainty_accuracy": 0.865,
+      "certainty_accuracy": 0.808,
       "over_confident": 1,
-      "under_confident": 2,
+      "under_confident": 4,
       "kept_per_meeting": 2.23,
       "unmatched": 69,
       "llm_errors": 0,
@@ -184,18 +189,19 @@
       },
       "certainty_by_kind": {
         "decision": "22/22",
-        "plan": "5/7",
+        "plan": "3/7",
         "tentative": "13/14",
-        "correction": "5/9"
+        "correction": "4/9"
       },
       "confusion": {
         "correction->confirmed": 1,
-        "correction->correction": 5,
+        "correction->correction": 4,
         "correction->exploratory": 3,
+        "correction->unconfirmed": 1,
         "decision->confirmed": 22,
-        "plan->confirmed": 5,
+        "plan->confirmed": 3,
         "plan->exploratory": 1,
-        "plan->unconfirmed": 1,
+        "plan->unconfirmed": 3,
         "tentative->confirmed": 1,
         "tentative->exploratory": 13
       },
@@ -212,13 +218,17 @@
         }
       ],
       "bucket_accuracy": {
+        "not_target": {
+          "n": 3,
+          "accuracy": 0.0
+        },
         "agree_all": {
-          "n": 27,
-          "accuracy": 0.963
+          "n": 25,
+          "accuracy": 0.96
         },
         "agree_llms": {
-          "n": 18,
-          "accuracy": 0.944
+          "n": 17,
+          "accuracy": 0.941
         },
         "regex_hedge": {
           "n": 3,
@@ -767,7 +777,7 @@
         },
         {
           "iid": "INT-039",
-          "certainty": "confirmed",
+          "certainty": "unconfirmed",
           "topic": "risk_tolerance",
           "statement": "Lucas can live with a twenty percent market fall taking roughly $215,000 off the portfolio."
         },

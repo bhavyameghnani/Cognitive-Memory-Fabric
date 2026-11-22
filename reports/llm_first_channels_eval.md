@@ -1,6 +1,6 @@
 # LLM-first on email, chat and generated meetings
 
-59 records · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · judge `gpt-4.1` · 2026-11-22 12:54
+59 records · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · judge `gpt-4.1` · 2026-11-22 13:45
 
 Answer key (evaluation only): `datasets/evaluation/scenario_links.csv` storyline notes for generated records, and the routine records that contain no decision. All numbers after the harness write validator.
 

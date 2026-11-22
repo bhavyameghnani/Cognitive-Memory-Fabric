@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-22 12:54",
+  "generated_at": "2026-11-22 13:45",
   "records": 59,
   "extractor": "gpt-4o-mini",
   "verifier": "gpt-4.1-mini",
   "judge": "gpt-4.1",
-  "seconds": 0.7,
+  "seconds": 1.9,
   "storyline_recall": 0.521,
   "routine_memories_per_record": 0.0,
   "by_channel": {

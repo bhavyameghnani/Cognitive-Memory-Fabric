@@ -39,8 +39,9 @@ class Verify:
         self.prompts.append(user)
         if self.fail:
             return LLMError("verifier down")
-        if system == llm_first.TARGET_SYSTEM:
-            return {"is_target": self.target}
+        if system == llm_first.VALUE_SYSTEM:
+            topic = re.search(r"Topic: (\w+)", user).group(1)
+            return {"client_figure": self.target, "quantity": {"retirement_age": "age", "asset_allocation": "percent"}.get(topic, "usd_amount")}
         n = len(re.findall(r"^Item \d+", user, re.M))
         return {"items": [dict(id=i, certainty=self.certainty, supported=self.supported, worth_remembering=self.worthy) for i in range(n)]}
 
@@ -127,28 +128,39 @@ class RunTests(unittest.TestCase):
         self.assertEqual([d.decision for d in run("INT-090", [c, c], Verify())[0]], ["accepted", "merged"])
 
 
-class TargetCheckTests(unittest.TestCase):
-    """retirement_age / asset_allocation hold one current value per client: a confirmed number there must be the client's agreed target."""
+class ValueCheckTests(unittest.TestCase):
+    """A confirmed number may only become a current value if it is the client's own figure; its quantity becomes part of the slot."""
     P133 = "It is a small diversifier at about five percent, although it is less liquid than the rest."
 
-    def test_holdings_readout_is_not_a_target(self):
+    def test_holdings_readout_is_not_a_client_figure(self):
         self.assertTrue(CONV.verify_excerpt("CLIENT-001", "INT-133", 9, self.P133))
         decs, votes, _ = run("INT-133", [cand(9, self.P133, "asset_allocation", "confirmed", value="5", role="Advisor",
                                               statement="The real estate fund is a small diversifier at about five percent.")], Verify(target=False))
         self.assertEqual((decs[0].final.certainty, votes[0].bucket), ("unconfirmed", "not_target"))
-        self.assertTrue(any("not the client's agreed asset_allocation" in n for n in decs[0].notes))
+        self.assertTrue(any("not the client's own figure" in n for n in decs[0].notes))
 
-    def test_agreed_target_passes_and_other_topics_are_not_checked(self):
+    def test_agreed_target_passes(self):
         ver = Verify(target=True)
         decs, _, _ = run("INT-090", [cand(2, K090_T2_SENT, "retirement_age", "confirmed", value="63")], ver)
-        self.assertEqual(decs[0].final.certainty, "confirmed")
-        self.assertEqual(sum("Proposed current value" in p for p in ver.prompts), 1)
-        c = MemoryCandidate(**cand(2, K090_T2_SENT, "liquidity_reserve", "confirmed", value="6"))
-        self.assertEqual(llm_first.check_target(None, c), (c, None))
+        self.assertEqual((decs[0].final.certainty, decs[0].final.subject), ("confirmed", "retirement_age"))
+        self.assertEqual(sum("Proposed value" in p for p in ver.prompts), 1)
+
+    def test_wrong_quantity_on_a_single_valued_topic_is_not_a_target(self):
+        c = MemoryCandidate(**cand(2, K090_T2_SENT, "retirement_age", "confirmed", value="63"))
+        years = MockLLM(handlers={"memory_verifier": lambda s, u, sc: {"client_figure": True, "quantity": "years"}})
+        out, note, q = llm_first.check_value(years, c)
+        self.assertEqual((out.certainty, q), ("unconfirmed", "years"))
+
+    def test_quantity_becomes_part_of_the_slot(self):
+        c = MemoryCandidate(**cand(2, K090_T2_SENT, "care_costs", "confirmed", value="5200", subject="frank_care"))
+        per_month = MockLLM(handlers={"memory_verifier": lambda s, u, sc: {"client_figure": True, "quantity": "usd_per_month"}})
+        out, _, q = llm_first.check_value(per_month, c)
+        self.assertEqual((out.subject, out.certainty, q), ("frank_care_usd_per_month", "confirmed", "usd_per_month"))
+        self.assertEqual(llm_first.check_value(per_month, out)[0].subject, "frank_care_usd_per_month")      # idempotent
 
     def test_unavailable_check_fails_safe(self):
         c = MemoryCandidate(**cand(2, K090_T2_SENT, "retirement_age", "confirmed", value="63"))
-        out, note = llm_first.check_target(MockLLM(handlers={}), c)
+        out, note, _ = llm_first.check_value(MockLLM(handlers={}), c)
         self.assertEqual(out.certainty, "unconfirmed")
         self.assertIn("unavailable", note)
 
@@ -203,11 +215,11 @@ class SlotCheckTests(unittest.TestCase):
     def test_different_thing_gets_its_own_slot(self):
         sem, calls = self.ingest_two(same_thing=False)
         self.assertEqual(len(calls), 1)
-        self.assertEqual(sem, [("education_funding", "30000", "active"), ("son_semester_abroad", "14000", "active")])
+        self.assertEqual(sem, [("education_funding_usd_amount", "30000", "active"), ("son_semester_abroad_usd_amount", "14000", "active")])
 
     def test_real_replacement_still_supersedes(self):
         sem, _ = self.ingest_two(same_thing=True)
-        self.assertEqual(sem, [("education_funding", "14000", "active"), ("education_funding", "30000", "superseded")])
+        self.assertEqual(sem, [("education_funding_usd_amount", "14000", "active"), ("education_funding_usd_amount", "30000", "superseded")])
 
     def test_a_fresh_subject_for_the_same_thing_is_merged(self):
         ext = Extract({"INT-068": [cand(8, self.K068, "education_funding", "confirmed", value="30000", subject="graduate_school",
@@ -229,7 +241,7 @@ class SlotCheckTests(unittest.TestCase):
         orch.ingest_meeting("INT-068")
         orch.ingest_meeting("INT-091")
         self.assertEqual(len(calls), 1)                                   # a second, unrelated value on the topic: asked once, kept separate
-        self.assertEqual(sorted(s["subject"] for s in store.records(KENJI, "semantic")), ["graduate_school", "seoul_semester"])
+        self.assertEqual(sorted(s["subject"] for s in store.records(KENJI, "semantic")), ["graduate_school_usd_amount", "seoul_semester_usd_amount"])
         # the same semester mentioned again under yet another name: the verifier matches it to existing memory 1 -> merged, not a third slot
         c = MemoryCandidate(**cand(11, self.K091, "education_funding", "confirmed", value="14000", subject="ren_seoul_program", role="Advisor"))
 
@@ -237,7 +249,7 @@ class SlotCheckTests(unittest.TestCase):
             n = next(i for i, line in enumerate(re.findall(r"^\d+\. \(([^,]+),", user, re.M)) if "seoul" in line)
             return {"match": n, "new_subject": ""}
         out, note = llm_first.check_slot(MockLLM(handlers={"memory_verifier": match_seoul}), store, ing.MeetingContext.load(CONV, "INT-091"), c)
-        self.assertEqual(out.subject, "seoul_semester")
+        self.assertEqual(out.subject, "seoul_semester_usd_amount")
         self.assertIn("confirms", note)
 
     def test_single_valued_topics_never_split(self):

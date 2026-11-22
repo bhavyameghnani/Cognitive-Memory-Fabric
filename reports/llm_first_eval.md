@@ -1,13 +1,13 @@
 # LLM-first vs rules ingestion: evaluation
 
-150 conversations from `data/conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-22 12:54
+150 conversations from `data/conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-22 13:45
 
 Answer key: the generator's authored outcomes (`reports/generation_manifest.json`). Matching: a blind LLM judge (`gpt-4.1`, used by neither pipeline) sees the key and a shuffled, unlabelled mix of both pipelines' memories. Identical for both pipelines. Unmatched memories are not counted as errors: the key lists outcomes, not every fact.
 
 | Metric | rules | llm_first | rules_raw | llm_first_raw |
 |---|---|---|---|---|
 | Recall of outcomes | 0.911 | 0.844 | 0.911 | 0.941 |
-| Certainty accuracy (matched) | 0.851 | 0.904 | 0.86 | 0.92 |
+| Certainty accuracy (matched) | 0.851 | 0.894 | 0.86 | 0.912 |
 | Over-confident (tentative → confirmed) | 0 | 0 | 0 | 1 |
 | Under-confident (decision → weak) | 7 | 5 | 7 | 4 |
 | Memories kept per conversation | 1.93 | 1.99 | 2.05 | 2.2 |
@@ -18,18 +18,18 @@ Answer key: the generator's authored outcomes (`reports/generation_manifest.json
 | recall: tentative | 36/37 | 32/37 | 36/37 | 37/37 |
 | recall: correction | 11/11 | 9/11 | 11/11 | 9/11 |
 | recall: deferred | 9/17 | 10/17 | 9/17 | 14/17 |
-| certainty: decision | 48/52 | 48/50 | 48/52 | 52/53 |
-| certainty: plan | 12/15 | 10/13 | 12/15 | 11/14 |
+| certainty: decision | 48/52 | 49/50 | 48/52 | 53/53 |
+| certainty: plan | 12/15 | 9/13 | 12/15 | 10/14 |
 | certainty: tentative | 33/36 | 31/32 | 33/36 | 36/37 |
-| certainty: correction | 4/11 | 5/9 | 5/11 | 5/9 |
+| certainty: correction | 4/11 | 4/9 | 5/11 | 4/9 |
 
 ## Agreement buckets (llm_first): measured certainty accuracy
 
 | Bucket | n | accuracy |
 |---|---|---|
 | agree_all | 76 | 0.974 |
-| agree_llms | 28 | 0.964 |
-| not_target | 1 | 0.0 |
+| agree_llms | 27 | 0.963 |
+| not_target | 2 | 0.0 |
 | regex_hedge | 3 | 0.333 |
 | verifier_higher | 3 | 0.333 |
 | verifier_lower | 2 | 0.5 |
@@ -95,10 +95,10 @@ Answer key: the generator's authored outcomes (`reports/generation_manifest.json
 - `INT-058` exploratory · business_sale: The advisor corrected their record to state that Rebecca is considering the Lakeshore offer and has not signed.
 - `INT-093` confirmed · tax_planning: Rebecca will have her accountant send over the last two years of personal tax returns.
 - `INT-021` unconfirmed · insurance_estate: Peg will send the latest statements for Frank's Medicare supplement policy and the home care invoices.
-- `INT-115` confirmed · liquidity_reserve: The advisor aims for Lucas to hold around 9 months of cash reserve, which he is currently at or above.
+- `INT-115` unconfirmed · liquidity_reserve: The advisor aims for Lucas to hold around 9 months of cash reserve, which he is currently at or above.
 - `INT-017` confirmed · housing_property: Sofia stated that the target price for the home is around six hundred thousand.
 - `INT-121` exploratory · family_support: Rebecca stated that Dorothy's reserve is covered, so she can probably live with the retention pool funding.
 - `INT-066` exploratory · investment_trade: Rebecca is considering moving her personal portfolio into bonds but has decided to hold off for now.
-- `INT-119` confirmed · care_costs: The portfolio covers a bigger gap, about thirty-eight hundred a month.
+- `INT-119` unconfirmed · care_costs: The portfolio covers a bigger gap, about thirty-eight hundred a month.
 - `INT-142` confirmed · investment_trade: Rebecca will send over the final purchase agreement draft, which is currently delayed due to a dispute about the escrow amount.
 - `INT-028` unconfirmed · care_costs: The advisor will model several levels of care and show how long the money would last in each.

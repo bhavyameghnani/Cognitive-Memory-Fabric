@@ -7,14 +7,12 @@
                 by the text and worth remembering.  The existing regex cues give a third vote, which can only veto on hedging wording.
     ④ combine   downgrade only: the final certainty is the LOWER of the extractor's and the verifier's.  Agreement sets a confidence bucket;
                 'unsupported' rejects; disagreement is recorded on the memory for review.
-    ⑤ slot      before a new confirmed value enters a topic that already has current values, the verifier says which of them (if any) it is about:
-                a match reuses that subject; otherwise the memory keeps its own (no unrelated value overwrites a current one, and one fact is not
-                split across several subjects).
-    ⑥ target    a confirmed retirement age or equity allocation (one slot per client: it would replace the current value) must be the client's agreed
-                target, says the verifier; a holdings read-out or payment schedule is kept as unconfirmed.
-
-The output is the same list of ingest.Decision objects the rules pipeline produces, so classification, the harness MemoryWriteValidator, persistence,
-consolidation and the audit trail are unchanged.  Semantic memory is still written only by the Consolidator.
+    ⑤ value     every confirmed number that could become a current value must be the client's own figure (not an unaccepted recommendation, an
+                advisor's read-out of balances or spending, a what-if or a corrected-away value), and its kind of quantity becomes part of the slot, so
+                dollars a month never replace a number of days.
+    ⑥ slot      before a confirmed value enters a topic that already has current values of the same kind, the verifier says which of them (if any) it
+                is about: a match reuses that subject; otherwise the memory keeps its own (no unrelated value overwrites a current one, and one fact is
+                not split across several subjects).
 """
 from __future__ import annotations
 
@@ -46,7 +44,7 @@ CONFIDENCE = {"agree_all": 0.96,         # [101]
               "verifier_higher": 0.86,   # [7]  verifier rated it higher; the extractor's lower label is kept
               "verifier_lower": 0.2,     # [5]  verifier rated it lower; the lower label is kept
               "regex_hedge": 0.3,        # [3]  hedge-wording veto; 0/3 measured, kept as a safety prior
-              "not_target": 0.4}         # [-]  not measured: downgraded by the single-valued target check, a safety prior
+              "not_target": 0.4}         # [-]  not measured: downgraded by the value check, a safety prior
 HEDGES = ("exploratory", "hypothetical")
 
 EXTRACT_SYSTEM = f"""You extract durable client memory candidates from ONE wealth-advisory conversation. You never invent facts.
@@ -308,7 +306,7 @@ def combine(c: MemoryCandidate, v: Optional[VerifiedItem]) -> Vote:
     return Vote(c.certainty, v.certainty, regex, v.supported, v.worth_remembering, bucket, final, CONFIDENCE.get(bucket, 0.5))
 
 
-# ---------------------------------------------------------------------------------------------- ⑤ slot resolution
+# ---------------------------------------------------------------------------------------------- ⑥ slot resolution
 SLOT_SYSTEM = """You decide which existing client memory, if any, a NEW memory is about. All share one topic. Decide from the quoted text only.
 match: the number of the existing memory that is about THE SAME person, account, property, goal or purpose as the new one (the new one then confirms or
 replaces its value), or -1 if the new memory is about something different from all of them (a different child, account, goal or purpose).
@@ -321,7 +319,8 @@ class SlotVerdict(BaseModel):
     new_subject: str = ""
 
 
-def check_slot(verifier: LLMClient, store, ctx: MeetingContext, c: MemoryCandidate, tracer: Optional[Tracer] = None) -> tuple[MemoryCandidate, Optional[str]]:
+def check_slot(verifier: LLMClient, store, ctx: MeetingContext, c: MemoryCandidate, tracer: Optional[Tracer] = None,
+               quantity: Optional[str] = None) -> tuple[MemoryCandidate, Optional[str]]:
     """Consolidation folds the confirmed values of one (topic, subject) slot into versions, so the subject decides what replaces what.  The extractor's
     subject is unreliable in both directions: one shared subject lets an unrelated value 'supersede' a current one (one child's one-off cost replacing
     another child's tuition budget), and a fresh subject per mention splits one fact into several current values.  So before a confirmed value enters a topic
@@ -330,6 +329,8 @@ def check_slot(verifier: LLMClient, store, ctx: MeetingContext, c: MemoryCandida
     if store is None or c.topic in FIXED_SUBJECT_TOPICS or c.certainty not in ("confirmed", "correction") or not c.value:
         return c, None
     cur = store.records(ctx.client_id, "semantic", statuses=["active"], topics=[c.topic])
+    if quantity:                                             # only values of the same kind can be the same thing (see check_value)
+        cur = [r for r in cur if (r["subject"] or r["topic"]).endswith("_" + quantity)]
     if not cur:
         return c, None
     same = [r for r in cur if (r["subject"] or r["topic"]) == c.subject]
@@ -359,38 +360,58 @@ def check_slot(verifier: LLMClient, store, ctx: MeetingContext, c: MemoryCandida
     new = rules.normalise_subject(c.topic, v.new_subject)
     if new in ("", c.topic) or any((r["subject"] or r["topic"]) == new for r in cur):
         new = rules.normalise_subject(c.topic, f"{c.subject}_{ctx.interaction_id}")
+    if quantity and not new.endswith("_" + quantity):
+        new = rules.normalise_subject(c.topic, f"{new}_{quantity}")
     return c.model_copy(update=dict(subject=new)), f"slot check: different from the current {c.subject} value {same[0]['value_text']}; own subject {new!r}"
 
 
-# ---------------------------------------------------------------------------------------------- ⑥ target check for single-valued slots
-TARGET_MEANING = {"retirement_age": "the age at which the client plans to retire",
-                  "asset_allocation": "the share of the client's investable portfolio held in equities (stocks)"}
-TARGET_SYSTEM = """You check one memory before it becomes the client's CURRENT value for a single-valued planning target. Decide from the quoted text only.
-is_target: true only if the text shows the client decided or agreed this value as their target for the stated meaning. false if the number describes
-something else: a single fund's or holding's weight, a read-out of current holdings, a scenario or what-if, another person's age, a payment schedule,
-or a target the client has not agreed to.
-Output JSON only: {"is_target": true}."""
+# ---------------------------------------------------------------------------------------------- ⑤ value check (before a number can become a current value)
+QUANTITIES = ("age", "years", "months", "percent", "usd_amount", "usd_per_month", "usd_per_year", "count", "date", "other")
+TARGET_MEANING = {"retirement_age": ("the age at which the client plans to retire", "age"),
+                  "asset_allocation": ("the share of the client's investable portfolio held in equities (stocks)", "percent")}
+VALUE_SYSTEM = f"""You check one memory before its number can become a CURRENT value in the client's profile. Decide from the quoted text only.
+client_figure: true if the text shows this figure is the client's own: something the client decided or agreed, a completed action, or a fact about the
+client's situation. It does not matter who says it: an advisor recording the plan or decision the client agreed ("The working plan I'm recording is
+..."), an agreed working assumption for planning, an advisor correcting the record ("my note was wrong; the form says sixty percent"), the client
+stating their own income, costs or spending, and figures from the client's own documents, accounts or professionals (a pension form, a loan balance
+the client owes, the client's accountant's estimate) are all the client's figure.
+false only for: an advisor's suggestion or recommendation the client has not accepted; the ADVISOR reading out figures from statements or systems
+(current balances, holdings weights, average spending "I'm seeing", returns); a scenario or what-if; the old value that a correction says was wrong;
+or a number about something other than the memory's subject.
+quantity: what kind of number the value is, exactly one of {", ".join(QUANTITIES)} (usd_amount = a one-off or total dollar amount).
+Output JSON only: {{"client_figure": true, "quantity": "usd_per_month"}}."""
 
 
-class TargetVerdict(BaseModel):
-    is_target: bool
+class ValueVerdict(BaseModel):
+    client_figure: bool
+    quantity: Literal["age", "years", "months", "percent", "usd_amount", "usd_per_month", "usd_per_year", "count", "date", "other"]
 
 
-def check_target(verifier: LLMClient, c: MemoryCandidate, tracer: Optional[Tracer] = None) -> tuple[MemoryCandidate, Optional[str]]:
-    """retirement_age and asset_allocation have ONE slot per client: any confirmed value with a number becomes the current value and supersedes the old one.
-    A holdings read-out ("the real estate fund is about five percent") or a payment schedule ("installments starting at 63") must not.  So a confirmed value
-    on these topics needs the verifier to say it is the client's agreed target; otherwise (or if the check cannot run) it is kept as unconfirmed."""
-    if c.topic not in TARGET_MEANING or c.certainty not in ("confirmed", "correction") or not c.value:
-        return c, None
-    user = (f"Target: {c.topic} = {TARGET_MEANING[c.topic]}\nProposed current value: {c.value}\nMemory: {c.statement}\n"
+def check_value(verifier: LLMClient, c: MemoryCandidate, tracer: Optional[Tracer] = None) -> tuple[MemoryCandidate, Optional[str], Optional[str]]:
+    """(candidate, note, quantity).  Consolidation turns every confirmed number on a slot into its current value, so before that can happen the verifier
+    says (1) whether the figure is the client's own (an unaccepted recommendation, a balance or spending read-out, a what-if or a corrected-away claim is
+    not: kept as unconfirmed) and (2) what kind of quantity it is.  The quantity becomes part of the slot, so dollars a month can never replace a number of
+    days or a one-off amount.  Single-valued topics must also have their own quantity (retirement_age: an age; asset_allocation: a percent).
+    If the check cannot run, the memory is kept as unconfirmed (fail safe)."""
+    if c.certainty not in ("confirmed", "correction") or not c.value:
+        return c, None, None
+    meaning = TARGET_MEANING.get(c.topic)
+    target = f"Single-valued target: {c.topic} = {meaning[0]}\n" if meaning else ""
+    user = (f"Topic: {c.topic}\nSubject: {c.subject.replace('_', ' ')}\n{target}Proposed value: {c.value}\nMemory: {c.statement}\n"
             f"  quoted ({c.speaker_role}): \"{c.excerpt}\"")
     try:
-        v = generate_structured(verifier, VERIFIER_AGENT, TARGET_SYSTEM, user, TargetVerdict, retries=1, tracer=tracer)
+        v = generate_structured(verifier, VERIFIER_AGENT, VALUE_SYSTEM, user, ValueVerdict, retries=1, tracer=tracer)
     except (StructuredOutputError, LLMError) as e:
-        return c.model_copy(update=dict(certainty="unconfirmed")), f"target check unavailable ({str(e)[:60]}); kept as unconfirmed"
-    if v.is_target:
-        return c, f"target check: the client's agreed {c.topic}"
-    return c.model_copy(update=dict(certainty="unconfirmed")), f"target check: {c.value} is not the client's agreed {c.topic}; kept as unconfirmed"
+        return c.model_copy(update=dict(certainty="unconfirmed")), f"value check unavailable ({str(e)[:60]}); kept as unconfirmed", None
+    if not v.client_figure:
+        return c.model_copy(update=dict(certainty="unconfirmed")), f"value check: {c.value} is not the client's own figure; kept as unconfirmed", v.quantity
+    if meaning:
+        if v.quantity != meaning[1]:
+            return (c.model_copy(update=dict(certainty="unconfirmed")),
+                    f"value check: {c.value} is a {v.quantity}, not the client's {c.topic} ({meaning[1]}); kept as unconfirmed", v.quantity)
+        return c, f"value check: the client's agreed {c.topic}", v.quantity
+    subject = c.subject if c.subject.endswith("_" + v.quantity) else rules.normalise_subject(c.topic, f"{c.subject}_{v.quantity}")
+    return c.model_copy(update=dict(subject=subject)), f"value check: the client's own figure ({v.quantity})", v.quantity
 
 
 # ---------------------------------------------------------------------------------------------- the whole stage
@@ -430,13 +451,13 @@ def run(llm: LLMClient, verifier: LLMClient, ctx: MeetingContext, conv: Conversa
             continue
         if vote.bucket in ("verifier_lower", "verifier_higher", "regex_hedge", "unverified"):
             tag += "; needs review"
-        out, slot_note = check_slot(verifier, store, ctx, c.model_copy(update=dict(certainty=vote.final)), tracer)
-        out, target_note = check_target(verifier, out, tracer)
-        notes = notes + [n for n in (slot_note, target_note) if n]
-        if out.certainty != vote.final:                       # the target check may only lower certainty
+        out, value_note, quantity = check_value(verifier, c.model_copy(update=dict(certainty=vote.final)), tracer)
+        out, slot_note = check_slot(verifier, store, ctx, out, tracer, quantity)
+        notes = notes + [n for n in (value_note, slot_note) if n]
+        if out.certainty != vote.final:                       # the value check may only lower certainty
             vote = Vote(vote.extractor, vote.verifier, vote.regex, vote.supported, vote.worthy, "not_target", out.certainty, CONFIDENCE["not_target"])
             votes[di] = vote
-            tag = tag + f"; target check -> {out.certainty} (confidence {vote.confidence}); needs review"
+            tag = tag + f"; value check -> {out.certainty} (confidence {vote.confidence}); needs review"
         decisions[di] = Decision(d.origin, d.candidate, "downgraded" if vote.final != c.certainty else "accepted",
                                  ("verifier vote: " + vote.bucket) if vote.final != c.certainty else "valid", out, d.certainty_in, vote.final, notes + [tag],
                                  confidence=vote.confidence, extra_evidence=extras.get(di, []))

@@ -123,3 +123,29 @@ class ConsolidationFallbackTests(unittest.TestCase):
         sem = [(s["value_text"], s["valid_from"], s["status"]) for s in store.records("CLIENT-001", "semantic")]
         self.assertEqual(sem, [("63", "2026-05-01", "active")])
         self.assertGreaterEqual(out["consolidation"].get("rejected_versions", 0), 1)
+
+
+class OutOfOrderEvidenceTests(unittest.TestCase):
+    """An email thread can deliver an EARLIER-dated fact after a later one.  Consolidation rebuilds the chain once; re-running it must then change
+    nothing (it used to compare against stale superseded versions and re-create the chain on every run)."""
+    K068 = "I've decided: if she goes, we'll contribute up to thirty thousand a year."                                  # INT-068, 2026-04-08
+    K091 = "You've decided to set aside fourteen thousand dollars in cash for Ren's possible semester in Seoul."     # INT-091, 2026-05-04
+
+    def test_rebuild_after_out_of_order_evidence_is_stable(self):
+        from agents.memory.consolidate import Consolidator
+        later = dict(topic="education_funding", subject="kids_fund", statement="Set aside fourteen thousand dollars in cash for the semester.", value="14000",
+                     certainty="confirmed", speaker_role="Advisor", turn_index=11, excerpt=self.K091, corrects_value=None, reusable_procedure=False)
+        earlier = dict(later, statement="Kenji decided to contribute up to thirty thousand a year.", value="30000", speaker_role="Client", turn_index=8, excerpt=self.K068)
+        m = MockLLM(handlers={"memory": Extract2({"INT-091": [later], "INT-068": [earlier]}), "memory_verifier": Verify("confirmed")})
+        store = MemoryStore(url="sqlite:///:memory:", conv=MC, clock=Clock())
+        o = MemoryOrchestrator(m, store=store, conv=MC, config=OrchestratorConfig(ingest_mode="llm_first"))
+        o.init()
+        o.ingest_meeting("INT-091")                       # the later fact first ...
+        o.ingest_meeting("INT-068")                       # ... then the earlier one: one rebuild
+        chain = lambda: sorted((s["value_text"], s["valid_from"], s["status"]) for s in store.records("CLIENT-001", "semantic"))
+        after_rebuild = chain()
+        for _ in range(3):
+            self.assertEqual(Consolidator(store).consolidate_client("CLIENT-001")["versions_created"], 0)
+        self.assertEqual(chain(), after_rebuild)
+        live = [s for s in store.records("CLIENT-001", "semantic") if s["status"] == "active"]
+        self.assertEqual([(s["value_text"], s["valid_from"]) for s in live], [("14000", "2026-05-04")])

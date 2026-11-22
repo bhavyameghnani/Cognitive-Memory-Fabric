@@ -1,15 +1,15 @@
 # LLM-first vs rules ingestion: evaluation
 
-60 conversations from `build/eval/paraphrased_conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-22 12:54
+60 conversations from `build/eval/paraphrased_conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-22 13:42
 
 Answer key: the generator's authored outcomes (`reports/generation_manifest.json`). Matching: a blind LLM judge (`gpt-4.1`, used by neither pipeline) sees the key and a shuffled, unlabelled mix of both pipelines' memories. Identical for both pipelines. Unmatched memories are not counted as errors: the key lists outcomes, not every fact.
 
 | Metric | rules | llm_first | rules_raw | llm_first_raw |
 |---|---|---|---|---|
 | Recall of outcomes | 0.662 | 0.743 | 0.703 | 0.851 |
-| Certainty accuracy (matched) | 0.425 | 0.833 | 0.419 | 0.827 |
+| Certainty accuracy (matched) | 0.425 | 0.792 | 0.419 | 0.788 |
 | Over-confident (tentative → confirmed) | 0 | 0 | 0 | 0 |
-| Under-confident (decision → weak) | 15 | 1 | 16 | 1 |
+| Under-confident (decision → weak) | 15 | 2 | 16 | 2 |
 | Memories kept per conversation | 2.25 | 2.08 | 2.4 | 2.32 |
 | Kept but matching no outcome | 86 | 71 | 92 | 77 |
 | LLM failures | 0 | 0 | 0 | 0 |
@@ -19,16 +19,17 @@ Answer key: the generator's authored outcomes (`reports/generation_manifest.json
 | recall: correction | 8/11 | 10/11 | 9/11 | 11/11 |
 | recall: deferred | 9/17 | 7/17 | 9/17 | 11/17 |
 | certainty: decision | 3/15 | 20/21 | 4/16 | 21/21 |
-| certainty: plan | 1/4 | 5/5 | 1/5 | 5/6 |
+| certainty: plan | 1/4 | 4/5 | 1/5 | 4/6 |
 | certainty: tentative | 13/13 | 12/12 | 13/13 | 14/14 |
-| certainty: correction | 0/8 | 3/10 | 0/9 | 3/11 |
+| certainty: correction | 0/8 | 2/10 | 0/9 | 2/11 |
 
 ## Agreement buckets (llm_first): measured certainty accuracy
 
 | Bucket | n | accuracy |
 |---|---|---|
 | agree_all | 18 | 0.944 |
-| agree_llms | 27 | 0.852 |
+| agree_llms | 25 | 0.84 |
+| not_target | 2 | 0.0 |
 | regex_hedge | 1 | 0.0 |
 | verifier_higher | 3 | 0.667 |
 | verifier_lower | 3 | 0.333 |

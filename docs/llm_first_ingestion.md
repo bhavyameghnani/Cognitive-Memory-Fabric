@@ -21,8 +21,8 @@ Everything after the candidate list is the existing code: the harness `MemoryWri
 | ② Re-anchor | Code | If the cited sentence is a bare "Yes, let's do that", primary evidence moves to the earlier sentence that states the content. The reply is kept as `supporting` evidence. |
 | ③ Verify | LLM (`CMF_VERIFIER_MODEL`) | Labels each candidate's certainty **blind** (never sees the extractor's label). Also says whether the statement is supported and worth remembering. |
 | ④ Combine | Code | Final certainty = the **lower** of extractor and verifier (downgrade only). A regex **hedge** ("maybe", "leaning", "what if") vetoes both. Unsupported or unworthy → rejected. |
-| ⑤ Slot | LLM (verifier) | Before a confirmed value enters a topic that already has current values, the verifier says which one (if any) it is about. A match reuses that subject; otherwise the memory keeps its own. This stops both an unrelated value overwriting a current one and one fact being split across subjects. |
-| ⑥ Target | LLM (verifier) | A confirmed retirement age or equity allocation (one slot per client) must be the client's **agreed target**. A holdings read-out ("the real estate fund is about five percent") or a payment schedule is kept as unconfirmed. If the check can't run, it fails safe to unconfirmed. |
+| ⑤ Value | LLM (verifier) | Every confirmed number that could become a current value must be the **client's own figure**: a decision, an agreed plan or working assumption, a completed action, or a fact about their situation, whoever says it. An unaccepted recommendation, the advisor reading out balances or spending from a system, a what-if, or a corrected-away value is kept as unconfirmed. The verifier also names the **kind of quantity** (age, months, percent, one-off dollars, dollars per month…). That becomes part of the slot, so dollars a month can never replace a number of days. Retirement age must be an age, and equity allocation a percent. If the check can't run, it fails safe to unconfirmed. |
+| ⑥ Slot | LLM (verifier) | Before a confirmed value enters a topic that already has current values of the same kind, the verifier says which one (if any) it is about. A match reuses that subject; otherwise the memory keeps its own. This stops both an unrelated value overwriting a current one and one fact being split across subjects. |
 
 Each memory stores a `confidence` equal to the measured certainty accuracy of its agreement bucket. Its audit note records every vote, for example `votes: extractor=confirmed verifier=confirmed regex=confirmed -> confirmed (agree_all, confidence 0.96)`. Disagreements are flagged `needs review`.
 
@@ -45,7 +45,9 @@ The disagreement buckets are small samples, and in them the downgraded label was
 - **Restricted records:** Records with `SYN-ACC-RESTRICTED` (agent access: none) in `datasets/governance/source_control.csv` are not loaded.
 - **Excluded inputs:** The evaluation answer key and the CRM layer are never read.
 
-**Consolidation fallback (applies to both modes).** A version's creator is the earliest confirmed episode with that value. If the write validator rejects that creator (e.g. a reported preference, "She'd be happier with 63"), the next confirmed episode with the same value now creates the version, valid from its own date. Each fallback creator must also pass the validator. Before this fix, one early wrongly-labelled episode blocked a later real decision.
+**Two consolidation fixes (apply to both modes).**
+- **Fallback creator.** A version's creator is the earliest confirmed episode with that value. If the write validator rejects that creator (e.g. a reported preference, "She'd be happier with 63"), the next confirmed episode with the same value now creates the version, valid from its own date. Each fallback creator must also pass the validator. Before this fix, one early wrongly-labelled episode blocked a later real decision.
+- **No version churn after out-of-order evidence.** An email thread can deliver an earlier-dated fact after a later one, so the chain is rebuilt. Consolidation used to compare its target chain against *all* stored versions, including the superseded ones from before the rebuild. It therefore "rebuilt" again on every later run: one client had the same two values recreated about 29 times. It now compares against the live chain (from the current version back while dates decrease), so a re-run changes nothing.
 
 ## Results
 
@@ -55,10 +57,12 @@ All numbers are on the **production path** (after the harness write validator). 
 
 | | Rules | LLM-first |
 |---|---|---|
-| All 150, original wording: recall / certainty | **91.1%** / 85.1% | 84.4% / **90.4%** |
-| Same 60, original wording | **85.1%** / 75.9% | 78.4% / **85.4%** |
-| Same 60, **natural wording** | 66.2% / 42.5% | **74.3% / 83.3%** |
+| All 150, original wording: recall / certainty | **91.1%** / 85.1% | 84.4% / **89.4%** |
+| Same 60, original wording | **85.1%** / 75.9% | 78.4% / **79.2%** |
+| Same 60, **natural wording** | 66.2% / 42.5% | **74.3% / 79.2%** |
 | Over-confident (tentative stored as confirmed), each set | 0 | 0 |
+
+The value check (⑤) trades a few certainty points for safer current values. Before it, the same sets scored 90.4%, 85.4% and 83.3%. The losses are mostly plans an advisor records as a "working assumption", which the verifier sometimes reads as not yet agreed. What it blocks is visible in the profile: holdings and spending read-outs, unaccepted recommendations, and values of a different kind replacing each other (see "All clients" below).
 
 "Natural wording" means the same 60 meetings rewritten by `gpt-4.1` (`scripts/make_paraphrased_set.py`, output in `build/eval/`, never in `data/`). Every fact, figure and decision status is kept, but the dataset's stock recap phrases ("You've decided…", "still weighing… an idea and not an instruction", "I've corrected my own record") are gone. On that set the rules pipeline marks 15 decisions as weaker than they were. Its accuracy depends on the scripted phrasing.
 
@@ -74,23 +78,32 @@ Before the write validator, LLM-first recall is 94.1%, 89.2% and 85.1% on the th
 
 About half the chat points are deliberate non-decisions ("late-night musing; nothing due", "refuses to decide by text"). A manual read found no case where a musing was stored as a decision.
 
-**End to end, Kenji (CLIENT-001), all channels, production CLI:** 35 interactions ingested, none failed.
+### All clients, end to end
 
-| Slot | Current values |
-|---|---|
-| Retirement age | 65 → 63 (May 1) |
-| Equity allocation | 75% → 60% (the 5% read-out blocked by ⑥) |
-| Education funding | Yuki's $30k/yr and Ren's $14k semester kept separate (⑤ matched two later mentions of the semester) |
-| Other | retirement income $15k/mo, mortgage cleared 2032, severance assumption, a healthcare gap from a generated meeting |
+Production CLI, all channels, `build/cmf_memory_llm_first_v3.db`: 209 conversations (6 clients), all completed, about 16 minutes. Each client's current values were reviewed by hand against the authored decisions.
+
+- **Right:**
+  - Retirement ages: Kenji 63 (from 65), Grace 63.
+  - Equity allocations: Kenji 75% → 60%, Sofia 90% → 75%, Grace 25%, Peg 35% → 25% → 30%.
+  - Lucas's 9-month cash reserve; Rebecca's $600k care reserve, kept separate from the $6k/month care cost.
+  - Yuki's $30k/yr and Ren's $14k semester; Peg's $5,200/month aide and "5 days" kept separate; Peg's $6k church gift.
+- **Still wrong (6 of about 50 current values):**
+  - Kenji's history shows 60 from Feb 10 to Mar 5. The advisor's email overstated an exploration; both LLMs believed it. The current value, 63, is right.
+  - Rebecca's $14,500 spending and Peg's $210k cash are advisor read-outs that the value check missed.
+  - Rebecca's "cash account" is a payment amount.
+  - Sofia's "2 years" is the value a correction says was wrong, and her purchase price is replaced by the $40k house fund.
+  - Grace's "up to fifteen" gift is stored as 15, not 15,000.
+- **Re-runs:** re-running consolidation creates nothing (no version churn).
 
 ## Known limitations
 
 - **The write validator costs LLM-first recall.** Its support check is word overlap between the statement and **one** quoted sentence. LLM-first reasons across turns ("Does she have any scholarships?" / "A small one."), so some correct memories are rejected. This drops recall by about 7–10 points and is why rules has higher recall on the scripted wording. The validator was not loosened. Suggested follow-up: check the statement against all cited evidence rows (content turn plus confirming reply), keeping every other rule.
 - **Variation between runs.** gpt-4o-mini's phrasing varies between runs and prompt versions even at temperature 0, so production recall has ranged between 84% and 90% on the 150 meetings.
 - **Pre-existing gap.** `INT-121` is marked `SYN-ACC-RESTRICTED`, but it is in the frozen `data/conversations.csv`, which both pipelines already ingest. The adapter only filters the new channels.
+- **Residual current-value errors.** About 1 in 8 current values is still wrong (listed above). Two cheap next steps: let the regex read-out templates ("I'm seeing about $…") veto a current value, as the hedge veto does; and normalise "fifteen" to 15,000 when the slot already holds thousands.
 - **Weak acceptance is read as agreement.** The advisor says "I'd want closer to 15 months"; the client replies "Okay, that's consistent with my own numbers". LLM-first stores that as confirmed; rules stores a recommendation.
 - **Synthetic data, outcome-only key.** Precision is not measured beyond the routine-record check. Re-measure the confidence table on real, anonymised conversations before relying on it.
-- **Cost.** About 2 LLM calls per conversation, plus rare slot and target checks.
+- **Cost.** About 2 LLM calls per conversation, plus one value check per confirmed number and occasional slot checks.
 
 ## Reproduce
 

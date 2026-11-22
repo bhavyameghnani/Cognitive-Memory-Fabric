@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-22 12:54",
+  "generated_at": "2026-11-22 13:45",
   "conversations": 150,
   "transcripts": "data/conversations.csv",
   "client": null,
@@ -7,10 +7,10 @@
   "verifier_model": "gpt-4.1-mini",
   "match_threshold": 0.5,
   "judge": "gpt-4.1",
-  "seconds": 2.6,
+  "seconds": 8.7,
   "llm_calls": {
     "cache_hit": 450,
-    "calls": 20
+    "calls": 78
   },
   "cached_tokens_all_runs": {
     "memory_in": 0,
@@ -70,7 +70,7 @@
       "recall": 0.844,
       "found": 114,
       "gold": 135,
-      "certainty_accuracy": 0.904,
+      "certainty_accuracy": 0.894,
       "over_confident": 0,
       "under_confident": 5,
       "kept_per_meeting": 1.99,
@@ -84,33 +84,38 @@
         "deferred": "10/17"
       },
       "certainty_by_kind": {
-        "decision": "48/50",
-        "plan": "10/13",
+        "decision": "49/50",
+        "plan": "9/13",
         "tentative": "31/32",
-        "correction": "5/9"
+        "correction": "4/9"
       },
       "confusion": {
         "correction->confirmed": 1,
-        "correction->correction": 5,
+        "correction->correction": 4,
         "correction->exploratory": 3,
-        "decision->confirmed": 48,
-        "decision->unconfirmed": 2,
-        "plan->confirmed": 10,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 49,
+        "decision->unconfirmed": 1,
+        "plan->confirmed": 9,
         "plan->exploratory": 1,
         "plan->hypothetical": 1,
-        "plan->unconfirmed": 1,
+        "plan->unconfirmed": 2,
         "tentative->exploratory": 31,
         "tentative->unconfirmed": 1
       },
       "over_confident_cases": [],
       "bucket_accuracy": {
         "agree_llms": {
-          "n": 26,
-          "accuracy": 0.885
+          "n": 25,
+          "accuracy": 0.88
         },
         "agree_all": {
           "n": 70,
           "accuracy": 0.971
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
         },
         "regex_hedge": {
           "n": 3,
@@ -119,10 +124,6 @@
         "verifier_lower": {
           "n": 2,
           "accuracy": 0.5
-        },
-        "not_target": {
-          "n": 1,
-          "accuracy": 0.0
         },
         "verifier_higher": {
           "n": 2,
@@ -176,7 +177,7 @@
       "recall": 0.941,
       "found": 127,
       "gold": 135,
-      "certainty_accuracy": 0.92,
+      "certainty_accuracy": 0.912,
       "over_confident": 1,
       "under_confident": 4,
       "kept_per_meeting": 2.2,
@@ -190,20 +191,20 @@
         "deferred": "14/17"
       },
       "certainty_by_kind": {
-        "decision": "52/53",
-        "plan": "11/14",
+        "decision": "53/53",
+        "plan": "10/14",
         "tentative": "36/37",
-        "correction": "5/9"
+        "correction": "4/9"
       },
       "confusion": {
         "correction->confirmed": 1,
-        "correction->correction": 5,
+        "correction->correction": 4,
         "correction->exploratory": 3,
-        "decision->confirmed": 52,
-        "decision->unconfirmed": 1,
-        "plan->confirmed": 11,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 53,
+        "plan->confirmed": 10,
         "plan->exploratory": 2,
-        "plan->unconfirmed": 1,
+        "plan->unconfirmed": 2,
         "tentative->confirmed": 1,
         "tentative->exploratory": 36
       },
@@ -221,12 +222,16 @@
       ],
       "bucket_accuracy": {
         "agree_llms": {
-          "n": 28,
-          "accuracy": 0.964
+          "n": 27,
+          "accuracy": 0.963
         },
         "agree_all": {
           "n": 76,
           "accuracy": 0.974
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
         },
         "regex_hedge": {
           "n": 3,
@@ -239,10 +244,6 @@
         "verifier_higher": {
           "n": 3,
           "accuracy": 0.333
-        },
-        "not_target": {
-          "n": 1,
-          "accuracy": 0.0
         }
       }
     }
@@ -456,7 +457,7 @@
         },
         {
           "iid": "INT-115",
-          "certainty": "confirmed",
+          "certainty": "unconfirmed",
           "topic": "liquidity_reserve",
           "statement": "The advisor aims for Lucas to hold around 9 months of cash reserve, which he is currently at or above."
         },
@@ -480,7 +481,7 @@
         },
         {
           "iid": "INT-119",
-          "certainty": "confirmed",
+          "certainty": "unconfirmed",
           "topic": "care_costs",
           "statement": "The portfolio covers a bigger gap, about thirty-eight hundred a month."
         },

@@ -106,13 +106,14 @@ class Consolidator:
         if pinned:             # PRECEDENCE: a live human correction outranks every automatic version.  Consolidation neither supersedes nor rebuilds around it
             self._respect_correction(client_id, desired, stored, pinned[-1], pr, out)
             return
+        chain = self._live_chain(stored)
         i = 0
-        while i < min(len(desired), len(stored)) and (desired[i].value, desired[i].valid_from) == (stored[i]["value_text"], stored[i]["valid_from"]):
+        while i < min(len(desired), len(chain)) and (desired[i].value, desired[i].valid_from) == (chain[i]["value_text"], chain[i]["valid_from"]):
             i += 1
-        for s in stored[i:]:   # out-of-order evidence changed history: stale tail is superseded (never deleted)
+        for s in chain[i:]:    # out-of-order evidence changed history: stale tail is superseded (never deleted)
             if s["status"] in ("active", "disputed"):
                 st.set_status(s["memory_id"], "superseded", "chain rebuilt after out-of-order evidence", "consolidation", valid_to=s["valid_from"], principal=pr)
-        ids = [s["memory_id"] for s in stored[:i]]
+        ids = [s["memory_id"] for s in chain[:i]]
         prev_id = ids[-1] if ids else (stored[-1]["memory_id"] if stored else None)
         next_no = (stored[-1]["version_no"] if stored else 0) + 1
         topic, subject = slot.split("|")
@@ -149,6 +150,27 @@ class Consolidator:
             row = st.get(mid)
             if row and row["supporting_episodes"] != 1 + len(v.supports):
                 st.set_semantic_support(mid, 1 + len(v.supports), principal=pr)
+
+    @staticmethod
+    def _live_chain(stored: list[dict]) -> list[dict]:
+        """The CURRENT version chain of a slot, oldest first: from the newest version back along supersedes_id while valid_from strictly decreases.
+        After a rebuild the slot also holds the superseded versions of the earlier chain, and the first rebuilt version keeps an audit link to the stale one
+        it replaced; a chain is chronological, so a link that goes FORWARD in time is that rebuild boundary.  Comparing against the stale history
+        (instead of the live chain) made every later run 'rebuild' again and duplicate the versions."""
+        if not stored:
+            return []
+        by_id = {s["memory_id"]: s for s in stored}
+        live = [s for s in stored if s["status"] in ("active", "disputed")]
+        cur = live[-1] if live else stored[-1]
+        chain, seen = [cur], {cur["memory_id"]}
+        while True:
+            prev = by_id.get(cur["supersedes_id"]) if cur["supersedes_id"] else None
+            if prev is None or prev["memory_id"] in seen or not (prev["valid_from"] or "") < (cur["valid_from"] or ""):
+                break
+            chain.append(prev)
+            seen.add(prev["memory_id"])
+            cur = prev
+        return chain[::-1]
 
     def _respect_correction(self, client_id: str, desired: list, stored: list, pinned: dict, pr: Principal, out: dict) -> None:
         """A person's correction is the active version of this slot.  Evidence that AGREES with it, or that is not newer than it, changes nothing.  Newer evidence that DISAGREES is

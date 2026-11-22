@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-22 12:54",
+  "generated_at": "2026-11-22 13:42",
   "conversations": 60,
   "transcripts": "build/eval/paraphrased_conversations.csv",
   "client": null,
@@ -7,10 +7,10 @@
   "verifier_model": "gpt-4.1-mini",
   "match_threshold": 0.5,
   "judge": "gpt-4.1",
-  "seconds": 1.8,
+  "seconds": 4.6,
   "llm_calls": {
     "cache_hit": 179,
-    "calls": 7
+    "calls": 33
   },
   "cached_tokens_all_runs": {
     "memory_in": 0,
@@ -68,9 +68,9 @@
       "recall": 0.743,
       "found": 55,
       "gold": 74,
-      "certainty_accuracy": 0.833,
+      "certainty_accuracy": 0.792,
       "over_confident": 0,
-      "under_confident": 1,
+      "under_confident": 2,
       "kept_per_meeting": 2.08,
       "unmatched": 71,
       "llm_errors": 0,
@@ -83,25 +83,27 @@
       },
       "certainty_by_kind": {
         "decision": "20/21",
-        "plan": "5/5",
+        "plan": "4/5",
         "tentative": "12/12",
-        "correction": "3/10"
+        "correction": "2/10"
       },
       "confusion": {
         "correction->confirmed": 2,
-        "correction->correction": 3,
+        "correction->correction": 2,
         "correction->exploratory": 4,
         "correction->hypothetical": 1,
+        "correction->unconfirmed": 1,
         "decision->confirmed": 20,
         "decision->unconfirmed": 1,
-        "plan->confirmed": 5,
+        "plan->confirmed": 4,
+        "plan->unconfirmed": 1,
         "tentative->exploratory": 12
       },
       "over_confident_cases": [],
       "bucket_accuracy": {
         "agree_llms": {
-          "n": 26,
-          "accuracy": 0.846
+          "n": 24,
+          "accuracy": 0.833
         },
         "agree_all": {
           "n": 17,
@@ -110,6 +112,10 @@
         "verifier_lower": {
           "n": 3,
           "accuracy": 0.333
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
         },
         "regex_hedge": {
           "n": 1,
@@ -166,9 +172,9 @@
       "recall": 0.851,
       "found": 63,
       "gold": 74,
-      "certainty_accuracy": 0.827,
+      "certainty_accuracy": 0.788,
       "over_confident": 0,
-      "under_confident": 1,
+      "under_confident": 2,
       "kept_per_meeting": 2.32,
       "unmatched": 77,
       "llm_errors": 0,
@@ -181,24 +187,26 @@
       },
       "certainty_by_kind": {
         "decision": "21/21",
-        "plan": "5/6",
+        "plan": "4/6",
         "tentative": "14/14",
-        "correction": "3/11"
+        "correction": "2/11"
       },
       "confusion": {
         "correction->confirmed": 4,
-        "correction->correction": 3,
+        "correction->correction": 2,
         "correction->exploratory": 4,
+        "correction->unconfirmed": 1,
         "decision->confirmed": 21,
-        "plan->confirmed": 5,
+        "plan->confirmed": 4,
         "plan->exploratory": 1,
+        "plan->unconfirmed": 1,
         "tentative->exploratory": 14
       },
       "over_confident_cases": [],
       "bucket_accuracy": {
         "agree_llms": {
-          "n": 27,
-          "accuracy": 0.852
+          "n": 25,
+          "accuracy": 0.84
         },
         "agree_all": {
           "n": 18,
@@ -207,6 +215,10 @@
         "verifier_lower": {
           "n": 3,
           "accuracy": 0.333
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
         },
         "regex_hedge": {
           "n": 1,
