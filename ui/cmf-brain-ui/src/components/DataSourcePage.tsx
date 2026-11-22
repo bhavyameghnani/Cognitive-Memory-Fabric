@@ -67,11 +67,20 @@ function StepCard({ step, memories }: { step: DsStep; memories: MemoryItem[] }) 
                 <h4 className="text-xs font-semibold text-slate-300 mb-2">③ Memories extracted from it</h4>
                 {memories.length === 0 ? <p className="text-xs text-slate-500">{original ? 'No memory in the store cites this source.'
                     : 'No memory cites this record. Email, chat and follow-up meetings are ingested only with CMF_MEMORY_CHANNELS=all and CMF_INGEST_MODE=llm_first.'}</p>
-                  : memories.map((m) => (
-                    <div key={m.memory_id} className="rounded-lg border border-slate-800 p-2 mb-2 text-xs">
-                      <span className="font-semibold" style={{ color: TYPES[m.memory_type].color }}>{TYPES[m.memory_type].name}</span> <span className="text-slate-500">· {m.status}</span>
-                      <div className="text-slate-200 mt-0.5">{m.title}</div>
-                    </div>))}
+                  : memories.map((m) => {
+                    const ev = m.evidence.find((e) => e.interaction_id === step.source_id);
+                    return (
+                      <div key={m.memory_id} className="rounded-lg border border-slate-800 p-2 mb-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-x-1.5">
+                          <span className="font-semibold" style={{ color: TYPES[m.memory_type].color }}>{TYPES[m.memory_type].name}</span>
+                          <span className="text-slate-500">·</span>
+                          <span className={`font-semibold capitalize ${m.certainty === 'confirmed' || m.certainty === 'correction' ? 'text-emerald-300' : 'text-sky-300'}`}>{m.certainty}</span>
+                          <span className="text-slate-500">· {Math.round(m.confidence * 100)}% · {m.status}</span>
+                        </div>
+                        <div className="text-slate-200 mt-0.5">{m.memory_type === 'semantic' ? m.title : m.content}</div>
+                        {ev && <div className="text-slate-400 italic mt-1 border-l-2 border-amber-500/50 pl-2">“{ev.excerpt}” <span className="not-italic font-mono text-slate-500">turn {ev.turn_index}</span></div>}
+                      </div>);
+                  })}
               </div>
               <p className="text-[11px] text-slate-500">Link to the storyline: {step.link_basis.replace(/_/g, ' ')} · {step.origin}{step.note ? ` · ${step.note}` : ''}</p>
             </div>

@@ -185,7 +185,7 @@ export const BrainVisualizer: React.FC<Props> = (p) => {
             const r = (SIZE[m.memory_type] ?? 4) * (0.8 + m.confidence * 0.4);
             const label = (sel || hov || m.memory_type === 'semantic' || m.memory_type === 'procedural') && !faded;
             return (
-              <g key={m.memory_id} transform={`translate(${o.x},${o.y})`} onClick={() => p.onSelect(m.memory_id)} onMouseEnter={() => setHovered(m.memory_id)} onMouseLeave={() => setHovered(null)}
+              <g key={m.memory_id} data-memory-id={m.memory_id} transform={`translate(${o.x},${o.y})`} onClick={() => p.onSelect(m.memory_id)} onMouseEnter={() => setHovered(m.memory_id)} onMouseLeave={() => setHovered(null)}
                 className="cursor-pointer transition-opacity duration-300" opacity={faded ? 0.14 : old ? 0.55 : 1}>
                 <circle r={11} fill="transparent" />
                 {(sel || hit) && <circle r={r + 7} fill={t.glow} stroke={t.color} strokeWidth="1.5" className="animate-pulse-slow" />}

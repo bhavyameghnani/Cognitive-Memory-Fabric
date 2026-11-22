@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Zap, Quote, History, ShieldAlert, Loader2 } from 'lucide-react';
+import { Zap, Quote, History, ShieldAlert, Loader2, Scale, AlertTriangle, Lock } from 'lucide-react';
 import { api } from '../api';
-import type { MemoryDetail, MemoryItem } from '../types';
+import type { ConflictView, MemoryDetail, MemoryItem } from '../types';
 import { STATUS_TONE, TYPES, fmtDate, nodeTitle, topicLabel, workingInfo } from '../lib/memory';
 
 interface Props {
@@ -46,8 +46,10 @@ export const MemoryDossier: React.FC<Props> = ({ memory, advisorId, onSelect, on
     try {
       await api.lifecycle(memory.memory_id, { new_status: confirm, reason, actor: advisorId });
       setConfirm(null); setReason(''); onChanged();
-    } catch (e: any) { setError(String(e.message ?? e)); } finally { setBusy(false); }
+    } catch (e: any) { setError(humanError(e)); } finally { setBusy(false); }
   };
+  const openConflicts = detail?.conflicts.filter((c) => c.status === 'open') ?? [];
+  const reloadDetail = () => api.memory(memory.memory_id).then(setDetail).catch(() => undefined);
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl p-5 flex flex-col gap-4">
@@ -91,6 +93,8 @@ export const MemoryDossier: React.FC<Props> = ({ memory, advisorId, onSelect, on
         </Section>
       )}
 
+      {!wk && detail?.reasoning && <WhyThisMemory memory={memory} r={detail.reasoning} onSelect={onSelect} />}
+
       {!wk && <Section icon={<Quote className="w-3.5 h-3.5 text-amber-400" />} title={`Evidence (${memory.evidence.length})`}>
         {memory.evidence.length === 0 && <p className="text-xs text-slate-500">No conversation evidence (curated or system-generated).</p>}
         <div className="space-y-2">
@@ -102,6 +106,15 @@ export const MemoryDossier: React.FC<Props> = ({ memory, advisorId, onSelect, on
           ))}
         </div>
       </Section>}
+
+      {detail && detail.conflicts.length > 0 && (
+        <Section icon={<AlertTriangle className="w-3.5 h-3.5 text-orange-400" />} title={`Conflicts (${openConflicts.length} open${detail.conflicts.length > openConflicts.length ? `, ${detail.conflicts.length - openConflicts.length} resolved` : ''})`}>
+          <div className="space-y-2">
+            {detail.conflicts.map((c) => <ConflictCard key={c.conflict_id} c={c} onSelect={onSelect} onResolved={() => { reloadDetail(); onChanged(); }} />)}
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2">Conflicts never change a memory by themselves. Only a signed-in person can resolve one, and the resolution is recorded with who, when and why.</p>
+        </Section>
+      )}
 
       {detail && detail.versions.length > 1 && (
         <Section icon={<History className="w-3.5 h-3.5 text-emerald-400" />} title="Version history">
@@ -151,7 +164,100 @@ export const MemoryDossier: React.FC<Props> = ({ memory, advisorId, onSelect, on
           )}
         </div>
       )}
-      {error && <p className="text-xs text-rose-400">{error}</p>}
+      {error && <p className="flex items-start gap-1.5 text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-md p-2"><Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />{error}</p>}
+    </div>
+  );
+};
+
+// A refusal from the memory store, in the words an audience understands.
+function humanError(e: any): string {
+  const m = String(e?.message ?? e);
+  if (m.includes('unauthenticated_actor')) {
+    return 'Refused by the memory store: only a signed-in person can change a memory. This session is anonymous, so neither it nor any AI agent can change this memory\'s status.';
+  }
+  return m;
+}
+
+const WhyThisMemory = ({ memory, r, onSelect }: { memory: MemoryItem; r: NonNullable<MemoryDetail['reasoning']>; onSelect: (id: string) => void }) => {
+  if (!r.votes && r.checks.length === 0) return null;
+  const v = r.votes;
+  const tone = (x: string) => (x === 'confirmed' || x === 'correction' ? 'text-emerald-300' : x === 'unconfirmed' ? 'text-amber-300' : 'text-sky-300');
+  return (
+    <Section icon={<Scale className="w-3.5 h-3.5 text-sky-400" />} title="Why this memory">
+      {r.created_by_episode && (
+        <p className="text-[11px] text-slate-400 mb-2">This current value was created by <button onClick={() => onSelect(r.created_by_episode!)} className="underline decoration-dotted text-slate-200 cursor-pointer">the episode that stated it</button>; its reasoning:</p>
+      )}
+      {v && (
+        <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-2.5 text-xs">
+          <div className="grid grid-cols-3 gap-2">
+            <Vote who="AI extractor" sub="gpt-4o-mini" label={v.extractor} tone={tone(v.extractor)} />
+            <Vote who="AI verifier (blind)" sub="gpt-4.1-mini" label={v.verifier} tone={tone(v.verifier)} />
+            <Vote who="Rule check" sub="wording cues" label={v.rules === 'unconfirmed' ? 'no decision words' : v.rules} tone={v.rules === 'unconfirmed' ? 'text-slate-400' : tone(v.rules)} />
+          </div>
+          <div className="mt-2 pt-2 border-t border-slate-800 flex flex-wrap items-center gap-2">
+            <span className="text-slate-400">{r.created_by_episode ? 'Episode stored as' : 'Stored as'}</span><b className={`capitalize ${tone(v.final)}`}>{v.final}</b>
+            <span className="text-slate-500">·</span><span className="text-slate-300">confidence {Math.round(v.confidence * 100)}%</span>
+            {r.needs_review && <span className="ml-auto rounded-md bg-orange-500/15 text-orange-300 px-1.5 py-0.5 text-[10px] font-semibold">NEEDS REVIEW</span>}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">{v.bucket_text}.</p>
+        </div>
+      )}
+      {r.checks.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {r.checks.map((c, i) => <li key={i} className="text-[11px] text-slate-400 leading-snug">✓ {c}</li>)}
+        </ul>
+      )}
+    </Section>
+  );
+};
+
+const Vote = ({ who, sub, label, tone }: { who: string; sub: string; label: string; tone: string }) => (
+  <div><div className="text-[10px] uppercase tracking-wide text-slate-500">{who}</div><div className={`capitalize font-semibold ${tone}`}>{label}</div><div className="text-[10px] text-slate-600 font-mono">{sub}</div></div>
+);
+
+const ConflictCard = ({ c, onSelect, onResolved }: { c: ConflictView; onSelect: (id: string) => void; onResolved: () => void }) => {
+  const [mode, setMode] = useState<'keep' | 'dismiss' | null>(null);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const o = c.other;
+  const resolve = async () => {
+    if (!mode) return;
+    setBusy(true); setErr(null);
+    try { await api.resolveConflict(c.conflict_id, { decision: mode, reason }); setMode(null); onResolved(); }
+    catch (e: any) { setErr(humanError(e)); } finally { setBusy(false); }
+  };
+  return (
+    <div className={`rounded-lg border p-2.5 text-xs ${c.status === 'open' ? (c.needs_person ? 'border-orange-500/50 bg-orange-500/5' : 'border-slate-700 bg-slate-950/40') : 'border-slate-800 opacity-70'}`}>
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <p className="text-slate-200 font-medium">{c.label}</p>
+          <p className="text-slate-400 mt-0.5">
+            Other memory: <button onClick={() => onSelect(c.other_id)} className="underline decoration-dotted text-slate-200 cursor-pointer">{o.value ? <b>{o.value}</b> : (o.text.slice(0, 70) + (o.text.length > 70 ? '…' : ''))}</button>
+            {o.date && <span className="text-slate-500"> · {fmtDate(o.date)}</span>}{o.status && <span className="text-slate-500"> · {o.status}</span>}
+          </p>
+        </div>
+        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.status === 'open' ? (c.needs_person ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-300') : 'bg-emerald-500/15 text-emerald-300'}`}>
+          {c.status === 'open' ? (c.needs_person ? 'NEEDS A PERSON' : 'OPEN') : 'RESOLVED'}
+        </span>
+      </div>
+      {c.status === 'resolved' && <p className="text-[11px] text-emerald-300/80 mt-1">{c.decision} by {c.resolved_by} · {c.resolution_reason}</p>}
+      {c.status === 'open' && !mode && (
+        <div className="flex items-center gap-2 mt-2">
+          <button onClick={() => setMode('keep')} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 hover:bg-slate-800 cursor-pointer">Resolve: keep current</button>
+          <button onClick={() => setMode('dismiss')} className="px-2 py-1 rounded-md border border-slate-700 text-slate-400 hover:bg-slate-800 cursor-pointer">Dismiss</button>
+        </div>
+      )}
+      {mode && (
+        <div className="mt-2 space-y-1.5">
+          <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (required, recorded with your name)" className="w-full rounded-md bg-slate-950 border border-slate-700 px-2 py-1 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500" />
+          <div className="flex gap-2">
+            <button disabled={busy || reason.trim().length < 3} onClick={resolve} className="px-2.5 py-1 rounded-md bg-blue-600 text-white disabled:opacity-40 cursor-pointer">{busy ? 'Saving…' : mode === 'keep' ? 'Confirm: keep' : 'Confirm: dismiss'}</button>
+            <button onClick={() => { setMode(null); setErr(null); }} className="px-2.5 py-1 rounded-md text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          </div>
+        </div>
+      )}
+      {err && <p className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-md p-2"><Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />{err}</p>}
     </div>
   );
 };

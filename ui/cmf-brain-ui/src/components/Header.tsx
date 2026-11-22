@@ -24,6 +24,7 @@ export const Header: React.FC<Props> = ({ clients, clientId, onClient, data, onl
           <span><b className="text-amber-400">{s.unconfirmed ?? 0}</b> unconfirmed</span>
           <span><b className="text-slate-300">{s.superseded ?? 0}</b> superseded</span>
           <span><b className="text-rose-400">{s.disputed ?? 0}</b> disputed</span>
+          <span><b className="text-orange-400">{data?.conflicts?.length ?? 0}</b> open conflicts</span>
         </div>
         <a href="#/data" className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-blue-500 hover:text-white"><Database className="w-3.5 h-3.5 text-blue-400" />Learn about the data source</a>
         <label className="flex items-center gap-2 text-xs text-slate-400">

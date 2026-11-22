@@ -27,6 +27,10 @@ export const api = {
   memory: (id: string) => call<MemoryDetail>(`/api/memories/${id}`),
   ask: (question: string) =>
     call<AskResult>('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) }),
+  resolveConflict: (id: string, body: { decision: 'keep' | 'dismiss'; reason: string }) =>
+    call<{ conflict_id: string; decision: string; resolved_by: string }>(`/api/conflicts/${id}/resolve`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }),
   lifecycle: (id: string, body: { new_status: string; reason: string; actor: string; approval_status?: string }) =>
     call<{ memory_id: string; from_status: string; to_status: string }>(`/api/memories/${id}/lifecycle`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

@@ -73,6 +73,7 @@ export interface BrainData {
   relationships: Relationship[];
   interactions: Interaction[];
   counts: { by_type: Record<string, number>; by_status: Record<string, number> };
+  conflicts?: { conflict_id: string; kind: string }[];
 }
 
 export interface LifecycleEvent {
@@ -86,10 +87,37 @@ export interface LifecycleEvent {
   created_at: string;
 }
 
+export interface ConflictView {
+  conflict_id: string;
+  kind: string;
+  label: string;
+  severity: string;
+  status: 'open' | 'resolved';
+  needs_person: boolean;
+  detected_at: string;
+  other_id: string;
+  other: { memory_type: string | null; value: string | null; status: string | null; certainty: string | null; date: string | null; text: string };
+  decision: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_reason: string | null;
+}
+
+export interface Reasoning {
+  created_by_episode: string | null;
+  votes: { extractor: string; verifier: string; rules: string; final: string; bucket: string; bucket_text: string; confidence: number } | null;
+  checks: string[];
+  needs_review: boolean;
+  ingestion: { origin: string; certainty_in: string; certainty_out: string; decision: string; reason: string } | null;
+  mode: 'llm_first' | 'rules' | null;
+}
+
 export interface MemoryDetail {
   memory: MemoryItem;
   versions: MemoryItem[];
   lifecycle: LifecycleEvent[];
+  conflicts: ConflictView[];
+  reasoning: Reasoning;
 }
 
 export interface Finding { text: string; refs: string[] }

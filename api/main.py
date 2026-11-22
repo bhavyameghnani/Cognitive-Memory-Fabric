@@ -317,8 +317,63 @@ def memory(memory_id: str, request: Request) -> dict:
     if row["memory_type"] == "semantic":  # whole version chain of the slot (same client, topic, subject)
         chain = [r for r in store().records(row["client_id"], "semantic") if r["topic"] == row["topic"] and (r["subject"] or "") == (row["subject"] or "")]
         history = _items(sorted(chain, key=lambda r: r["version_no"] or 0))
+    conflicts = store().conflicts(row["client_id"], None, memory_id) if row["client_id"] != GLOBAL_CLIENT else []
     return dict(memory=item, versions=history, lifecycle=store().lifecycle_events(memory_id),
-                conflicts=(store().conflicts(row["client_id"], None, memory_id) if row["client_id"] != GLOBAL_CLIENT else []))
+                conflicts=[_conflict_view(c, memory_id) for c in conflicts], reasoning=_reasoning(row))
+
+
+# ---- "why this memory" and conflicts, in the words an advisor would use (read-only views of the audit data; nothing here decides anything)
+_VOTES = re.compile(r"votes: extractor=(\w+) verifier=(\w+) regex=([\w/]+) -> (\w+) \((\w+), confidence ([\d.]+)\)")
+_BUCKETS = {"agree_all": "both AI models and the rule check agree",
+            "agree_llms": "both AI models agree; the rule check found no matching wording",
+            "verifier_lower": "the second model rated it weaker, so the weaker label was kept",
+            "verifier_higher": "the second model rated it stronger; the weaker label was kept",
+            "regex_hedge": "hedging words ('maybe', 'leaning', 'what if') vetoed both models",
+            "not_target": "not the client's own figure, so it cannot become a current value",
+            "unverified": "the second model could not be reached, so it was stored as unconfirmed"}
+_CONFLICT_KINDS = {"contradiction": "Disagreed with the value that was current at the time",
+                   "contradiction_same_period": "Two confirmed statements disagree on the same day",
+                   "changed_over_time": "The value changed over time",
+                   "open_exploration": "Still being explored: nothing decided yet",
+                   "unconsolidated_update": "A newer statement is not yet reflected in the current value",
+                   "late_arriving_historical": "An older fact arrived after a newer one",
+                   "unverified_vs_verified": "An unverified memory disagrees with a verified one",
+                   "human_correction_vs_evidence": "New evidence disagrees with a person's correction",
+                   "disputed": "Disputed by a person"}
+_NEEDS_PERSON = {"contradiction_same_period", "unverified_vs_verified", "human_correction_vs_evidence"}
+
+
+def _reasoning(row: dict) -> dict:
+    """The recorded reasoning behind one memory: the model votes, the checks it passed, and what the ingestion audit decided.  For a current value
+    (semantic), the reasoning of the episode that created it."""
+    st = store()
+    creator = None
+    if row["memory_type"] == "semantic":
+        rel = st.query("SELECT target_id FROM {S}memory_relationships WHERE source_id=? AND rel_type='derived_from'", (row["memory_id"],))
+        creator = rel[0]["target_id"] if rel else None
+    src = creator or row["memory_id"]
+    note = (st.query("SELECT selection_note FROM {S}episodic_details WHERE memory_id=?", (src,)) or [{}])[0].get("selection_note") or ""
+    cand = st.query("SELECT origin, certainty_in, certainty_out, decision, reason FROM {S}memory_candidates WHERE memory_id=? ORDER BY candidate_id LIMIT 1", (src,))
+    parts = [p.strip() for p in re.split(r";\s*", note) if p.strip()]
+    votes = None
+    checks: list[str] = []
+    for ptext in parts:
+        m = _VOTES.search(ptext)
+        if m:
+            votes = dict(extractor=m.group(1), verifier=m.group(2), rules=m.group(3), final=m.group(4), bucket=m.group(5),
+                         bucket_text=_BUCKETS.get(m.group(5), m.group(5)), confidence=float(m.group(6)))
+        elif not ptext.startswith(("selected:", "memory_kind=")) and "needs review" not in ptext:
+            checks.append(ptext.replace("value check ->", "value check:"))
+    return dict(created_by_episode=creator, votes=votes, checks=checks, needs_review="needs review" in note,
+                ingestion=(dict(cand[0]) if cand else None), mode=("llm_first" if votes else "rules" if note else None))
+
+
+def _conflict_view(c: dict, memory_id: str) -> dict:
+    other_id = c["other_memory_id"] if c["memory_id"] == memory_id else c["memory_id"]
+    o = store().get(other_id) or {}
+    return dict(c, other_id=other_id, label=_CONFLICT_KINDS.get(c["kind"], c["kind"].replace("_", " ")), needs_person=c["kind"] in _NEEDS_PERSON,
+                other=dict(memory_type=o.get("memory_type"), value=o.get("value_text"), status=o.get("status"), certainty=o.get("certainty"),
+                           date=o.get("valid_from") or o.get("event_date"), text=(o.get("content") or "")[:220]))
 
 
 class AskBody(BaseModel):

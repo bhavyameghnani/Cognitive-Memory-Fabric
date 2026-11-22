@@ -1,5 +1,7 @@
 # CMF demo script (about 15 minutes)
 
+> **Current version: [`CMF_Demo_Script.docx`](CMF_Demo_Script.docx)**, about 12 minutes, with a screenshot for every step. It adds the conflicts and "why this memory" panels and the refused-resolve moment. This page is the earlier, longer outline.
+
 The story you are telling: **a client's history is scattered across meetings, calls, emails and chats. The CRM keeps a thin, sometimes wrong summary. CMF reads the original conversations and builds a memory where every fact is dated, labelled by how settled it is, and traceable to the exact sentence it came from.**
 
 Two clients carry the demo:
