@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from agents.memory import ingest as ing
+from agents.memory import llm_first
 from agents.memory import retrieve as ret
 from agents.memory.config import GLOBAL_CLIENT, OrchestratorConfig
 from agents.memory.consolidate import Consolidator
@@ -40,6 +41,7 @@ class MemoryOrchestrator:
         self.store = store or MemoryStore(conv=self.conv)
         self.tracer, self.cfg = tracer or NullTracer(), config or OrchestratorConfig()
         self.write_validator = write_validator          # optional harness MemoryWriteValidator (independent pre-persistence check)
+        self.verifier_llm = llm_first.make_verifier_llm(llm)   # used only when cfg.ingest_mode == "llm_first"
         self.consolidator = Consolidator(self.store, validator=write_validator)
         # durable-write audit events go to this orchestrator's CURRENT tracer (the pipeline swaps it per request, so it is read lazily)
         self.store.boundary.emit_fn = lambda component, name, **payload: self.tracer.event(component, name, **payload)
@@ -76,13 +78,18 @@ class MemoryOrchestrator:
         ctx = ing.MeetingContext.load(self.conv, interaction_id)
         st.start_ingestion(interaction_id, ctx.client_id, getattr(self.llm, "model", "unknown"), self.conv.transcript_hash(interaction_id))
         try:
-            selected = ing.select_salient_turns(ctx.rows, self.cfg.filter)
-            self.tracer.event("memory", "turns_selected", interaction=interaction_id, turns=[(t.turn_index, t.score, t.reasons) for t in selected])
             label = (self.conv.directory().get(ctx.client_id) or {}).get("first_name") or ctx.client_id
-            res, err = ing.extract_memory_candidates(self.llm, ctx, selected, label, self.tracer)
-            cands = [(c, "conversation_llm") for c in res.candidates] + [(c, "conversation_rule") for c in ing.rule_candidates(ctx)]
-            decisions = ing.filter_memory_candidates(cands, ctx, self.conv, {t.turn_index for t in selected}, self.cfg.filter)
-            why = {t.turn_index: ",".join(t.reasons) for t in selected}
+            if self.cfg.ingest_mode == "llm_first":     # whole conversation to the model, blind verifier vote, fact checks in code
+                decisions, _, err = llm_first.run(self.llm, self.verifier_llm, ctx, self.conv, label, self.tracer, store=st)
+                selected = [ing.SelectedTurn(r["turn_index"], r["speaker"], "", 0.0, ["llm_first"]) for r in ctx.rows]
+                why = {t.turn_index: "llm_first: whole conversation" for t in selected}
+            else:
+                selected = ing.select_salient_turns(ctx.rows, self.cfg.filter)
+                self.tracer.event("memory", "turns_selected", interaction=interaction_id, turns=[(t.turn_index, t.score, t.reasons) for t in selected])
+                res, err = ing.extract_memory_candidates(self.llm, ctx, selected, label, self.tracer)
+                cands = [(c, "conversation_llm") for c in res.candidates] + [(c, "conversation_rule") for c in ing.rule_candidates(ctx)]
+                decisions = ing.filter_memory_candidates(cands, ctx, self.conv, {t.turn_index for t in selected}, self.cfg.filter)
+                why = {t.turn_index: ",".join(t.reasons) for t in selected}
             kept = 0
             for d in decisions:
                 if d.kept and self.write_validator is not None:   # independent re-check; may reject or downgrade, never upgrade

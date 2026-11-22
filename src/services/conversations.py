@@ -23,6 +23,9 @@ class Conversations:
             self.rows = list(csv.DictReader(f))
         for r in self.rows:
             r["turn_index"] = int(r["turn_index"])
+        self._index()
+
+    def _index(self) -> None:
         self.by_turn = {(r["interaction_id"], r["turn_index"]): r for r in self.rows}
         self.meetings: dict[str, list[dict]] = defaultdict(list)
         for r in self.rows:
@@ -93,6 +96,81 @@ def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.replace("’", "'").replace("“", '"').replace("”", '"')).strip().lower()
 
 
+# ---- multichannel source adapter -------------------------------------------------------------------------------------------------------------------------
+# The generated meetings, email threads and chat conversations of datasets/ are presented through the SAME interface as conversations.csv: one interaction
+# per meeting / thread / chat (MTG-, THR-, CHT- ids), one "turn" per turn / message.  The memory integrity boundary, the harness write validator and the
+# evidence checks therefore verify them with their existing code: an excerpt must exist in the cited message, the speaker must match, and the memory's
+# observation time is the cited message's own timestamp (a thread spans weeks, so it is set per row, not per interaction).
+#   * a third-party sender (e.g. the client's CPA) is kept as context with speaker "Third party"; such a message can never be cited as memory evidence
+#   * records restricted from agent access in datasets/governance/source_control.csv (SYN-ACC-RESTRICTED) are not loaded at all
+#   * the evaluation answer key and the CRM layer are never read here
+DATASETS = ROOT / "datasets"
+CHANNELS = ("meetings", "email", "chat")
+THIRD_PARTY = "Third party"
+_NO_AGENT_ACCESS = "SYN-ACC-RESTRICTED"
+
+
+def _csv(rel: str) -> list[dict]:
+    with open(DATASETS / rel, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def _role(person_id: str) -> str:
+    return "Client" if person_id.startswith("CLIENT-") else "Advisor" if person_id.startswith("ADVISOR-") else THIRD_PARTY
+
+
+def restricted_records() -> set[str]:
+    return {r["record_id"] for r in _csv("governance/source_control.csv") if r.get("restriction_policy_id") == _NO_AGENT_ACCESS}
+
+
+def channel_rows(channels=CHANNELS) -> list[dict]:
+    """Rows in the conversations.csv shape (plus speaker_name / speaker_id) for the requested extra channels, restricted records excluded."""
+    blocked, out = restricted_records(), []
+
+    def row(iid, client, advisor, ts, channel, turn, speaker_id, name, text, context, source_type, consent):
+        return dict(interaction_id=iid, client_id=client, advisor_id=advisor, interaction_datetime=ts, channel=channel, turn_index=int(turn),
+                    speaker=_role(speaker_id), speaker_id=speaker_id, speaker_name=name, utterance=text, meeting_context=context,
+                    source_type=source_type, consent_status=consent)
+    if "meetings" in channels:
+        meta = {m["meeting_id"]: m for m in _csv("meetings/meetings.csv")}
+        for t in _csv("meetings/meeting_turns.csv"):
+            m = meta[t["meeting_id"]]
+            if t["meeting_id"] not in blocked:
+                out.append(row(t["meeting_id"], t["client_id"], m["advisor_id"], t["turn_timestamp"], "meeting", t["turn_index"], t["speaker_id"], t["speaker_name"],
+                               t["utterance"], m["subject"], t["source_type"], t["consent_status"]))
+    if "email" in channels:
+        for e in _csv("emails/emails.csv"):
+            if e["thread_id"] not in blocked:
+                out.append(row(e["thread_id"], e["client_id"], e["advisor_id"], e["timestamp"], "email", e["message_seq"], e["sender_id"], e["sender_name"],
+                               e["body"], e["subject"], e["source_type"], e["consent_status"]))
+    if "chat" in channels:
+        for c in _csv("chats/chats.csv"):
+            if c["chat_conversation_id"] not in blocked:
+                out.append(row(c["chat_conversation_id"], c["client_id"], c["advisor_id"], c["timestamp"], "chat", c["message_seq"], c["sender_id"], c["sender_name"],
+                               c["message_text"], "chat conversation", c["source_type"], c["consent_status"]))
+    return out
+
+
+class MultiChannelConversations(Conversations):
+    """conversations.csv plus the requested extra channels, behind the unchanged Conversations interface."""
+
+    def __init__(self, path: Path = CSV_PATH, channels=CHANNELS) -> None:
+        super().__init__(path)
+        self.channels = tuple(channels)
+        self.rows += channel_rows(self.channels)
+        self._index()
+
+
+def memory_channels(env=None) -> tuple:
+    """CMF_MEMORY_CHANNELS: empty / 'conversations' (default) = data/conversations.csv only; 'all' or a comma list of meetings,email,chat adds those."""
+    import os
+    v = (os.environ if env is None else env).get("CMF_MEMORY_CHANNELS", "").strip().lower()
+    if v in ("", "conversations"):
+        return ()
+    return CHANNELS if v == "all" else tuple(c for c in (x.strip() for x in v.split(",")) if c in CHANNELS)
+
+
 @lru_cache(maxsize=1)
 def shared() -> Conversations:
-    return Conversations()
+    extra = memory_channels()
+    return MultiChannelConversations(channels=extra) if extra else Conversations()

@@ -1,0 +1,324 @@
+{
+  "generated_at": "2026-11-22 12:54",
+  "records": 59,
+  "extractor": "gpt-4o-mini",
+  "verifier": "gpt-4.1-mini",
+  "judge": "gpt-4.1",
+  "seconds": 0.7,
+  "storyline_recall": 0.521,
+  "routine_memories_per_record": 0.0,
+  "by_channel": {
+    "chat": {
+      "records": 27,
+      "kept": 15,
+      "errors": 0,
+      "storyline_points": 21,
+      "storyline_found": 5,
+      "routine_records": 6,
+      "routine_kept": 0
+    },
+    "email": {
+      "records": 21,
+      "kept": 25,
+      "errors": 0,
+      "storyline_points": 15,
+      "storyline_found": 13,
+      "routine_records": 6,
+      "routine_kept": 0
+    },
+    "meeting": {
+      "records": 11,
+      "kept": 23,
+      "errors": 0,
+      "storyline_points": 12,
+      "storyline_found": 7
+    }
+  },
+  "rejection_reasons": {
+    "write validator": 8,
+    "verifier": 4,
+    "excerpt does not exist in the cited turn": 2,
+    "no recognisable topic": 2,
+    "duplicate of an earlier candidate in the same turn": 1
+  },
+  "misses": [
+    {
+      "iid": "CHT-002",
+      "channel": "chat",
+      "note": "client asks for comparison; maybes stay maybes"
+    },
+    {
+      "iid": "CHT-003",
+      "channel": "chat",
+      "note": "late-night musing about the house; nothing due"
+    },
+    {
+      "iid": "CHT-004",
+      "channel": "chat",
+      "note": "client anxious about annuity salesman; no action"
+    },
+    {
+      "iid": "CHT-005",
+      "channel": "chat",
+      "note": "deposit worry; nothing due"
+    },
+    {
+      "iid": "CHT-007",
+      "channel": "chat",
+      "note": "client wavers by chat; refuses to decide by text"
+    },
+    {
+      "iid": "CHT-008",
+      "channel": "chat",
+      "note": "recruiter call: exploratory only"
+    },
+    {
+      "iid": "CHT-009",
+      "channel": "chat",
+      "note": "client asks not to record four days as a plan"
+    },
+    {
+      "iid": "CHT-010",
+      "channel": "chat",
+      "note": "client felt rushed; nothing to decide"
+    },
+    {
+      "iid": "CHT-011",
+      "channel": "chat",
+      "note": "employer might allow remote; still a possibility"
+    },
+    {
+      "iid": "CHT-013",
+      "channel": "chat",
+      "note": "employer says no remote; off for the moment"
+    },
+    {
+      "iid": "CHT-014",
+      "channel": "chat",
+      "note": "client checks the correction was made; acceptance still pending"
+    },
+    {
+      "iid": "CHT-016",
+      "channel": "chat",
+      "note": "client double-checks the correction"
+    },
+    {
+      "iid": "CHT-017",
+      "channel": "chat",
+      "note": "reminder for summaries"
+    },
+    {
+      "iid": "CHT-019",
+      "channel": "chat",
+      "note": "client asks to stop; advisor restates no decision needed and the conditional call"
+    },
+    {
+      "iid": "CHT-021",
+      "channel": "chat",
+      "note": "CPA confirmation forwarded; submission planned; signed copy pending"
+    },
+    {
+      "iid": "CHT-022",
+      "channel": "chat",
+      "note": "pension papers to be uploaded via the secure portal"
+    },
+    {
+      "iid": "MTG-006",
+      "channel": "meeting",
+      "note": "two conditions restated; specialist declined; kept as maybe"
+    },
+    {
+      "iid": "MTG-007",
+      "channel": "meeting",
+      "note": "questions for the attorney; advisor explicitly not recommending"
+    },
+    {
+      "iid": "MTG-009",
+      "channel": "meeting",
+      "note": "advisor suggests house fund as one option; client says do not record as done"
+    },
+    {
+      "iid": "MTG-011",
+      "channel": "meeting",
+      "note": "client again says nothing decided about the equipment"
+    },
+    {
+      "iid": "MTG-011",
+      "channel": "meeting",
+      "note": "model rerun; survivor amount is a stress case only"
+    },
+    {
+      "iid": "THR-008",
+      "channel": "email",
+      "note": "advisor email labels it additional tuition; later corrected in same thread"
+    },
+    {
+      "iid": "THR-013",
+      "channel": "email",
+      "note": "forms requested; one form missing"
+    }
+  ],
+  "found": [
+    {
+      "iid": "MTG-003",
+      "channel": "meeting",
+      "note": "four-day week as scenario only; childcare fees to follow",
+      "certainty": "confirmed",
+      "statement": "Sofia's manager hinted at a four-day work week when she returns, but she hasn't asked for it and is undecided.",
+      "evidence": "MTG-003 msg 11"
+    },
+    {
+      "iid": "THR-007",
+      "channel": "email",
+      "note": "email lists equipment help as a wish; ambiguous client acknowledgement; correction May 8",
+      "certainty": "correction",
+      "statement": "Peg clarified that helping Brian with equipment was only a thought and nothing has been offered.",
+      "evidence": "THR-007 msg 3"
+    },
+    {
+      "iid": "THR-006",
+      "channel": "email",
+      "note": "advisor email says offer accepted; correction and client confirmation of 'inclined' on Mar 24",
+      "certainty": "exploratory",
+      "statement": "Rebecca told Daniel she is inclined to accept the Lakeshore offer, but has not signed the letter of intent and her lawyer is still negotiating.",
+      "evidence": "THR-006 msg 3"
+    },
+    {
+      "iid": "CHT-020",
+      "channel": "chat",
+      "note": "client confirms both payments were made from the cash account",
+      "certainty": "confirmed",
+      "statement": "Rebecca confirmed that she paid the lawyer's forty thousand retainer and Mei Lin's fifteen thousand advance from the cash account.",
+      "evidence": "CHT-020 msg 1"
+    },
+    {
+      "iid": "MTG-010",
+      "channel": "meeting",
+      "note": "trust explained; attorney suggested; open",
+      "certainty": "exploratory",
+      "statement": "Grace is open to the idea of holding Folake's share outright for now and revisiting it later with an attorney.",
+      "evidence": "MTG-010 msg 7"
+    },
+    {
+      "iid": "THR-009",
+      "channel": "email",
+      "note": "advisor asks for summaries; client wants cover but buys nothing; partial summaries found",
+      "certainty": "exploratory",
+      "statement": "Lucas wants disability cover but is not buying anything yet.",
+      "evidence": "THR-009 msg 2"
+    },
+    {
+      "iid": "THR-004",
+      "channel": "email",
+      "note": "advisor email labels payout as reserved for mortgage; client's reply states a wish, not an action; later keep-mortgage confirmation; June correction",
+      "certainty": "confirmed",
+      "statement": "Grace has decided to keep the mortgage in place for now.",
+      "evidence": "THR-004 msg 3"
+    },
+    {
+      "iid": "CHT-012",
+      "channel": "chat",
+      "note": "advisor suggestion; client defers",
+      "certainty": "confirmed",
+      "statement": "Sofia Alvarez decided to hold off on choosing a 529 plan until the autumn.",
+      "evidence": "CHT-012 msg 3"
+    },
+    {
+      "iid": "CHT-001",
+      "channel": "chat",
+      "note": "client asks for confirmation the corrected note says 65",
+      "certainty": "confirmed",
+      "statement": "Kenji confirmed that the formal planning date is 65.",
+      "evidence": "CHT-001 msg 1"
+    },
+    {
+      "iid": "THR-015",
+      "channel": "email",
+      "note": "v1 model assumes no salary; correction and v2 model",
+      "certainty": "correction",
+      "statement": "Daniel corrected the assumption that Rebecca's salary stops at closing, noting she will remain in a paid consulting role for twelve months after closing at her current salary.",
+      "evidence": "THR-015 msg 3"
+    },
+    {
+      "iid": "THR-011",
+      "channel": "email",
+      "note": "contract summary, hold, attorney list, final decision against for now",
+      "certainty": "confirmed",
+      "statement": "Peg has decided against Maplewood Commons for now, because Frank wants to stay at home.",
+      "evidence": "THR-011 msg 4"
+    },
+    {
+      "iid": "MTG-004",
+      "channel": "meeting",
+      "note": "63 under serious consideration; planning date still 65; decision promised for May 1",
+      "certainty": "exploratory",
+      "statement": "Kenji is considering 63 as his retirement age, but he is not ready to say it is the answer yet.",
+      "evidence": "MTG-004 msg 6"
+    },
+    {
+      "iid": "CHT-015",
+      "channel": "chat",
+      "note": "first step executed on Jun 1",
+      "certainty": "confirmed",
+      "statement": "Priya confirmed that about $24,000 went into the global equity fund this morning as the first of six steps.",
+      "evidence": "CHT-015 msg 2"
+    },
+    {
+      "iid": "THR-001",
+      "channel": "email",
+      "note": "advisor email states decision; correction and softened autumn plan on Apr 13",
+      "certainty": "confirmed",
+      "statement": "Sofia is considering a purchase within about two years, with no commitment, and has decided not to start a house search until the autumn.",
+      "evidence": "THR-001 msg 4"
+    },
+    {
+      "iid": "THR-016",
+      "channel": "email",
+      "note": "advisor email treats house fund as cushion; correction and client's explicit instruction",
+      "certainty": "confirmed",
+      "statement": "Sofia confirmed to keep the $40,000 in the house fund as house money.",
+      "evidence": "THR-016 msg 4"
+    },
+    {
+      "iid": "THR-002",
+      "channel": "email",
+      "note": "advisor email overstates exploration as a wish to retire at 60; client reply is tentative",
+      "certainty": "exploratory",
+      "statement": "Kenji would like to retire at 60, despite the trade-offs and not recommended on current numbers.",
+      "evidence": "THR-002 msg 2"
+    },
+    {
+      "iid": "MTG-005",
+      "channel": "meeting",
+      "note": "two funding versions requested; 529 suggestion left open",
+      "certainty": "exploratory",
+      "statement": "Rebecca expressed uncertainty about opening a 529 plan and requested to be asked again once she knows where Ethan is applying.",
+      "evidence": "MTG-005 msg 12"
+    },
+    {
+      "iid": "MTG-008",
+      "channel": "meeting",
+      "note": "form review; beneficiary partly open; submission pending",
+      "certainty": "exploratory",
+      "statement": "Kenji wants Mariko as the primary beneficiary, with Yuki and Ren equally as contingent beneficiaries, pending confirmation against the estate documents.",
+      "evidence": "MTG-008 msg 8"
+    },
+    {
+      "iid": "THR-010",
+      "channel": "email",
+      "note": "advisor shares plan summary with the client's CPA; tentative client lean; decision recorded Jun 3",
+      "certainty": "exploratory",
+      "statement": "Kenji is leaning toward five installments for his deferred compensation payout but will confirm on Wednesday's call.",
+      "evidence": "THR-010 msg 3"
+    },
+    {
+      "iid": "MTG-001",
+      "channel": "meeting",
+      "note": "form walkthrough; tentative preference for monthly income; lump sum not evaluated",
+      "certainty": "exploratory",
+      "statement": "Grace is feeling uncertain about choosing the annuity option and stated, 'I'm feeling like no. But I don't know.'",
+      "evidence": "MTG-001 msg 14"
+    }
+  ],
+  "routine_kept": []
+}

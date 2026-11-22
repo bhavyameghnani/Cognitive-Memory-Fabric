@@ -60,6 +60,8 @@ class Decision:
     certainty_in: str = ""
     certainty_out: str = ""
     notes: list[str] = field(default_factory=list)
+    confidence: Optional[float] = None      # set by the LLM-first path (measured agreement confidence); None = the rules pipeline's fixed table
+    extra_evidence: list[dict] = field(default_factory=list)   # LLM-first: e.g. the client's confirming reply when the content was stated in an earlier turn
 
     @property
     def kept(self) -> bool:
@@ -170,6 +172,9 @@ def filter_memory_candidates(cands: list[tuple[MemoryCandidate, str]], ctx: Meet
             continue
         notes: list[str] = []
         role = row["speaker"]
+        if role not in ("Client", "Advisor"):
+            decisions.append(rej("a third-party message cannot be cited as client memory evidence"))
+            continue
         if role != cand.speaker_role:
             notes.append(f"speaker role taken from data: {role} (model said {cand.speaker_role})")
         excerpt = cand.excerpt
@@ -258,21 +263,24 @@ def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: 
     """Returns [(memory_id, created)]; created is False when the same memory (content hash) was already stored."""
     c = d.final
     assert c is not None
+    # observation time = the CITED turn's own timestamp (identical for every turn of a meeting; per message in an email thread or chat)
+    ts = (ctx.turn(c.turn_index) or {}).get("interaction_datetime") or ctx.ts
     ev = [dict(source_type="conversation", interaction_id=ctx.interaction_id, turn_index=c.turn_index, speaker=c.speaker_role, excerpt=c.excerpt, role="primary")]
+    ev += [dict(source_type="conversation", interaction_id=ctx.interaction_id, **x) for x in d.extra_evidence]
     ids: list[tuple[str, bool]] = []
     who = Principal.service("ingestion", [ctx.client_id], request_id=request_id)      # scope = the client of the verified meeting row
     for mtype in route_memory(cls):
         digest = h(ctx.client_id, mtype, ctx.interaction_id, c.turn_index, c.topic, c.subject, rules.norm(c.value or ""), c.certainty, rules.norm(c.excerpt), n=40)
         base = dict(client_id=ctx.client_id, memory_type=mtype, topic=c.topic, subject=c.subject, title=f"{c.topic}: {c.certainty}", content=c.statement, value_text=c.value,
                     corrects_value=c.corrects_value, certainty=c.certainty if mtype == "episodic" else "recommendation", source_role=c.speaker_role,
-                    confidence=rules.confidence_for(c.certainty, d.origin, d.decision == "downgraded"), event_date=ctx.date, origin=d.origin, model=model if d.origin == "conversation_llm" else None,
+                    confidence=d.confidence if d.confidence is not None else rules.confidence_for(c.certainty, d.origin, d.decision == "downgraded"), event_date=ts[:10], origin=d.origin, model=model if d.origin == "conversation_llm" else None,
                     content_hash=digest)
         if mtype == "episodic":
             rec = dict(base, memory_id="MEM-EPI-" + digest[:12], status=cls.status)
-            det = dict(interaction_id=ctx.interaction_id, turn_index=c.turn_index, event_ts=ctx.ts, speaker_role=c.speaker_role, event_type=cls.event_type,
+            det = dict(interaction_id=ctx.interaction_id, turn_index=c.turn_index, event_ts=ts, speaker_role=c.speaker_role, event_type=cls.event_type,
                        selection_note=(selection_note + "; " + "; ".join(d.notes))[:400].strip("; "), candidate_id=None)
         else:  # procedural proposal from an advisor turn: never active until a human approves it
-            rec = dict(base, memory_id="MEM-PRO-" + digest[:12], status="candidate", valid_from=ctx.date)
+            rec = dict(base, memory_id="MEM-PRO-" + digest[:12], status="candidate", valid_from=ts[:10])
             det = dict(procedure_name=c.statement[:80], steps=json.dumps([c.statement]), topics=c.topic, keywords="", approval_status="proposed", approver=None,
                        source_ref=f"{ctx.interaction_id}.{c.turn_index}")
         mid, created = store.insert_memory(rec, det, ev, reason=f"created from {ctx.interaction_id} turn {c.turn_index} ({d.origin})", principal=who)

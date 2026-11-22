@@ -1,0 +1,888 @@
+{
+  "generated_at": "2026-11-22 12:54",
+  "conversations": 60,
+  "transcripts": "build/eval/paraphrased_conversations.csv",
+  "client": null,
+  "extractor_model": "gpt-4o-mini",
+  "verifier_model": "gpt-4.1-mini",
+  "match_threshold": 0.5,
+  "judge": "gpt-4.1",
+  "seconds": 1.8,
+  "llm_calls": {
+    "cache_hit": 179,
+    "calls": 7
+  },
+  "cached_tokens_all_runs": {
+    "memory_in": 0,
+    "memory_out": 0,
+    "memory_verifier_in": 0,
+    "memory_verifier_out": 0,
+    "judge_in": 0,
+    "judge_out": 0,
+    "paraphrase_in": 0,
+    "paraphrase_out": 0
+  },
+  "results": [
+    {
+      "pipeline": "rules",
+      "meetings": 60,
+      "recall": 0.662,
+      "found": 49,
+      "gold": 74,
+      "certainty_accuracy": 0.425,
+      "over_confident": 0,
+      "under_confident": 15,
+      "kept_per_meeting": 2.25,
+      "unmatched": 86,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "15/22",
+        "plan": "4/10",
+        "tentative": "13/14",
+        "correction": "8/11",
+        "deferred": "9/17"
+      },
+      "certainty_by_kind": {
+        "decision": "3/15",
+        "plan": "1/4",
+        "tentative": "13/13",
+        "correction": "0/8"
+      },
+      "confusion": {
+        "correction->exploratory": 3,
+        "correction->unconfirmed": 5,
+        "decision->confirmed": 3,
+        "decision->exploratory": 1,
+        "decision->unconfirmed": 11,
+        "plan->confirmed": 1,
+        "plan->exploratory": 1,
+        "plan->unconfirmed": 2,
+        "tentative->exploratory": 13
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {}
+    },
+    {
+      "pipeline": "llm_first",
+      "meetings": 60,
+      "recall": 0.743,
+      "found": 55,
+      "gold": 74,
+      "certainty_accuracy": 0.833,
+      "over_confident": 0,
+      "under_confident": 1,
+      "kept_per_meeting": 2.08,
+      "unmatched": 71,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "21/22",
+        "plan": "5/10",
+        "tentative": "12/14",
+        "correction": "10/11",
+        "deferred": "7/17"
+      },
+      "certainty_by_kind": {
+        "decision": "20/21",
+        "plan": "5/5",
+        "tentative": "12/12",
+        "correction": "3/10"
+      },
+      "confusion": {
+        "correction->confirmed": 2,
+        "correction->correction": 3,
+        "correction->exploratory": 4,
+        "correction->hypothetical": 1,
+        "decision->confirmed": 20,
+        "decision->unconfirmed": 1,
+        "plan->confirmed": 5,
+        "tentative->exploratory": 12
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {
+        "agree_llms": {
+          "n": 26,
+          "accuracy": 0.846
+        },
+        "agree_all": {
+          "n": 17,
+          "accuracy": 0.941
+        },
+        "verifier_lower": {
+          "n": 3,
+          "accuracy": 0.333
+        },
+        "regex_hedge": {
+          "n": 1,
+          "accuracy": 0.0
+        },
+        "verifier_higher": {
+          "n": 1,
+          "accuracy": 1.0
+        }
+      }
+    },
+    {
+      "pipeline": "rules_raw",
+      "meetings": 60,
+      "recall": 0.703,
+      "found": 52,
+      "gold": 74,
+      "certainty_accuracy": 0.419,
+      "over_confident": 0,
+      "under_confident": 16,
+      "kept_per_meeting": 2.4,
+      "unmatched": 92,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "16/22",
+        "plan": "5/10",
+        "tentative": "13/14",
+        "correction": "9/11",
+        "deferred": "9/17"
+      },
+      "certainty_by_kind": {
+        "decision": "4/16",
+        "plan": "1/5",
+        "tentative": "13/13",
+        "correction": "0/9"
+      },
+      "confusion": {
+        "correction->exploratory": 4,
+        "correction->unconfirmed": 5,
+        "decision->confirmed": 4,
+        "decision->exploratory": 1,
+        "decision->unconfirmed": 11,
+        "plan->confirmed": 1,
+        "plan->exploratory": 1,
+        "plan->unconfirmed": 3,
+        "tentative->exploratory": 13
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {}
+    },
+    {
+      "pipeline": "llm_first_raw",
+      "meetings": 60,
+      "recall": 0.851,
+      "found": 63,
+      "gold": 74,
+      "certainty_accuracy": 0.827,
+      "over_confident": 0,
+      "under_confident": 1,
+      "kept_per_meeting": 2.32,
+      "unmatched": 77,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "21/22",
+        "plan": "6/10",
+        "tentative": "14/14",
+        "correction": "11/11",
+        "deferred": "11/17"
+      },
+      "certainty_by_kind": {
+        "decision": "21/21",
+        "plan": "5/6",
+        "tentative": "14/14",
+        "correction": "3/11"
+      },
+      "confusion": {
+        "correction->confirmed": 4,
+        "correction->correction": 3,
+        "correction->exploratory": 4,
+        "decision->confirmed": 21,
+        "plan->confirmed": 5,
+        "plan->exploratory": 1,
+        "tentative->exploratory": 14
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {
+        "agree_llms": {
+          "n": 27,
+          "accuracy": 0.852
+        },
+        "agree_all": {
+          "n": 18,
+          "accuracy": 0.944
+        },
+        "verifier_lower": {
+          "n": 3,
+          "accuracy": 0.333
+        },
+        "regex_hedge": {
+          "n": 1,
+          "accuracy": 0.0
+        },
+        "verifier_higher": {
+          "n": 3,
+          "accuracy": 0.667
+        }
+      }
+    }
+  ],
+  "samples": {
+    "rules": {
+      "unmatched": [
+        {
+          "iid": "INT-066",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "The client has not made any decisions beyond considering the bond allocation."
+        },
+        {
+          "iid": "INT-040",
+          "certainty": "unconfirmed",
+          "topic": "retirement_age",
+          "statement": "You might qualify for Social Security survivor benefits at age 60."
+        },
+        {
+          "iid": "INT-078",
+          "certainty": "exploratory",
+          "topic": "business_sale",
+          "statement": "Rebecca is considering waiting two years before selling her business to potentially get a better price."
+        },
+        {
+          "iid": "INT-148",
+          "certainty": "unconfirmed",
+          "topic": "liquidity_reserve",
+          "statement": "You aimed for a nine-month reserve after shifting your strategy."
+        },
+        {
+          "iid": "INT-010",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Kenji is comfortable holding around seventy-five percent equities and can handle a sizable dip."
+        },
+        {
+          "iid": "INT-015",
+          "certainty": "unconfirmed",
+          "topic": "care_costs",
+          "statement": "Her doctors indicated that she might need to stay in care for years."
+        },
+        {
+          "iid": "INT-128",
+          "certainty": "recommendation",
+          "topic": "investment_trade",
+          "statement": "The advisor will contact Grace if her stock position drops more than ten percent before the July 1 buy."
+        },
+        {
+          "iid": "INT-016",
+          "certainty": "recommendation",
+          "topic": "liquidity_reserve",
+          "statement": "The advisor suggests that the client should have closer to nine months of cash set aside due to unpredictable income."
+        },
+        {
+          "iid": "INT-071",
+          "certainty": "confirmed",
+          "topic": "housing_property",
+          "statement": "Sofia has decided to wait until autumn to start house hunting."
+        },
+        {
+          "iid": "INT-144",
+          "certainty": "exploratory",
+          "topic": "retirement_age",
+          "statement": "The client is considering a Roth conversion before turning 63."
+        },
+        {
+          "iid": "INT-014",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "The client is considering purchasing an additional $50,000 worth of Vantora stock."
+        },
+        {
+          "iid": "INT-119",
+          "certainty": "recommendation",
+          "topic": "liquidity_reserve",
+          "statement": "The advisor suggests having closer to 24 months saved up for expenses due to Frank's care and potential medical needs."
+        },
+        {
+          "iid": "INT-050",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "The client is considering whether they really need the annuity given their existing guaranteed income sources."
+        },
+        {
+          "iid": "INT-005",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "The client is considering whether to keep the intermediate bond fund."
+        },
+        {
+          "iid": "INT-015",
+          "certainty": "exploratory",
+          "topic": "retirement_age",
+          "statement": "David is considering retiring from teaching in a couple of years."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "INT-118",
+          "kind": "decision",
+          "gold": "to pay the second-quarter estimate at the safe-harbor amount"
+        },
+        {
+          "iid": "INT-150",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are final"
+        },
+        {
+          "iid": "INT-010",
+          "kind": "plan",
+          "gold": "a growth-oriented portfolio at about 75 percent equities"
+        },
+        {
+          "iid": "INT-050",
+          "kind": "correction",
+          "gold": "my February summary that the survivor payment was about half of Samuel's pension was imprecise; the form says sixty percent for life, with a lump-sum alternative not yet evaluated"
+        },
+        {
+          "iid": "INT-144",
+          "kind": "deferred",
+          "gold": "any Roth conversion until the second-half review"
+        },
+        {
+          "iid": "INT-126",
+          "kind": "decision",
+          "gold": "to pay the lawyer's retainer and the accountant's advance, about fifty-five thousand dollars, from cash and not from investments"
+        },
+        {
+          "iid": "INT-147",
+          "kind": "deferred",
+          "gold": "asking for a four-day work week until next year"
+        },
+        {
+          "iid": "INT-010",
+          "kind": "decision",
+          "gold": "to proceed with the agreed portfolio review"
+        },
+        {
+          "iid": "INT-015",
+          "kind": "plan",
+          "gold": "treating your mother's care, about six thousand dollars a month from you, as a fixed obligation in all projections"
+        },
+        {
+          "iid": "INT-142",
+          "kind": "correction",
+          "gold": "my assumption that your salary would stop at closing was wrong; the draft agreement keeps you on as a paid consultant for twelve months after closing"
+        },
+        {
+          "iid": "INT-079",
+          "kind": "decision",
+          "gold": "to apply for a one and a half million dollar twenty-year term policy for you and a one million dollar policy for Mateo"
+        },
+        {
+          "iid": "INT-118",
+          "kind": "deferred",
+          "gold": "the annualized-installment method for estimated taxes until the third quarter's income is clearer"
+        },
+        {
+          "iid": "INT-076",
+          "kind": "plan",
+          "gold": "the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account"
+        },
+        {
+          "iid": "INT-003",
+          "kind": "plan",
+          "gold": "preserving capital while covering the gap between about six thousand three hundred in pension and Social Security and spending of about eight thousand nine hundred a month"
+        },
+        {
+          "iid": "INT-103",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are firm"
+        }
+      ]
+    },
+    "llm_first": {
+      "unmatched": [
+        {
+          "iid": "INT-122",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Grace indicated that she wants to give some of the insurance payout to Tobi as a gift, but only up to fifteen."
+        },
+        {
+          "iid": "INT-010",
+          "certainty": "unconfirmed",
+          "topic": "retirement_age",
+          "statement": "Kenji noted that he is about seven years out from retirement."
+        },
+        {
+          "iid": "INT-066",
+          "certainty": "hypothetical",
+          "topic": "investment_trade",
+          "statement": "Rebecca agreed to send the signed exclusivity agreement and her lawyer's summary to Daniel."
+        },
+        {
+          "iid": "INT-010",
+          "certainty": "confirmed",
+          "topic": "risk_tolerance",
+          "statement": "Kenji confirmed that he would rather err on the side of taking more risk than playing it safe."
+        },
+        {
+          "iid": "INT-046",
+          "certainty": "recommendation",
+          "topic": "investment_trade",
+          "statement": "The advisor suggests that Kenji should sell some Northgate shares at each vest and spread the money out."
+        },
+        {
+          "iid": "INT-089",
+          "certainty": "confirmed",
+          "topic": "risk_tolerance",
+          "statement": "Sofia indicated that her perspective on risk has changed for the long haul after having a child."
+        },
+        {
+          "iid": "INT-127",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "Lucas is still mulling over what to do with the rest of Vantora."
+        },
+        {
+          "iid": "INT-046",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "Kenji mentioned that Ren is switching his major to engineering, which probably means he'll need to add another semester."
+        },
+        {
+          "iid": "INT-077",
+          "certainty": "confirmed",
+          "topic": "business_sale",
+          "statement": "Rebecca confirmed that a cash at closing of roughly $12.3 million would take care of her mom and the reserve."
+        },
+        {
+          "iid": "INT-010",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "Kenji will send the summary for his Northgate deferred comp plan when he gets it."
+        },
+        {
+          "iid": "INT-089",
+          "certainty": "exploratory",
+          "topic": "risk_tolerance",
+          "statement": "Sofia decided to shift her retirement investments from about 90% stocks to 75% due to her changed comfort level after Lucia was born."
+        },
+        {
+          "iid": "INT-049",
+          "certainty": "exploratory",
+          "topic": "retirement_age",
+          "statement": "Priya will update her notes to reflect that Kenji is considering age 60 for retirement, but that 65 is still the official goal."
+        },
+        {
+          "iid": "INT-079",
+          "certainty": "unconfirmed",
+          "topic": "insurance_estate",
+          "statement": "Sofia will kick off the application process for the term life insurance this week."
+        },
+        {
+          "iid": "INT-126",
+          "certainty": "exploratory",
+          "topic": "liquidity_reserve",
+          "statement": "Rebecca mentioned that they\u2019re aiming for late June to sign, with closing supposed to be in September."
+        },
+        {
+          "iid": "INT-114",
+          "certainty": "correction",
+          "topic": "education_funding",
+          "statement": "Kenji clarified that the $14,000 is for the program fee, flights, and housing on top of his usual tuition, which is already in the budget."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "INT-066",
+          "kind": "deferred",
+          "gold": "repositioning your personal portfolio until the deal terms are final"
+        },
+        {
+          "iid": "INT-040",
+          "kind": "deferred",
+          "gold": "claiming the Social Security survivor benefit while you are still working"
+        },
+        {
+          "iid": "INT-076",
+          "kind": "plan",
+          "gold": "the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account"
+        },
+        {
+          "iid": "INT-118",
+          "kind": "deferred",
+          "gold": "the annualized-installment method for estimated taxes until the third quarter's income is clearer"
+        },
+        {
+          "iid": "INT-010",
+          "kind": "decision",
+          "gold": "to proceed with the agreed portfolio review"
+        },
+        {
+          "iid": "INT-098",
+          "kind": "correction",
+          "gold": "my note that you would help Brian with a few hundred dollars toward equipment was too strong; it was only a thought and nothing has been offered"
+        },
+        {
+          "iid": "INT-144",
+          "kind": "deferred",
+          "gold": "any Roth conversion until the second-half review"
+        },
+        {
+          "iid": "INT-135",
+          "kind": "deferred",
+          "gold": "any decision about selling the house until at least November, a year after Samuel's death"
+        },
+        {
+          "iid": "INT-103",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are firm"
+        },
+        {
+          "iid": "INT-005",
+          "kind": "plan",
+          "gold": "taking no large irreversible financial decisions for the first six to twelve months unless something forces them"
+        },
+        {
+          "iid": "INT-150",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are final"
+        },
+        {
+          "iid": "INT-090",
+          "kind": "plan",
+          "gold": "a formal retirement date of 63, to be revisited if your health changes or Northgate is sold"
+        },
+        {
+          "iid": "INT-150",
+          "kind": "tentative",
+          "gold": "relocating to the Maine coast in a couple of years"
+        },
+        {
+          "iid": "INT-046",
+          "kind": "deferred",
+          "gold": "selling part of the vested Northgate shares until the tax estimate is in"
+        },
+        {
+          "iid": "INT-124",
+          "kind": "tentative",
+          "gold": "holding Folake's share in a trust until she is older"
+        }
+      ]
+    },
+    "rules_raw": {
+      "unmatched": [
+        {
+          "iid": "INT-059",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Grace's investment portfolio is currently around $1.45 million, with about 15 percent in equities."
+        },
+        {
+          "iid": "INT-090",
+          "certainty": "exploratory",
+          "topic": "retirement_age",
+          "statement": "Kenji was initially leaning toward retiring at age 60 but has since adjusted his thinking."
+        },
+        {
+          "iid": "INT-128",
+          "certainty": "recommendation",
+          "topic": "investment_trade",
+          "statement": "The advisor will contact Grace if her stock position drops more than ten percent before the July 1 buy."
+        },
+        {
+          "iid": "INT-089",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor recommends gradually reducing the sizable portion of stocks since Sofia's salary comes from the same place."
+        },
+        {
+          "iid": "INT-067",
+          "certainty": "confirmed",
+          "topic": "asset_allocation",
+          "statement": "Kenji is comfortable moving to sixty percent in equities."
+        },
+        {
+          "iid": "INT-058",
+          "certainty": "unconfirmed",
+          "topic": "income_cashflow",
+          "statement": "The advisor provided an estimate of about $13.5 million in cash at closing based on Lakeshore's offer after taxes and fees."
+        },
+        {
+          "iid": "INT-050",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "The client is considering whether they really need the annuity given their existing guaranteed income sources."
+        },
+        {
+          "iid": "INT-040",
+          "certainty": "unconfirmed",
+          "topic": "retirement_age",
+          "statement": "You might qualify for Social Security survivor benefits at age 60."
+        },
+        {
+          "iid": "INT-148",
+          "certainty": "unconfirmed",
+          "topic": "liquidity_reserve",
+          "statement": "You aimed for a nine-month reserve after shifting your strategy."
+        },
+        {
+          "iid": "INT-015",
+          "certainty": "unconfirmed",
+          "topic": "care_costs",
+          "statement": "Her doctors indicated that she might need to stay in care for years."
+        },
+        {
+          "iid": "INT-122",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "The money is mainly for Folake's tuition."
+        },
+        {
+          "iid": "INT-108",
+          "certainty": "exploratory",
+          "topic": "education_funding",
+          "statement": "The client is considering whether to open a college fund for Lucia now."
+        },
+        {
+          "iid": "INT-103",
+          "certainty": "unconfirmed",
+          "topic": "liquidity_reserve",
+          "statement": "The advisor emphasizes the importance of having solid cash reserves to avoid selling during market downturns."
+        },
+        {
+          "iid": "INT-064",
+          "certainty": "unconfirmed",
+          "topic": "tax_planning",
+          "statement": "The client estimates that the extra tax for this year will be about $28,000."
+        },
+        {
+          "iid": "INT-089",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "The advisor confirms that the stock allocation is now close to 75%."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "INT-103",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are firm"
+        },
+        {
+          "iid": "INT-144",
+          "kind": "deferred",
+          "gold": "any Roth conversion until the second-half review"
+        },
+        {
+          "iid": "INT-015",
+          "kind": "plan",
+          "gold": "treating your mother's care, about six thousand dollars a month from you, as a fixed obligation in all projections"
+        },
+        {
+          "iid": "INT-039",
+          "kind": "tentative",
+          "gold": "investing sixty thousand dollars in Hugo's restaurant"
+        },
+        {
+          "iid": "INT-135",
+          "kind": "deferred",
+          "gold": "any decision about selling the house until at least November, a year after Samuel's death"
+        },
+        {
+          "iid": "INT-119",
+          "kind": "plan",
+          "gold": "using your own estimate of about half for the survivor income from Frank's pension in the stress case, until you have checked the booklet"
+        },
+        {
+          "iid": "INT-050",
+          "kind": "correction",
+          "gold": "my February summary that the survivor payment was about half of Samuel's pension was imprecise; the form says sixty percent for life, with a lump-sum alternative not yet evaluated"
+        },
+        {
+          "iid": "INT-119",
+          "kind": "plan",
+          "gold": "monthly spending of about ten thousand one hundred dollars, with the portfolio covering about thirty-eight hundred"
+        },
+        {
+          "iid": "INT-127",
+          "kind": "deferred",
+          "gold": "any further reduction of the Vantora position until after third-quarter earnings"
+        },
+        {
+          "iid": "INT-147",
+          "kind": "deferred",
+          "gold": "asking for a four-day work week until next year"
+        },
+        {
+          "iid": "INT-076",
+          "kind": "plan",
+          "gold": "the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account"
+        },
+        {
+          "iid": "INT-069",
+          "kind": "decision",
+          "gold": "to roll Samuel's retirement account into an account in your own name"
+        },
+        {
+          "iid": "INT-003",
+          "kind": "plan",
+          "gold": "preserving capital while covering the gap between about six thousand three hundred in pension and Social Security and spending of about eight thousand nine hundred a month"
+        },
+        {
+          "iid": "INT-010",
+          "kind": "decision",
+          "gold": "to proceed with the agreed portfolio review"
+        },
+        {
+          "iid": "INT-137",
+          "kind": "decision",
+          "gold": "to reinvest the maturing bond at the far end of the short-term ladder instead of adding to stocks"
+        }
+      ]
+    },
+    "llm_first_raw": {
+      "unmatched": [
+        {
+          "iid": "INT-089",
+          "certainty": "confirmed",
+          "topic": "risk_tolerance",
+          "statement": "Sofia indicated that her perspective on risk has changed for the long haul after having a child."
+        },
+        {
+          "iid": "INT-098",
+          "certainty": "exploratory",
+          "topic": "family_support",
+          "statement": "Peg mentioned that she might consider a small gift to Brian down the road once things calm down, but not right now."
+        },
+        {
+          "iid": "INT-142",
+          "certainty": "confirmed",
+          "topic": "income_cashflow",
+          "statement": "Rebecca clarified that she will stay on as a paid consultant for a year after closing, at her usual salary."
+        },
+        {
+          "iid": "INT-126",
+          "certainty": "exploratory",
+          "topic": "liquidity_reserve",
+          "statement": "Rebecca mentioned that they\u2019re aiming for late June to sign, with closing supposed to be in September."
+        },
+        {
+          "iid": "INT-014",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "Lucas is considering revisiting the idea of adding $50,000 to Vantora if he has some extra cash later."
+        },
+        {
+          "iid": "INT-022",
+          "certainty": "recommendation",
+          "topic": "liquidity_reserve",
+          "statement": "The advisor recommends that Kenji should have closer to 15 months' worth of cash reserves."
+        },
+        {
+          "iid": "INT-067",
+          "certainty": "confirmed",
+          "topic": "risk_tolerance",
+          "statement": "Kenji acknowledged that March\u2019s drop made him realize his actual risk comfort is lower than he thought in January."
+        },
+        {
+          "iid": "INT-128",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Grace requested that the advisor check in with her before doing anything if her stocks tank a lot by July 1."
+        },
+        {
+          "iid": "INT-147",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Sofia will set up a meeting with an attorney this month to finish up her will and guardianship paperwork."
+        },
+        {
+          "iid": "INT-010",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "Kenji will send the summary for his Northgate deferred comp plan when he gets it."
+        },
+        {
+          "iid": "INT-076",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Lucas decided to put any leftover from the secondary-sale proceeds into an index fund instead of Vantora."
+        },
+        {
+          "iid": "INT-126",
+          "certainty": "confirmed",
+          "topic": "liquidity_reserve",
+          "statement": "Rebecca has $220,000 in cash available to cover expenses before the deal closes."
+        },
+        {
+          "iid": "INT-068",
+          "certainty": "exploratory",
+          "topic": "education_funding",
+          "statement": "Kenji is considering limiting Yuki's education funding to $30,000 per year to avoid jeopardizing his retirement timeline and to manage support for Ren's tuition."
+        },
+        {
+          "iid": "INT-114",
+          "certainty": "correction",
+          "topic": "education_funding",
+          "statement": "Kenji clarified that the $14,000 is for the program fee, flights, and housing on top of his usual tuition, which is already in the budget."
+        },
+        {
+          "iid": "INT-122",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Grace indicated that she wants to give some of the insurance payout to Tobi as a gift, but only up to fifteen."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "INT-150",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are final"
+        },
+        {
+          "iid": "INT-103",
+          "kind": "deferred",
+          "gold": "any charitable gift until the sale numbers are firm"
+        },
+        {
+          "iid": "INT-005",
+          "kind": "plan",
+          "gold": "taking no large irreversible financial decisions for the first six to twelve months unless something forces them"
+        },
+        {
+          "iid": "INT-119",
+          "kind": "plan",
+          "gold": "using your own estimate of about half for the survivor income from Frank's pension in the stress case, until you have checked the booklet"
+        },
+        {
+          "iid": "INT-022",
+          "kind": "plan",
+          "gold": "a working assumption of six months of base salary as severance for liquidity planning, to be replaced if the real terms become known"
+        },
+        {
+          "iid": "INT-010",
+          "kind": "decision",
+          "gold": "to proceed with the agreed portfolio review"
+        },
+        {
+          "iid": "INT-076",
+          "kind": "plan",
+          "gold": "the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account"
+        },
+        {
+          "iid": "INT-135",
+          "kind": "deferred",
+          "gold": "any decision about selling the house until at least November, a year after Samuel's death"
+        },
+        {
+          "iid": "INT-144",
+          "kind": "deferred",
+          "gold": "any Roth conversion until the second-half review"
+        },
+        {
+          "iid": "INT-046",
+          "kind": "deferred",
+          "gold": "selling part of the vested Northgate shares until the tax estimate is in"
+        },
+        {
+          "iid": "INT-118",
+          "kind": "deferred",
+          "gold": "the annualized-installment method for estimated taxes until the third quarter's income is clearer"
+        }
+      ]
+    }
+  }
+}

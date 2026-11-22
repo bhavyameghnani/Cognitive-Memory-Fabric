@@ -53,7 +53,14 @@ class RetrievalConfig:
     working_ttl_hours: float = WORKING_TTL_HOURS
 
 
+def ingest_mode() -> str:
+    """rules (default): regex salience -> LLM on selected snippets -> rule guards.  llm_first: LLM on the whole conversation + blind verifier LLM (agents/memory/llm_first.py)."""
+    m = os.environ.get("CMF_INGEST_MODE", "rules").strip().lower()
+    return m if m in ("rules", "llm_first") else "rules"
+
+
 @dataclass
 class OrchestratorConfig:
     filter: FilterConfig = field(default_factory=FilterConfig)
+    ingest_mode: str = field(default_factory=ingest_mode)
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)

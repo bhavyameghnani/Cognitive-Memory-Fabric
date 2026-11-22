@@ -86,11 +86,19 @@ class Consolidator:
         if self.validator is not None:   # semantic memory is still written only here; the validator can only REMOVE candidates versions
             kept = []
             for v in desired:
-                ok, why = self.validator.approve_semantic(client_id, v, st)
-                if ok:
-                    kept.append(v)
-                else:
+                cand = v
+                while True:
+                    ok, why = self.validator.approve_semantic(client_id, cand, st)
+                    if ok:
+                        kept.append(cand)
+                        break
                     out["rejected_versions"] = out.get("rejected_versions", 0) + 1
+                    if not cand.supports:
+                        break
+                    # the rejected creator was only the EARLIEST episode with this value; a later confirmed episode stating the same value may still
+                    # create it (each fallback creator must pass the validator too), valid from that episode's own date
+                    nxt, rest = cand.supports[0], cand.supports[1:]
+                    cand = Version(cand.value, nxt["event_date"], nxt, list(rest), cand.conflicts)
             desired = kept
         stored = sorted(st.records(client_id, "semantic", topics=[slot.split("|")[0]]), key=lambda r: r["version_no"] or 0)
         stored = [s for s in stored if s["slot_key"] == slot]
