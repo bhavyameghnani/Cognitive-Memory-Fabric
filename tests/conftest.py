@@ -7,6 +7,11 @@ import os
 import pytest
 
 os.environ.setdefault("HARNESS_PROFILE", "development")
+# Hermetic memory defaults: a developer's .env may switch on LLM-first ingestion and the extra source channels for the UI (docs/llm_first_ingestion.md),
+# but the suite is written against the frozen data/conversations.csv and the rules pipeline.  Set before src/llm loads .env (which never overrides a set
+# variable); tests that need channels or llm_first construct MultiChannelConversations / OrchestratorConfig(ingest_mode=...) explicitly.
+os.environ["CMF_MEMORY_CHANNELS"] = ""
+os.environ["CMF_INGEST_MODE"] = "rules"
 
 
 @pytest.fixture(autouse=True)

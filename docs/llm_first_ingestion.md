@@ -105,6 +105,19 @@ Production CLI, all channels, `build/cmf_memory_llm_first_v3.db`: 209 conversati
 - **Synthetic data, outcome-only key.** Precision is not measured beyond the routine-record check. Re-measure the confidence table on real, anonymised conversations before relying on it.
 - **Cost.** About 2 LLM calls per conversation, plus one value check per confirmed number and occasional slot checks.
 
+## Try it in the UI
+
+A pre-built memory for all six clients and all channels ships as `data/seed/cmf_memory_llm_first.db`, so no LLM calls are needed to browse it.
+
+```bash
+cp .env.development.example .env                                  # then put your OPENAI_API_KEY in .env (only needed for "Ask CMF")
+cp data/seed/cmf_memory_llm_first.db build/cmf_memory_llm_first.db  # working copy: the app writes to it, the seed stays clean
+PYTHONPATH=src .venv/bin/python -m api.main                        # terminal 1
+cd ui/cmf-brain-ui && npm run dev                                  # terminal 2 -> http://localhost:5173
+```
+
+`CMF_MEMORY_CHANNELS=all` must be set wherever this database is used. Its memories cite email, chat and meeting records that only resolve with the multichannel adapter.
+
 ## Reproduce
 
 ```bash
