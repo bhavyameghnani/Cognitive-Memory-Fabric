@@ -1,10 +1,10 @@
 # LLM-first ingestion and multichannel memory
 
-Two opt-in additions to memory ingestion, both off by default. The frozen 150-meeting setup and the rules pipeline are unchanged unless you switch them on.
+Two additions to memory ingestion. LLM-first is the default ingestion mode; the rules pipeline is kept as a baseline (`CMF_INGEST_MODE=rules`). The extra channels are opt-in.
 
 | Setting | Values | What it does |
 |---|---|---|
-| `CMF_INGEST_MODE` | `rules` (default), `llm_first` | `llm_first`: the LLM reads the whole conversation. Code checks facts. A second, blind LLM votes on certainty. |
+| `CMF_INGEST_MODE` | `llm_first` (default), `rules` | `llm_first`: the LLM reads the whole conversation. Code checks facts. A second, blind LLM votes on certainty. |
 | `CMF_VERIFIER_MODEL` | default `gpt-4.1-mini`; `same` | Verifier for `llm_first` (OpenAI backend only). Using a different model than the extractor measured +5 points certainty accuracy. |
 | `CMF_MEMORY_CHANNELS` | empty (default), `all`, or `meetings,email,chat` | Also ingest the generated follow-up meetings, email threads and chats from `datasets/`. |
 

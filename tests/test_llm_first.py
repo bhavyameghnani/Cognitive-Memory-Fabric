@@ -1,5 +1,6 @@
 """LLM-first ingestion (agents/memory/llm_first.py): fact checks, blind verifier vote, downgrade-only combination, re-anchoring, persistence.
 Scripted models only (MockLLM); every quoted excerpt is genuine text from data/conversations.csv."""
+import os
 import re
 import unittest
 
@@ -178,8 +179,16 @@ class OrchestratorModeTests(unittest.TestCase):
         sem = store.records(KENJI, "semantic")
         self.assertEqual([(s["topic"], s["value_text"]) for s in sem], [("retirement_age", "63")])
 
-    def test_default_mode_is_still_rules(self):
-        self.assertEqual(OrchestratorConfig().ingest_mode, "rules")
+    def test_default_mode_is_llm_first(self):
+        # conftest pins CMF_INGEST_MODE=rules for the suite, so clear it here to see the real code default
+        from unittest import mock
+        with mock.patch.dict(os.environ):
+            os.environ.pop("CMF_INGEST_MODE", None)
+            self.assertEqual(OrchestratorConfig().ingest_mode, "llm_first")
+            os.environ["CMF_INGEST_MODE"] = "nonsense"
+            self.assertEqual(OrchestratorConfig().ingest_mode, "llm_first")
+            os.environ["CMF_INGEST_MODE"] = " RULES "
+            self.assertEqual(OrchestratorConfig().ingest_mode, "rules")
 
 
 if __name__ == "__main__":

@@ -54,9 +54,10 @@ class RetrievalConfig:
 
 
 def ingest_mode() -> str:
-    """rules (default): regex salience -> LLM on selected snippets -> rule guards.  llm_first: LLM on the whole conversation + blind verifier LLM (agents/memory/llm_first.py)."""
-    m = os.environ.get("CMF_INGEST_MODE", "rules").strip().lower()
-    return m if m in ("rules", "llm_first") else "rules"
+    """llm_first (default): LLM on the whole conversation + blind verifier LLM (agents/memory/llm_first.py).  rules: regex salience -> LLM on selected snippets -> rule guards
+    (the original pipeline, kept as a baseline).  An unset or unknown value gives the default."""
+    m = os.environ.get("CMF_INGEST_MODE", "llm_first").strip().lower()
+    return m if m in ("rules", "llm_first") else "llm_first"
 
 
 @dataclass
