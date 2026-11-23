@@ -1,0 +1,26 @@
+{
+ "cover": {
+  "file": "cover.jpg",
+  "model": "gpt-image-2",
+  "size": "1536x1024",
+  "quality": "medium",
+  "prompt": "Many thin, coloured threads arrive from the left, each one starting from a small icon of a different communication channel (a video call screen, a telephone handset, an envelope, a chat bubble). They are woven together in the centre into a tidy, glowing network of connected nodes, like a fabric or a constellation. A few nodes glow brighter than others. Clean editorial illustration, dark navy background, soft blue, teal and amber accents, flat vector shapes with subtle depth, generous negative space, no text, no letters, no numbers, no logos, no human faces.",
+  "created": "2026-11-23"
+ },
+ "evidence": {
+  "file": "evidence.jpg",
+  "model": "gpt-image-2",
+  "size": "1536x1024",
+  "quality": "medium",
+  "prompt": "A single glowing memory node in the foreground, connected by a fine bright line back to one highlighted sentence-shaped bar inside a stack of conversation bubbles. Other bubbles are dimmer. The image conveys that every memory points back to its exact source. Clean editorial illustration, dark navy background, soft blue, teal and amber accents, flat vector shapes with subtle depth, generous negative space, no text, no letters, no numbers, no logos, no human faces.",
+  "created": "2026-11-23"
+ },
+ "timeline": {
+  "file": "timeline.jpg",
+  "model": "gpt-image-2",
+  "size": "1536x1024",
+  "quality": "medium",
+  "prompt": "A horizontal timeline of small nodes; earlier nodes are hollow and fading, linked by curved arrows to newer solid nodes, the last one glowing. The picture conveys that old beliefs are superseded, never erased. Clean editorial illustration, dark navy background, soft blue, teal and amber accents, flat vector shapes with subtle depth, generous negative space, no text, no letters, no numbers, no logos, no human faces.",
+  "created": "2026-11-23"
+ }
+}

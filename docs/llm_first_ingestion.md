@@ -57,10 +57,13 @@ All numbers are on the **production path** (after the harness write validator). 
 
 | | Rules | LLM-first |
 |---|---|---|
-| All 150, original wording: recall / certainty | **91.1%** / 85.1% | 84.4% / **89.4%** |
-| Same 60, original wording | **85.1%** / 75.9% | 78.4% / **79.2%** |
-| Same 60, **natural wording** | 66.2% / 42.5% | **74.3% / 79.2%** |
+| All 150, original wording: recall / certainty | **91.1%** / 78.1% | 83.7% / **82.5%** |
+| Same 60, original wording | **85.1%** / 64.8% | 77.0% / **72.3%** |
+| Same 60, **natural wording** | 66.2% / 40.0% | **73.0% / 74.5%** |
+| 25 **new** simulated interactions (`data/simulation/`, own answer key) | 23.4% / 43.8% | **55.8% / 56.8%** |
 | Over-confident (tentative stored as confirmed), each set | 0 | 0 |
+
+These figures include the M1 evidence policy (`src/agents/memory/attribution.py`, ported from `feature/cmf-client-reporting`): an advisor's statement is stored as at most `unconfirmed` unless the client's immediate reply confirms it. Before M1, LLM-first certainty accuracy was 89.4% / 79.2% / 79.2% on the first three sets. The difference is the price of never storing an advisor's account as a client-confirmed fact; most of the remaining cases are a client's agreement followed by a remark about a different open item ("Correct, including what's still open."), where the policy abstains by design. Reports: `reports/llm_first_eval*.md`.
 
 The value check (⑤) trades a few certainty points for safer current values. Before it, the same sets scored 90.4%, 85.4% and 83.3%. The losses are mostly plans an advisor records as a "working assumption", which the verifier sometimes reads as not yet agreed. What it blocks is visible in the profile: holdings and spending read-outs, unaccepted recommendations, and values of a different kind replacing each other (see "All clients" below).
 

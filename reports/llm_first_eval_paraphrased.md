@@ -1,34 +1,34 @@
 # LLM-first vs rules ingestion: evaluation
 
-60 conversations from `build/eval/paraphrased_conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-22 13:42
+60 conversations from `build/eval/paraphrased_conversations.csv` · extractor `gpt-4o-mini` · verifier `gpt-4.1-mini` · generated 2026-11-23 10:58
 
 Answer key: the generator's authored outcomes (`reports/generation_manifest.json`). Matching: a blind LLM judge (`gpt-4.1`, used by neither pipeline) sees the key and a shuffled, unlabelled mix of both pipelines' memories. Identical for both pipelines. Unmatched memories are not counted as errors: the key lists outcomes, not every fact.
 
 | Metric | rules | llm_first | rules_raw | llm_first_raw |
 |---|---|---|---|---|
-| Recall of outcomes | 0.662 | 0.743 | 0.703 | 0.851 |
-| Certainty accuracy (matched) | 0.425 | 0.792 | 0.419 | 0.788 |
+| Recall of outcomes | 0.662 | 0.73 | 0.703 | 0.851 |
+| Certainty accuracy (matched) | 0.4 | 0.745 | 0.395 | 0.75 |
 | Over-confident (tentative → confirmed) | 0 | 0 | 0 | 0 |
-| Under-confident (decision → weak) | 15 | 2 | 16 | 2 |
-| Memories kept per conversation | 2.25 | 2.08 | 2.4 | 2.32 |
-| Kept but matching no outcome | 86 | 71 | 92 | 77 |
+| Under-confident (decision → weak) | 16 | 3 | 17 | 3 |
+| Memories kept per conversation | 2.25 | 2.02 | 2.4 | 2.32 |
+| Kept but matching no outcome | 86 | 68 | 92 | 77 |
 | LLM failures | 0 | 0 | 0 | 0 |
 | recall: decision | 15/22 | 21/22 | 16/22 | 21/22 |
 | recall: plan | 4/10 | 5/10 | 5/10 | 6/10 |
-| recall: tentative | 13/14 | 12/14 | 13/14 | 14/14 |
+| recall: tentative | 13/14 | 11/14 | 13/14 | 14/14 |
 | recall: correction | 8/11 | 10/11 | 9/11 | 11/11 |
 | recall: deferred | 9/17 | 7/17 | 9/17 | 11/17 |
-| certainty: decision | 3/15 | 20/21 | 4/16 | 21/21 |
-| certainty: plan | 1/4 | 4/5 | 1/5 | 4/6 |
-| certainty: tentative | 13/13 | 12/12 | 13/13 | 14/14 |
-| certainty: correction | 0/8 | 2/10 | 0/9 | 2/11 |
+| certainty: decision | 3/15 | 19/21 | 4/16 | 20/21 |
+| certainty: plan | 0/4 | 4/5 | 0/5 | 4/6 |
+| certainty: tentative | 13/13 | 11/11 | 13/13 | 14/14 |
+| certainty: correction | 0/8 | 1/10 | 0/9 | 1/11 |
 
 ## Agreement buckets (llm_first): measured certainty accuracy
 
 | Bucket | n | accuracy |
 |---|---|---|
 | agree_all | 18 | 0.944 |
-| agree_llms | 25 | 0.84 |
+| agree_llms | 25 | 0.76 |
 | not_target | 2 | 0.0 |
 | regex_hedge | 1 | 0.0 |
 | verifier_higher | 3 | 0.667 |
@@ -76,32 +76,32 @@ Answer key: the generator's authored outcomes (`reports/generation_manifest.json
 - `INT-040` deferred: claiming the Social Security survivor benefit while you are still working
 - `INT-076` plan: the April tax shortfall paid, with about twenty-two thousand dollars from invoices and the rest from the cash account
 - `INT-118` deferred: the annualized-installment method for estimated taxes until the third quarter's income is clearer
-- `INT-010` decision: to proceed with the agreed portfolio review
+- `INT-150` deferred: any charitable gift until the sale numbers are final
 - `INT-098` correction: my note that you would help Brian with a few hundred dollars toward equipment was too strong; it was only a thought and nothing has been offered
-- `INT-144` deferred: any Roth conversion until the second-half review
-- `INT-135` deferred: any decision about selling the house until at least November, a year after Samuel's death
+- `INT-146` tentative: giving Tobi the fifteen thousand dollar gift, once you have asked him about his customers and what happens if the business fails
+- `INT-010` decision: to proceed with the agreed portfolio review
 - `INT-103` deferred: any charitable gift until the sale numbers are firm
 - `INT-005` plan: taking no large irreversible financial decisions for the first six to twelve months unless something forces them
-- `INT-150` deferred: any charitable gift until the sale numbers are final
+- `INT-124` tentative: holding Folake's share in a trust until she is older
+- `INT-144` deferred: any Roth conversion until the second-half review
 - `INT-090` plan: a formal retirement date of 63, to be revisited if your health changes or Northgate is sold
 - `INT-150` tentative: relocating to the Maine coast in a couple of years
 - `INT-046` deferred: selling part of the vested Northgate shares until the tax estimate is in
-- `INT-124` tentative: holding Folake's share in a trust until she is older
 
 ## llm_first: sample of kept memories matching no outcome
 
-- `INT-122` confirmed · family_support: Grace indicated that she wants to give some of the insurance payout to Tobi as a gift, but only up to fifteen.
-- `INT-010` unconfirmed · retirement_age: Kenji noted that he is about seven years out from retirement.
-- `INT-066` hypothetical · investment_trade: Rebecca agreed to send the signed exclusivity agreement and her lawyer's summary to Daniel.
-- `INT-010` confirmed · risk_tolerance: Kenji confirmed that he would rather err on the side of taking more risk than playing it safe.
-- `INT-046` recommendation · investment_trade: The advisor suggests that Kenji should sell some Northgate shares at each vest and spread the money out.
-- `INT-089` confirmed · risk_tolerance: Sofia indicated that her perspective on risk has changed for the long haul after having a child.
 - `INT-127` exploratory · investment_trade: Lucas is still mulling over what to do with the rest of Vantora.
+- `INT-010` unconfirmed · retirement_age: Kenji noted that he is about seven years out from retirement.
+- `INT-068` exploratory · education_funding: Kenji is considering limiting Yuki's education funding to $30,000 per year to avoid jeopardizing his retirement timeline and to manage support for Ren's tuition.
+- `INT-010` confirmed · risk_tolerance: Kenji confirmed that he would rather err on the side of taking more risk than playing it safe.
 - `INT-046` unconfirmed · education_funding: Kenji mentioned that Ren is switching his major to engineering, which probably means he'll need to add another semester.
-- `INT-077` confirmed · business_sale: Rebecca confirmed that a cash at closing of roughly $12.3 million would take care of her mom and the reserve.
-- `INT-010` unconfirmed · education_funding: Kenji will send the summary for his Northgate deferred comp plan when he gets it.
-- `INT-089` exploratory · risk_tolerance: Sofia decided to shift her retirement investments from about 90% stocks to 75% due to her changed comfort level after Lucia was born.
 - `INT-049` exploratory · retirement_age: Priya will update her notes to reflect that Kenji is considering age 60 for retirement, but that 65 is still the official goal.
-- `INT-079` unconfirmed · insurance_estate: Sofia will kick off the application process for the term life insurance this week.
-- `INT-126` exploratory · liquidity_reserve: Rebecca mentioned that they’re aiming for late June to sign, with closing supposed to be in September.
-- `INT-114` correction · education_funding: Kenji clarified that the $14,000 is for the program fee, flights, and housing on top of his usual tuition, which is already in the budget.
+- `INT-067` confirmed · risk_tolerance: Kenji acknowledged that March’s drop made him realize his actual risk comfort is lower than he thought in January.
+- `INT-015` confirmed · care_costs: Rebecca wants to ensure she has enough cash to keep paying for her mother's care if she decides to sell.
+- `INT-089` confirmed · risk_tolerance: Sofia indicated that her perspective on risk has changed for the long haul after having a child.
+- `INT-010` unconfirmed · education_funding: Kenji will send the summary for his Northgate deferred comp plan when he gets it.
+- `INT-106` unconfirmed · risk_tolerance: Rebecca stated that after twenty years of taking chances, she’d prefer to play it safer once the sale goes through.
+- `INT-049` unconfirmed · income_cashflow: Kenji will ensure he has the estimated tax figure from Hannah Park by their next meeting.
+- `INT-098` exploratory · family_support: Peg mentioned that she might consider a small gift to Brian down the road once things calm down, but not right now.
+- `INT-139` unconfirmed · liquidity_reserve: Sofia has about $50,000 in cash and short-term assets, which would cover her expenses for around six months.
+- `INT-119` recommendation · liquidity_reserve: The advisor recommends Peg have closer to 24 months saved up for liquidity.

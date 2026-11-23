@@ -1,0 +1,944 @@
+{
+  "generated_at": "2026-11-23 10:58",
+  "conversations": 25,
+  "transcripts": "data/simulation/sim_conversations.csv",
+  "client": null,
+  "extractor_model": "gpt-4o-mini",
+  "verifier_model": "gpt-4.1-mini",
+  "match_threshold": 0.5,
+  "judge": "gpt-4.1",
+  "seconds": 0.2,
+  "llm_calls": {
+    "cache_hit": 84
+  },
+  "cached_tokens_all_runs": {
+    "memory_in": 0,
+    "memory_out": 0,
+    "memory_verifier_in": 0,
+    "memory_verifier_out": 0,
+    "judge_in": 0,
+    "judge_out": 0,
+    "paraphrase_in": 0,
+    "paraphrase_out": 0
+  },
+  "results": [
+    {
+      "pipeline": "rules",
+      "meetings": 25,
+      "recall": 0.234,
+      "found": 18,
+      "gold": 77,
+      "certainty_accuracy": 0.438,
+      "over_confident": 0,
+      "under_confident": 5,
+      "kept_per_meeting": 1.24,
+      "unmatched": 14,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "5/12",
+        "plan": "1/26",
+        "tentative": "7/17",
+        "correction": "3/12",
+        "deferred": "2/10"
+      },
+      "certainty_by_kind": {
+        "decision": "1/5",
+        "plan": "0/1",
+        "tentative": "6/7",
+        "correction": "0/3"
+      },
+      "confusion": {
+        "correction->exploratory": 1,
+        "correction->hypothetical": 1,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 1,
+        "decision->exploratory": 3,
+        "decision->unconfirmed": 1,
+        "plan->exploratory": 1,
+        "tentative->exploratory": 6,
+        "tentative->unconfirmed": 1
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {}
+    },
+    {
+      "pipeline": "llm_first",
+      "meetings": 25,
+      "recall": 0.558,
+      "found": 43,
+      "gold": 77,
+      "certainty_accuracy": 0.568,
+      "over_confident": 0,
+      "under_confident": 11,
+      "kept_per_meeting": 2.44,
+      "unmatched": 20,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "11/12",
+        "plan": "13/26",
+        "tentative": "7/17",
+        "correction": "6/12",
+        "deferred": "6/10"
+      },
+      "certainty_by_kind": {
+        "decision": "6/11",
+        "plan": "7/13",
+        "tentative": "7/7",
+        "correction": "1/6"
+      },
+      "confusion": {
+        "correction->confirmed": 3,
+        "correction->correction": 1,
+        "correction->exploratory": 1,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 6,
+        "decision->exploratory": 1,
+        "decision->unconfirmed": 4,
+        "plan->confirmed": 7,
+        "plan->exploratory": 3,
+        "plan->hypothetical": 1,
+        "plan->recommendation": 1,
+        "plan->unconfirmed": 1,
+        "tentative->exploratory": 6,
+        "tentative->hypothetical": 1
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {
+        "agree_llms": {
+          "n": 20,
+          "accuracy": 0.65
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
+        },
+        "regex_hedge": {
+          "n": 3,
+          "accuracy": 0.0
+        },
+        "verifier_higher": {
+          "n": 5,
+          "accuracy": 0.6
+        },
+        "agree_all": {
+          "n": 6,
+          "accuracy": 0.833
+        },
+        "verifier_lower": {
+          "n": 1,
+          "accuracy": 0.0
+        }
+      }
+    },
+    {
+      "pipeline": "rules_raw",
+      "meetings": 25,
+      "recall": 0.234,
+      "found": 18,
+      "gold": 77,
+      "certainty_accuracy": 0.438,
+      "over_confident": 0,
+      "under_confident": 5,
+      "kept_per_meeting": 1.36,
+      "unmatched": 17,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "5/12",
+        "plan": "1/26",
+        "tentative": "7/17",
+        "correction": "3/12",
+        "deferred": "2/10"
+      },
+      "certainty_by_kind": {
+        "decision": "1/5",
+        "plan": "0/1",
+        "tentative": "6/7",
+        "correction": "0/3"
+      },
+      "confusion": {
+        "correction->exploratory": 1,
+        "correction->hypothetical": 1,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 1,
+        "decision->exploratory": 3,
+        "decision->unconfirmed": 1,
+        "plan->exploratory": 1,
+        "tentative->exploratory": 6,
+        "tentative->unconfirmed": 1
+      },
+      "over_confident_cases": [],
+      "bucket_accuracy": {}
+    },
+    {
+      "pipeline": "llm_first_raw",
+      "meetings": 25,
+      "recall": 0.636,
+      "found": 49,
+      "gold": 77,
+      "certainty_accuracy": 0.512,
+      "over_confident": 2,
+      "under_confident": 12,
+      "kept_per_meeting": 2.84,
+      "unmatched": 24,
+      "llm_errors": 0,
+      "recall_by_kind": {
+        "decision": "12/12",
+        "plan": "14/26",
+        "tentative": "10/17",
+        "correction": "7/12",
+        "deferred": "6/10"
+      },
+      "certainty_by_kind": {
+        "decision": "6/12",
+        "plan": "8/14",
+        "tentative": "7/10",
+        "correction": "1/7"
+      },
+      "confusion": {
+        "correction->confirmed": 4,
+        "correction->correction": 1,
+        "correction->exploratory": 1,
+        "correction->unconfirmed": 1,
+        "decision->confirmed": 6,
+        "decision->exploratory": 1,
+        "decision->recommendation": 1,
+        "decision->unconfirmed": 4,
+        "plan->confirmed": 8,
+        "plan->exploratory": 4,
+        "plan->recommendation": 1,
+        "plan->unconfirmed": 1,
+        "tentative->confirmed": 2,
+        "tentative->exploratory": 7,
+        "tentative->unconfirmed": 1
+      },
+      "over_confident_cases": [
+        {
+          "iid": "SIM-007",
+          "gold": "Client is inclined to proceed with 55% equity allocation post-sale, but wants to review fixed income fund details before signing the investment policy.",
+          "predicted": "confirmed",
+          "statement": "Rebecca is okay with the 55% equity allocation for now.",
+          "excerpt": "I\u2019m okay with the 55% equity allocation for now, but could you clarify which fixed income funds you\u2019re planning for the rest?",
+          "votes": [
+            "votes: extractor=confirmed verifier=confirmed regex=unconfirmed -> confirmed (agree_llms, confidence 0.82)"
+          ]
+        },
+        {
+          "iid": "SIM-016",
+          "gold": "The $15,000 gift to Tobi remains on hold with no set figure or commitment; client does not want to specify a lower amount yet.",
+          "predicted": "confirmed",
+          "statement": "Grace requested that the potential gift be noted as on hold without naming a number right now.",
+          "excerpt": "Just say it\u2019s on hold, please.",
+          "votes": [
+            "votes: extractor=confirmed verifier=confirmed regex=unconfirmed -> confirmed (agree_llms, confidence 0.82)"
+          ]
+        }
+      ],
+      "bucket_accuracy": {
+        "agree_llms": {
+          "n": 23,
+          "accuracy": 0.565
+        },
+        "not_target": {
+          "n": 2,
+          "accuracy": 0.0
+        },
+        "regex_hedge": {
+          "n": 3,
+          "accuracy": 0.0
+        },
+        "verifier_higher": {
+          "n": 5,
+          "accuracy": 0.6
+        },
+        "verifier_lower": {
+          "n": 2,
+          "accuracy": 0.0
+        },
+        "agree_all": {
+          "n": 8,
+          "accuracy": 0.75
+        }
+      }
+    }
+  ],
+  "samples": {
+    "rules": {
+      "unmatched": [
+        {
+          "iid": "SIM-012",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "The client is considering running scenarios for their house situation if the numbers work."
+        },
+        {
+          "iid": "SIM-007",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor is proposing a 55% equity allocation for the client's investment strategy."
+        },
+        {
+          "iid": "SIM-013",
+          "certainty": "unconfirmed",
+          "topic": "liquidity_reserve",
+          "statement": "Sofia's house fund is available within 1 business day, while brokerage assets would take 3-5 days to liquidate and settle."
+        },
+        {
+          "iid": "SIM-024",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "If something changes with Frank or we decide on Maplewood, I\u2019ll call you first."
+        },
+        {
+          "iid": "SIM-006",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Rebecca noted that the current allocation is 55% equities instead of the expected 60%."
+        },
+        {
+          "iid": "SIM-006",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor mentioned that they can revise the allocation to 60% if Rebecca is more comfortable with that."
+        },
+        {
+          "iid": "SIM-013",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "The advisor will leave the 529 plan as deferred until Sofia finalizes the backup guardian/trustee situation."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "housing_property",
+          "statement": "If Frank's care needs increase or if you decide to consider Maplewood, you will notify the advisor in advance."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Rebecca requested to prepare the updated policy for her to sign after closing."
+        },
+        {
+          "iid": "SIM-020",
+          "certainty": "unconfirmed",
+          "topic": "insurance_estate",
+          "statement": "Lucas is considering a disability insurance plan that provides $5,000 monthly to age 65 without a partial payout option."
+        },
+        {
+          "iid": "SIM-013",
+          "certainty": "exploratory",
+          "topic": "care_costs",
+          "statement": "Sofia mentioned that if childcare costs change, they might need to reassess their financial situation."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "risk_tolerance",
+          "statement": "The client is not comfortable making changes to the portfolio without a significant reason, especially given Frank's current situation."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Your current equity allocation is at 30%, which was set as your comfort level after last year's volatility."
+        },
+        {
+          "iid": "SIM-007",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor is suggesting a fixed income blend of 30% Treasuries, 10% investment-grade corporates, and 5% tax-exempt municipal bonds."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "SIM-011",
+          "kind": "plan",
+          "gold": "Sofia and Mateo are still aiming to start the house search in autumn, with no active viewings yet despite browsing listings."
+        },
+        {
+          "iid": "SIM-002",
+          "kind": "decision",
+          "gold": "Yuki has chosen to take the nonprofit job, so Kenji's thirty-thousand-dollar cap for graduate school support is no longer applicable."
+        },
+        {
+          "iid": "SIM-006",
+          "kind": "plan",
+          "gold": "Rebecca's target equity allocation post-sale will be 55% for now, to be revisited in six months."
+        },
+        {
+          "iid": "SIM-002",
+          "kind": "plan",
+          "gold": "Next review meeting is deferred until September unless document issues arise."
+        },
+        {
+          "iid": "SIM-014",
+          "kind": "deferred",
+          "gold": "Decision about approaching estate attorneys for Folake's share is postponed until after the client's birthday in August."
+        },
+        {
+          "iid": "SIM-011",
+          "kind": "plan",
+          "gold": "Brokerage contributions remain trimmed by about $800/month to cover childcare, with the setup unchanged for now."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "correction",
+          "gold": "Client clarifies that while the thirty-thousand cap is available for Yuki, he is not encouraging her to choose grad school solely for the money."
+        },
+        {
+          "iid": "SIM-014",
+          "kind": "plan",
+          "gold": "Next investing step is penciled in for July 12 but will only proceed after a check-in on July 11 if markets remain stable."
+        },
+        {
+          "iid": "SIM-003",
+          "kind": "plan",
+          "gold": "Mariko\u2019s Social Security benefit of $2,050/month at age 67 is now built into the survivor analysis."
+        },
+        {
+          "iid": "SIM-005",
+          "kind": "deferred",
+          "gold": "Portfolio allocation and family support adjustments deferred until after September review or if client flags an issue."
+        },
+        {
+          "iid": "SIM-016",
+          "kind": "tentative",
+          "gold": "The $15,000 gift to Tobi remains on hold with no set figure or commitment; client does not want to specify a lower amount yet."
+        },
+        {
+          "iid": "SIM-021",
+          "kind": "plan",
+          "gold": "Advisor will send application forms and a checklist for Option B to Lucas and Camille."
+        },
+        {
+          "iid": "SIM-015",
+          "kind": "decision",
+          "gold": "Grace decides to pause the next investment tranche and reassess after her birthday in August."
+        },
+        {
+          "iid": "SIM-022",
+          "kind": "plan",
+          "gold": "Advisor will proceed with the bond reinvestment and notify Peg when the trade is complete."
+        },
+        {
+          "iid": "SIM-022",
+          "kind": "correction",
+          "gold": "Peg found an outdated 2017 power of attorney, not the updated version Dennis drafted."
+        }
+      ]
+    },
+    "llm_first": {
+      "unmatched": [
+        {
+          "iid": "SIM-024",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Peg confirmed that Dennis\u2019s office emailed the new power of attorney document, which she uploaded to the portal and it is all signed."
+        },
+        {
+          "iid": "SIM-015",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Grace decided to hold off on investing more in stocks for now due to market volatility."
+        },
+        {
+          "iid": "SIM-005",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Kenji stated that Mariko is still part-time with no changes to her benefits."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Rebecca agreed to prepare the updated investment policy for her signature after the closing."
+        },
+        {
+          "iid": "SIM-020",
+          "certainty": "exploratory",
+          "topic": "insurance_estate",
+          "statement": "Lucas wants one more look at the exclusions and the claims process before he signs anything."
+        },
+        {
+          "iid": "SIM-010",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Sofia has booked an appointment with an attorney for the will and guardianship next Friday."
+        },
+        {
+          "iid": "SIM-016",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "Grace stated that she is still not ready to commit any money to Tobi's potential clients and will only consider a smaller amount if he actually lands one."
+        },
+        {
+          "iid": "SIM-005",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Kenji mentioned that Yuki's first paycheck at the nonprofit showed up, making her extra cheerful."
+        },
+        {
+          "iid": "SIM-007",
+          "certainty": "exploratory",
+          "topic": "asset_allocation",
+          "statement": "Rebecca requested to see the list of fixed income funds before signing the investment policy."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Rebecca is maintaining her 55% equity allocation."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "confirmed",
+          "topic": "care_costs",
+          "statement": "Peg stated that Frank's care needs have not changed and they haven't decided on extra care or Maplewood."
+        },
+        {
+          "iid": "SIM-018",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Lucas cares about the monthly payout if he can't work and how long it pays for, and Camille thinks they should skip the fancy extras."
+        },
+        {
+          "iid": "SIM-018",
+          "certainty": "confirmed",
+          "topic": "education_funding",
+          "statement": "Lucas mentioned that the college fund is a lower priority until fall."
+        },
+        {
+          "iid": "SIM-014",
+          "certainty": "exploratory",
+          "topic": "insurance_estate",
+          "statement": "Grace mentioned she might ask Folake how she\u2019d feel about a trust before reaching out to an attorney."
+        },
+        {
+          "iid": "SIM-011",
+          "certainty": "confirmed",
+          "topic": "care_costs",
+          "statement": "Sofia stated that childcare costs continue to be stable and she does not see any change there for now."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "SIM-008",
+          "kind": "plan",
+          "gold": "Client expects closing first week of August but will notify advisor if the date changes."
+        },
+        {
+          "iid": "SIM-004",
+          "kind": "tentative",
+          "gold": "No immediate need for a portfolio performance report; client prefers to wait for the upcoming review unless there is a significant issue."
+        },
+        {
+          "iid": "SIM-009",
+          "kind": "decision",
+          "gold": "Rebecca agrees to proceed with the investment policy as discussed: 55% equities, 30% Treasuries, 10% corporates, no muni fund."
+        },
+        {
+          "iid": "SIM-025",
+          "kind": "tentative",
+          "gold": "Revisiting the equity allocation is an option for the year-end review, but not before unless the client raises it or urgent market conditions arise."
+        },
+        {
+          "iid": "SIM-002",
+          "kind": "plan",
+          "gold": "Next review meeting is deferred until September unless document issues arise."
+        },
+        {
+          "iid": "SIM-012",
+          "kind": "plan",
+          "gold": "House search remains unofficial; if Sofia and Mateo get serious about a listing, they'll ask Elena to run mortgage and expense numbers before making a move."
+        },
+        {
+          "iid": "SIM-017",
+          "kind": "tentative",
+          "gold": "Grace is considering a $5,000 gift for Tobi, but is not committing and wants to see how he manages his first client."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "deferred",
+          "gold": "Scheduling the next review meeting is deferred until after Yuki makes her decision on July 20."
+        },
+        {
+          "iid": "SIM-015",
+          "kind": "tentative",
+          "gold": "The $15,000 gift for Tobi remains open; Grace is considering a smaller amount but has not decided."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "tentative",
+          "gold": "Thirty-thousand-dollar cap for Yuki's grad program is a plan, but the client is not pushing her either way; support is flexible."
+        },
+        {
+          "iid": "SIM-015",
+          "kind": "plan",
+          "gold": "No approach to Folake about a trust will be made until Grace requests it."
+        },
+        {
+          "iid": "SIM-023",
+          "kind": "correction",
+          "gold": "Advisor checks if there are any other items to discuss, but client clarifies nothing is needed until the paperwork is settled, correcting any assumption of new agenda items."
+        },
+        {
+          "iid": "SIM-011",
+          "kind": "plan",
+          "gold": "Brokerage contributions remain trimmed by about $800/month to cover childcare, with the setup unchanged for now."
+        },
+        {
+          "iid": "SIM-021",
+          "kind": "correction",
+          "gold": "Lucas softens his earlier indecision, now stating he is comfortable proceeding with Option B, noting Camille is not thrilled but accepts it."
+        },
+        {
+          "iid": "SIM-009",
+          "kind": "plan",
+          "gold": "Advisor will remind Rebecca about the charitable gift decision in September."
+        }
+      ]
+    },
+    "rules_raw": {
+      "unmatched": [
+        {
+          "iid": "SIM-013",
+          "certainty": "unconfirmed",
+          "topic": "education_funding",
+          "statement": "The advisor will leave the 529 plan as deferred until Sofia finalizes the backup guardian/trustee situation."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Your current equity allocation is at 30%, which was set as your comfort level after last year's volatility."
+        },
+        {
+          "iid": "SIM-013",
+          "certainty": "exploratory",
+          "topic": "care_costs",
+          "statement": "Sofia mentioned that if childcare costs change, they might need to reassess their financial situation."
+        },
+        {
+          "iid": "SIM-012",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "The client is considering running scenarios for their house situation if the numbers work."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Rebecca requested to prepare the updated policy for her to sign after closing."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Rebecca wants to allocate 40% to Treasuries and investment-grade corporates while maintaining a 55% equity allocation."
+        },
+        {
+          "iid": "SIM-007",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor is suggesting a fixed income blend of 30% Treasuries, 10% investment-grade corporates, and 5% tax-exempt municipal bonds."
+        },
+        {
+          "iid": "SIM-007",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor is proposing a 55% equity allocation for the client's investment strategy."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "risk_tolerance",
+          "statement": "The client is not comfortable making changes to the portfolio without a significant reason, especially given Frank's current situation."
+        },
+        {
+          "iid": "SIM-006",
+          "certainty": "recommendation",
+          "topic": "asset_allocation",
+          "statement": "The advisor mentioned that they can revise the allocation to 60% if Rebecca is more comfortable with that."
+        },
+        {
+          "iid": "SIM-017",
+          "certainty": "exploratory",
+          "topic": "family_support",
+          "statement": "Grace mentioned she might decide next month regarding the gift for Tobi."
+        },
+        {
+          "iid": "SIM-025",
+          "certainty": "unconfirmed",
+          "topic": "housing_property",
+          "statement": "If Frank's care needs increase or if you decide to consider Maplewood, you will notify the advisor in advance."
+        },
+        {
+          "iid": "SIM-010",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "The client is considering moving the timeline for their house purchase up."
+        },
+        {
+          "iid": "SIM-013",
+          "certainty": "unconfirmed",
+          "topic": "liquidity_reserve",
+          "statement": "Sofia's house fund is available within 1 business day, while brokerage assets would take 3-5 days to liquidate and settle."
+        },
+        {
+          "iid": "SIM-024",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "If something changes with Frank or we decide on Maplewood, I\u2019ll call you first."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "SIM-019",
+          "kind": "correction",
+          "gold": "Client does not want partial disability benefits modeled at this stage, despite advisor earlier asking about it."
+        },
+        {
+          "iid": "SIM-011",
+          "kind": "tentative",
+          "gold": "Sofia and Mateo are discussing backup guardians and trustees for Lucia, with decisions expected after their upcoming family call."
+        },
+        {
+          "iid": "SIM-007",
+          "kind": "plan",
+          "gold": "Plan to finalize and sign the investment policy after the closing, targeting early August if closing occurs as now expected."
+        },
+        {
+          "iid": "SIM-015",
+          "kind": "plan",
+          "gold": "No approach to Folake about a trust will be made until Grace requests it."
+        },
+        {
+          "iid": "SIM-002",
+          "kind": "decision",
+          "gold": "Yuki has chosen to take the nonprofit job, so Kenji's thirty-thousand-dollar cap for graduate school support is no longer applicable."
+        },
+        {
+          "iid": "SIM-003",
+          "kind": "plan",
+          "gold": "Mariko\u2019s Social Security benefit of $2,050/month at age 67 is now built into the survivor analysis."
+        },
+        {
+          "iid": "SIM-013",
+          "kind": "tentative",
+          "gold": "Potential house purchase remains a possibility, but no viewing scheduled yet; client will contact advisor to run numbers if the process moves forward."
+        },
+        {
+          "iid": "SIM-011",
+          "kind": "plan",
+          "gold": "Sofia and Mateo are still aiming to start the house search in autumn, with no active viewings yet despite browsing listings."
+        },
+        {
+          "iid": "SIM-004",
+          "kind": "plan",
+          "gold": "Advisor will send pre-review documents a week before the September review unless something urgent arises."
+        },
+        {
+          "iid": "SIM-021",
+          "kind": "plan",
+          "gold": "Advisor will send application forms and a checklist for Option B to Lucas and Camille."
+        },
+        {
+          "iid": "SIM-008",
+          "kind": "plan",
+          "gold": "Client expects closing first week of August but will notify advisor if the date changes."
+        },
+        {
+          "iid": "SIM-004",
+          "kind": "deferred",
+          "gold": "Discussion of Mariko\u2019s Social Security claiming strategies is deferred until at least the new year."
+        },
+        {
+          "iid": "SIM-013",
+          "kind": "deferred",
+          "gold": "Decision on naming Mateo\u2019s cousin as a second backup guardian/trustee is postponed due to ongoing family discussion."
+        },
+        {
+          "iid": "SIM-022",
+          "kind": "correction",
+          "gold": "Peg found an outdated 2017 power of attorney, not the updated version Dennis drafted."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "deferred",
+          "gold": "Scheduling the next review meeting is deferred until after Yuki makes her decision on July 20."
+        }
+      ]
+    },
+    "llm_first_raw": {
+      "unmatched": [
+        {
+          "iid": "SIM-020",
+          "certainty": "exploratory",
+          "topic": "insurance_estate",
+          "statement": "Lucas wants one more look at the exclusions and the claims process before he signs anything."
+        },
+        {
+          "iid": "SIM-005",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Kenji mentioned that Yuki's first paycheck at the nonprofit showed up, making her extra cheerful."
+        },
+        {
+          "iid": "SIM-016",
+          "certainty": "exploratory",
+          "topic": "investment_trade",
+          "statement": "Grace stated that she is still not ready to commit any money to Tobi's potential clients and will only consider a smaller amount if he actually lands one."
+        },
+        {
+          "iid": "SIM-018",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Lucas cares about the monthly payout if he can't work and how long it pays for, and Camille thinks they should skip the fancy extras."
+        },
+        {
+          "iid": "SIM-010",
+          "certainty": "confirmed",
+          "topic": "insurance_estate",
+          "statement": "Sofia has booked an appointment with an attorney for the will and guardianship next Friday."
+        },
+        {
+          "iid": "SIM-018",
+          "certainty": "confirmed",
+          "topic": "education_funding",
+          "statement": "Lucas mentioned that the college fund is a lower priority until fall."
+        },
+        {
+          "iid": "SIM-010",
+          "certainty": "confirmed",
+          "topic": "housing_property",
+          "statement": "Sofia wants to keep autumn as the working plan for their house search."
+        },
+        {
+          "iid": "SIM-014",
+          "certainty": "exploratory",
+          "topic": "insurance_estate",
+          "statement": "Grace mentioned she might ask Folake how she\u2019d feel about a trust before reaching out to an attorney."
+        },
+        {
+          "iid": "SIM-014",
+          "certainty": "exploratory",
+          "topic": "business_sale",
+          "statement": "Grace told Tobi she needs to see some numbers and names of people interested before going further with his business plan."
+        },
+        {
+          "iid": "SIM-005",
+          "certainty": "confirmed",
+          "topic": "family_support",
+          "statement": "Kenji stated that Mariko is still part-time with no changes to her benefits."
+        },
+        {
+          "iid": "SIM-012",
+          "certainty": "exploratory",
+          "topic": "housing_property",
+          "statement": "Sofia mentioned that Mateo found a place he really likes and they are tempted to schedule a tour."
+        },
+        {
+          "iid": "SIM-015",
+          "certainty": "confirmed",
+          "topic": "investment_trade",
+          "statement": "Grace decided to hold off on investing more in stocks for now due to market volatility."
+        },
+        {
+          "iid": "SIM-006",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "The advisor adjusted the asset allocation to 55% equities instead of 60% intentionally due to the extra cash buffer post-sale."
+        },
+        {
+          "iid": "SIM-008",
+          "certainty": "unconfirmed",
+          "topic": "asset_allocation",
+          "statement": "Rebecca is maintaining her 55% equity allocation."
+        },
+        {
+          "iid": "SIM-011",
+          "certainty": "confirmed",
+          "topic": "care_costs",
+          "statement": "Sofia stated that childcare costs continue to be stable and she does not see any change there for now."
+        }
+      ],
+      "missed": [
+        {
+          "iid": "SIM-001",
+          "kind": "tentative",
+          "gold": "Thirty-thousand-dollar cap for Yuki's grad program is a plan, but the client is not pushing her either way; support is flexible."
+        },
+        {
+          "iid": "SIM-022",
+          "kind": "plan",
+          "gold": "Advisor will proceed with the bond reinvestment and notify Peg when the trade is complete."
+        },
+        {
+          "iid": "SIM-021",
+          "kind": "plan",
+          "gold": "Advisor will send application forms and a checklist for Option B to Lucas and Camille."
+        },
+        {
+          "iid": "SIM-006",
+          "kind": "deferred",
+          "gold": "Rebecca is deferring action on the charitable gift and Maine relocation until after the sale numbers and closing are final."
+        },
+        {
+          "iid": "SIM-019",
+          "kind": "correction",
+          "gold": "Client does not want partial disability benefits modeled at this stage, despite advisor earlier asking about it."
+        },
+        {
+          "iid": "SIM-017",
+          "kind": "tentative",
+          "gold": "Grace is considering a $5,000 gift for Tobi, but is not committing and wants to see how he manages his first client."
+        },
+        {
+          "iid": "SIM-020",
+          "kind": "correction",
+          "gold": "Lucas clarifies that he is not fully ruling out Option C yet, but sees it as probably too risky."
+        },
+        {
+          "iid": "SIM-011",
+          "kind": "plan",
+          "gold": "Brokerage contributions remain trimmed by about $800/month to cover childcare, with the setup unchanged for now."
+        },
+        {
+          "iid": "SIM-023",
+          "kind": "plan",
+          "gold": "Client will upload the updated power of attorney from Dennis as soon as it is received; no need to send the old version."
+        },
+        {
+          "iid": "SIM-009",
+          "kind": "plan",
+          "gold": "Advisor will remind Rebecca about the charitable gift decision in September."
+        },
+        {
+          "iid": "SIM-008",
+          "kind": "plan",
+          "gold": "Client expects closing first week of August but will notify advisor if the date changes."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "plan",
+          "gold": "Client will send Mariko's Social Security statement and the beneficiary forms for review as soon as possible, aiming for end of the week."
+        },
+        {
+          "iid": "SIM-023",
+          "kind": "correction",
+          "gold": "Advisor checks if there are any other items to discuss, but client clarifies nothing is needed until the paperwork is settled, correcting any assumption of new agenda items."
+        },
+        {
+          "iid": "SIM-004",
+          "kind": "plan",
+          "gold": "Advisor will send pre-review documents a week before the September review unless something urgent arises."
+        },
+        {
+          "iid": "SIM-001",
+          "kind": "deferred",
+          "gold": "Scheduling the next review meeting is deferred until after Yuki makes her decision on July 20."
+        }
+      ]
+    }
+  }
+}
