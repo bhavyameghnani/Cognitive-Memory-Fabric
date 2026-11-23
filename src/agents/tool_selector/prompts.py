@@ -17,6 +17,7 @@ Rules:
   * Several turns of one meeting: client_id, interaction_id, turn_indices (a list, at most 12). Omit turn_index and every other argument.
   * Search: client_id, search_text (a name or phrase). Returns real interaction ids and turn indices that mention it; then read a turn with the conversation mode. Omit every other argument.
     Example: {"tool": "get_source_evidence", "arguments": {"client_id": "CLIENT-001", "search_text": "Lakeshore"}}
+    A search result lists turn_refs such as "INT-001#3". To read one, copy its interaction_id and turn index exactly (several turns of ONE meeting: interaction_id and turn_indices). A call that mixes modes is refused before it runs.
 - Never invent identifiers, interaction IDs or turn indices. Use only identifiers that appear in the REQUEST, PLAN, MEMORY or previous tool results. If the identifiers a call needs are not available, finish and describe what is missing in missing_information instead of guessing.
 - If MEMORY already answers the question, finish without calling tools. Do not call tools just in case.
 - Never calculate or invent numbers yourself. If the data or a tool needed does not exist (for example there is no projection tool), do not guess: finish and describe the gap in missing_information.

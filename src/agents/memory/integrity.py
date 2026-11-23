@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-from agents.memory import rules, support
+from agents.memory import attribution, rules, support
 from agents.memory.config import GLOBAL_CLIENT
 from agents.planner.topics import TOPICS
 from agents.memory.errors import DatabaseIntegrityError, EvidenceError, EvidenceRejected, InvalidRecord, MemoryWriteRejected, ScopeDenied
@@ -522,6 +522,7 @@ class MemoryIntegrityBoundary:
             raise MemoryWriteRejected("provenance_missing", "a conversation-derived memory needs at least one resolvable source", operation_id=oid)
         if rec.get("certainty") in ("confirmed", "correction") and mtype in ("episodic", "semantic") and not conv:
             raise MemoryWriteRejected("certainty_requires_evidence", "a confirmed memory needs resolvable source evidence", operation_id=oid)
+        self._attribution_gate(rec, conv, sclass, mtype, oid)
         observed = self._bind_time(rec, det, conv, mtype, oid)
         if observed and mtype in ("semantic", "procedural"):      # valid_from is DERIVED from the validated source (or, for a correction, from the trusted correction context)
             expected = max(observed[:10], human_old.get("valid_from") or "") if human_old is not None else observed[:10]
@@ -601,6 +602,23 @@ class MemoryIntegrityBoundary:
             bad("valid_to before valid_from")
         if rec.get("supersedes_id") and rec["supersedes_id"] == rec["memory_id"]:
             bad("a memory cannot supersede itself")
+
+    def _attribution_gate(self, rec: dict, conv: list, sclass: str, mtype: str, oid: str) -> None:
+        """M1 evidence ceiling, enforced where EVERY durable write passes (extraction, consolidation and any direct caller), from the DATA: the speaker of the cited turn, never a label the
+        caller supplied.  (1) The stored `source_role` must be the cited turn's real speaker (a semantic memory may not become a `System`-sourced client fact).  (2) A `confirmed` /
+        `correction` memory needs client-attributable evidence that is not stated as non-final (agents.memory.attribution).  Human corrections are a separate, authorised path."""
+        if sclass not in ("llm_extraction", "observed_transcript", "derived") or mtype not in ("episodic", "semantic") or not conv:
+            return
+        turns = [(ev, self.store.conv.turn(ev["interaction_id"], int(ev["turn_index"])) or {}) for ev in conv]
+        pev, pturn = next(((ev, t) for ev, t in turns if (ev.get("role") or "primary") == "primary"), turns[0])
+        speaker = pturn.get("speaker")
+        if rec.get("source_role") not in ((None, speaker) if mtype == "episodic" else (speaker,)):
+            raise MemoryWriteRejected("source_attribution_mismatch", "the recorded source role is not the speaker of the cited turn", operation_id=oid)
+        if rec.get("certainty") in attribution.STRONG:
+            others = [dict(speaker=t.get("speaker"), excerpt=ev.get("excerpt") or "") for ev, t in turns if ev is not pev]
+            v = attribution.assess(rec["certainty"], speaker, pev.get("excerpt") or "", pturn.get("utterance") or "", others, "conversation_llm", rec.get("value_text"))
+            if v.certainty != rec["certainty"]:
+                raise MemoryWriteRejected("attribution_ceiling", "the cited evidence does not support this certainty: " + "; ".join(v.notes), operation_id=oid)
 
     def _bind_time(self, rec: dict, det: dict, conv: list, mtype: str, oid: str) -> Optional[str]:
         """Observation time comes from the CSV turn the memory cites, never from the caller.  A caller-supplied event_ts / event_date that disagrees with that turn is refused

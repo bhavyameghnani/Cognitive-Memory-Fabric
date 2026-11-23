@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from agents.memory import rules
 from agents.memory.config import CERTAINTY_RANK, EXTRACTION_AGENT, FIXED_SUBJECT_TOPICS
-from agents.memory.ingest import Decision, MeetingContext, _repair_excerpt
+from agents.memory.ingest import Decision, MeetingContext, _repair_excerpt, enforce_policy
 from agents.planner.topics import TOPICS
 from llm.client import LLMClient, LLMError, OpenAILLM, StructuredOutputError, generate_structured
 from orchestration.tracing import NullTracer, Tracer
@@ -461,4 +461,7 @@ def run(llm: LLMClient, verifier: LLMClient, ctx: MeetingContext, conv: Conversa
         decisions[di] = Decision(d.origin, d.candidate, "downgraded" if vote.final != c.certainty else "accepted",
                                  ("verifier vote: " + vote.bucket) if vote.final != c.certainty else "valid", out, d.certainty_in, vote.final, notes + [tag],
                                  confidence=vote.confidence, extra_evidence=extras.get(di, []))
+    for d in decisions:
+        if d.kept:
+            enforce_policy(d, ctx)     # M1: a confident extractor/verifier vote can never exceed the evidence ceiling (speaker attribution, finality)
     return decisions, votes, err or verr

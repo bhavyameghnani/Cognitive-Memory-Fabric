@@ -1,0 +1,19 @@
+# Line endings of byte-exact inputs.
+#
+# Several checks compare these files byte-for-byte (the dataset hash lock datasets/calls/conversations.sha256, the committed evaluation package
+# evaluation/semantic_annotation/, the protected-file hash comparisons in tests), and some CSV fields contain quoted multi-line text (every datasets/emails/emails.csv
+# body), so a CRLF checkout (Windows with core.autocrlf=true) changes the DATA, not only the hash.  Pin them to LF in every checkout, whatever the local git
+# configuration.  Source code, documentation and UI files are intentionally NOT listed: their line endings carry no meaning for any check.
+*.csv    text eol=lf
+*.jsonl  text eol=lf
+*.sql    text eol=lf
+datasets/**/*.json    text eol=lf
+datasets/**/*.sha256  text eol=lf
+data/**/*.json        text eol=lf
+evaluation/**/*.json  text eol=lf
+evaluation/**/*.md    text eol=lf
+
+# Databases are binary: never convert (the seed databases are shipped test fixtures).
+*.db       binary
+*.sqlite   binary
+*.sqlite3  binary

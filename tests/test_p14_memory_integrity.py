@@ -30,12 +30,29 @@ KI = Principal.service("ingestion", [KENJI], request_id="REQ-P14")              
 RI = Principal.service("ingestion", [REBECCA], request_id="REQ-P14R")
 
 
+# M1 (evidence attribution, agents/memory/attribution.py): a memory that cites an ADVISOR turn is client-confirmed only when a client-spoken row confirms it.  In the real data the
+# client's confirming reply follows each advisor recap (INT-090 turn 12: "That's right. Send me the summary."), so seeded fixtures cite it too, exactly as ingestion now does.
+_CONFIRM_TURNS = {("INT-090", 11): 12, ("INT-061", 11): 12, ("INT-149", 3): 4, ("INT-001", 13): 14, ("INT-049", 17): 18, ("INT-074", 13): 14, ("INT-012", 11): 12}
+
+
+def confirmed(ev):
+    """`ev` (a list of evidence dicts) plus the client's confirming reply for every advisor-spoken row whose recap has one in the data."""
+    out = list(ev)
+    for e in ev:
+        k = (e["interaction_id"], int(e["turn_index"]))
+        t = _CONFIRM_TURNS.get(k)
+        if e.get("speaker") == "Advisor" and t and not any((x["interaction_id"], int(x["turn_index"])) == (k[0], t) for x in out):
+            out.append(dict(source_type="conversation", interaction_id=k[0], turn_index=t, speaker="Client", excerpt=CONV.turn(k[0], t)["utterance"], role="supporting"))
+    return out
+
+
 TURNS = {   # label -> (interaction, turn, speaker, excerpt, interaction_datetime, value stated in the excerpt)   (all real rows of data/conversations.csv)
     "JAN": ("INT-012", 4, "Client", "But it's got me thinking: what if I retired at 60 instead of 65?", "2026-01-16T08:00:00", "60"),
     "MAR": ("INT-049", 17, "Advisor", "I've corrected my own record: my earlier note that you wanted to retire at 60 was too strong; you are exploring it, and 65 remains the planning date.",
             "2026-03-04T08:30:00", "65"),
     "APR": ("INT-074", 13, "Advisor", "You're still weighing retiring at 63 instead of 60, which I've recorded as an idea and not an instruction.", "2026-04-16T08:15:00", "63"),
     "MAY": ("INT-090", 2, "Client", "We've decided: 63.", "2026-05-01T08:15:00", "63"),
+    "P65": ("INT-001", 4, "Client", "Honestly, the plan has always been 65.", "2026-01-02T08:00:00", "65"),     # M1 fixture: the client's own, unhedged statement of an OLDER value
 }
 
 
@@ -57,7 +74,10 @@ def erec(mid, client=KENJI, **kw):
 
 
 def put(store, mid, ev=(KEV,), principal=KI, det=EDET, **kw):
-    return store.insert_memory(erec(mid, **kw), dict(det), list(ev), principal=principal)
+    rec = erec(mid, **kw)
+    if "source_role" not in kw and list(ev):
+        rec["source_role"] = list(ev)[0].get("speaker", rec["source_role"])        # M1: the recorded source role is the speaker of the cited turn
+    return store.insert_memory(rec, dict(det), confirmed(ev) if rec["certainty"] in ("confirmed", "correction") else list(ev), principal=principal)
 
 
 def rig(url="sqlite:///:memory:"):
@@ -297,7 +317,7 @@ def test_foreign_and_nonexistent_memories_look_identical_to_the_caller():
 def test_relationships_and_supersession_never_cross_clients():
     store, _, _ = rig()
     put(store, "K1")
-    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RTS[:10]), dict(EDET, interaction_id="INT-061", turn_index=11, speaker_role="Advisor", event_ts=RTS), [REV], principal=RI)
+    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RTS[:10], source_role="Advisor"), dict(EDET, interaction_id="INT-061", turn_index=11, speaker_role="Advisor", event_ts=RTS), confirmed([REV]), principal=RI)
     with pytest.raises(ValueError):
         store.add_relationship("K1", "R1", "related_to", principal=KP)
     with pytest.raises(ValueError):
@@ -382,7 +402,7 @@ def test_contradictory_observations_on_the_same_date_are_both_preserved_and_flag
 def test_a_late_arriving_older_observation_does_not_become_current():
     store, log, _ = rig()
     at(store, "MAY", "NEW", h="n")                                                 # the May decision is stored first ...
-    at(store, "JAN", "OLD", h="o", certainty="confirmed")                          # ... and a January observation arrives late (stated as a decision here; its verification is not the point)
+    at(store, "P65", "OLD", h="o")                                                 # ... and an older observation arrives late: the client's own January statement of 65 (M1: the hedged January exploration cannot be 'confirmed')
     assert row(store, "OLD")["temporal_status"] == "historical" and row(store, "NEW")["status"] == "active" and row(store, "OLD")["created_at"] >= row(store, "NEW")["created_at"]
     assert "late_arriving_historical" in [k["conflict"] for n, k in log if n == "memory_conflict_detected"]
 
@@ -425,7 +445,7 @@ def test_reusing_a_key_with_a_different_payload_is_rejected():
         store.boundary.create(erec("M2", h="m2", value_text="60"), dict(EDET), [KEV], principal=KI, idempotency_key="K-1")
     assert e.value.code == "idempotency_key_conflict" and store.get("M2") is None
     # keys are scoped to the client and operation: the same key text for another client is a different key
-    store.boundary.create(erec("R1", client=REBECCA, content="decline", h="r1", event_date=RTS[:10]), dict(EDET, interaction_id="INT-061", turn_index=11, speaker_role="Advisor", event_ts=RTS), [REV], principal=RI, idempotency_key="K-1")
+    store.boundary.create(erec("R1", client=REBECCA, content="decline", h="r1", event_date=RTS[:10], source_role="Advisor"), dict(EDET, interaction_id="INT-061", turn_index=11, speaker_role="Advisor", event_ts=RTS), confirmed([REV]), principal=RI, idempotency_key="K-1")
     assert store.get("R1") is not None
 
 

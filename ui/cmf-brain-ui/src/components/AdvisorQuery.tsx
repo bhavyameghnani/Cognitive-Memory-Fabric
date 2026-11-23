@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
-import type { AskResult, EvidenceItem, Finding } from '../types';
+import type { AskResult, EvidenceItem, ExecutionStatus, Finding } from '../types';
 import { AgentRunPanel } from './AgentRunPanel';
 
 interface Props {
@@ -66,6 +66,7 @@ export const AdvisorQuery: React.FC<Props> = ({ suggestions, result, onResult, o
       {report && !busy && (
         <div className="flex flex-col gap-4 border-t border-slate-800 pt-4">
           <p className="text-sm text-slate-100 leading-relaxed">{report.summary}</p>
+          {result!.released === false && result!.execution && <WithheldStatus ex={result!.execution} approvalId={result!.approval?.approval_id} />}
           <p className="text-[11px] text-slate-500 font-mono">{result!.released === false ? 'Memory details are withheld until the answer is approved' : `${result!.retrieved_memory_ids.length} memories retrieved · highlighted on the brain`} · {report.request_id}</p>
           <Findings title="Key findings" items={report.key_findings} />
           <Findings title="Historical context" items={report.historical_context} />
@@ -88,6 +89,25 @@ export const AdvisorQuery: React.FC<Props> = ({ suggestions, result, onResult, o
     </div>
   );
 };
+
+/** Shown only while an answer is withheld for approval: WHAT RAN (content-free), so a held answer is not a black box.  The answer itself stays withheld. */
+const WithheldStatus = ({ ex, approvalId }: { ex: ExecutionStatus; approvalId?: string }) => (
+  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+    <p className="font-semibold text-amber-300">Held for approval{ex.harness.approval.category ? ` (${ex.harness.approval.category.replace(/_/g, ' ')})` : ''}{approvalId ? ` · ${approvalId}` : ''}</p>
+    <ul className="mt-2 space-y-0.5 text-slate-300">
+      {ex.agents.map((a) => (
+        <li key={a.agent} className="flex gap-2 font-mono text-[11px]">
+          <span className={a.ran ? 'text-emerald-400' : 'text-rose-400'}>{a.ran ? 'ran' : 'did not run'}</span>
+          <span className="text-slate-200">{a.agent}</span>
+          <span className="text-slate-500">{a.duration_ms != null ? `${(a.duration_ms / 1000).toFixed(1)}s` : ''}{a.llm_calls ? ` · ${a.llm_calls} model call${a.llm_calls > 1 ? 's' : ''}` : ''}{a.status ? ` · ${a.status}` : ''}{a.stop_reason ? ` (${a.stop_reason.replace(/_/g, ' ')})` : ''}</span>
+        </li>
+      ))}
+    </ul>
+    <p className="mt-2 font-mono text-[11px] text-slate-400">Harness: {ex.harness.active ? 'active' : 'off'}{ex.harness.profile ? ` · ${ex.harness.profile}` : ''}{ex.harness.outcome ? ` · ${ex.harness.outcome}` : ''} · permission checks {ex.harness.permissions.allowed} allowed / {ex.harness.permissions.denied} denied{ex.harness.degraded ? ' · degraded' : ''}</p>
+    {!ex.client_identified && <p className="mt-1 text-amber-300/90">No client was identified in the question, so no client memory was searched. Name the client (for example "Kenji").</p>}
+    <p className="mt-1 text-slate-500">{ex.note}</p>
+  </div>
+);
 
 const Bullets = ({ title, items, tone }: { title: string; items: string[]; tone: string }) => (
   <div>

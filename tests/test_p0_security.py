@@ -290,7 +290,7 @@ def test_pending_approval_response_contains_no_report_content(world):
 def test_withheld_response_has_only_safe_keys(world):
     build, m, db = world
     body = ask_withheld(build("production"), db)
-    assert set(body) <= {"request_id", "client_ids", "report", "retrieved_memory_ids", "agent_run", "harness", "released", "status", "approval", "message"}
+    assert set(body) <= {"request_id", "client_ids", "report", "retrieved_memory_ids", "agent_run", "harness", "released", "status", "approval", "message", "execution"}
     assert set(body["approval"]) <= {"approval_id", "status", "category", "created_at"}
     assert "conflict" not in json.dumps(body).lower() and "tool" not in json.dumps(body["approval"]).lower()
 

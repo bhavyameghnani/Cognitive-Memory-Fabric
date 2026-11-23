@@ -47,7 +47,7 @@ Daniel]
   - original: Dear Kenji, A correction to my May 5 email. The $14,000 is not additional tuition. As you explained on today's call, it covers the program fee, flights and housing; Ren's normal tuition is paid separately and is already in your cash flow. I've corrected the file note and dated it today. My May 5 email is unchanged in the record. Best regards, Priya
   - existing interpretation: corrects -> EML-033 [rule_v1:correction_cue+shared_token]; replies_to -> EML-033 [in_reply_to_header]   [target text: Priya, thanks. I'll forward the breakdown as soon as the program office sends it. Ren is still waiting to hear whether h]
 - `EML-068` reproduced=yes  (Email, Daniel Okafor)
-  - original: Rebecca, A correction after yesterday's call. Version 1 assumed your salary stops at closing. You told me section six of the draft keeps you in a paid consulting role for the twelve months after closing, at your current salary. Version 2 reflects that: portfolio withdrawals begin only after those twelve months, and the spending account is larger than it needs to be. My recommendation is to resize
+  - original: Rebecca, A correction after yesterday's call. Version 1 assumed your salary stops at closing. You told me section six of the draft keeps you in a paid consulting role for the twelve months after closing, at your current salary. Version 2 reflects that: portfolio withdrawals begin only after those twelve months, and the spending account is larger than it needs to be. My recommendation is to resize 
   - existing interpretation: corrects -> EML-061 [rule_v1:correction_cue+shared_token]; replies_to -> EML-061 [in_reply_to_header]   [target text: Thanks. I haven't opened it properly. The escrow dispute is eating my week.
 
 Rebecca]
@@ -106,7 +106,7 @@ Expected (pending annotation): decision_status = reported_by_other; the decision
 Reproduced: 5/5
 
 - `INT-010#T17` reproduced=yes  (Calls, Priya Nair)
-  - original: Nothing from you today. If I think a trade is warranted, I'll bring it to you first, and nothing happens without your agreement. Let me record the outcomes. You've decided to proceed with the agreed portfolio review. The working plan I'm recording is a growth-oriented portfolio at about 75 percent equities. From your side, you'll send over the plan summary for your Northgate deferred compensation
+  - original: Nothing from you today. If I think a trade is warranted, I'll bring it to you first, and nothing happens without your agreement. Let me record the outcomes. You've decided to proceed with the agreed portfolio review. The working plan I'm recording is a growth-oriented portfolio at about 75 percent equities. From your side, you'll send over the plan summary for your Northgate deferred compensation 
   - existing interpretation: dialogue_act=['decision', 'commitment']
 - `INT-022#T23` reproduced=yes  (Meetings, Priya Nair)
   - original: To summarise today in order: You've decided to keep the mortgage as it is and hold the cash as a cushion, rather than pay the mortgage down early. The working plan I'm recording is a working assumption of six months of base salary as severance for liquidity planning, to be replaced if the real terms become known. I'll book us for Monday, February 9, if that suits you. I'll put a written summary in
@@ -133,7 +133,7 @@ Reproduced: 4/4
   - original: Dear Peg, Following today's call: you have decided against Maplewood Commons for now, because Frank wants to stay at home. You may revisit it if his needs change. No deposit will be paid. Kind regards, Elena
   - existing interpretation: temporal_ref=['today', 'may']
 - `INT-141#T17` reproduced=yes  (Meetings, Priya Nair)
-  - original: My notes from today read as follows. No decisions were needed today. We went through follow-ups on forms and estate documents and everything is on track. From your side, you'll get Mariko's Social Security statement to complete the survivor analysis and send over your current will and the beneficiary designations on your retirement accounts. Let's pencil in Thursday, June 25 for our next meeting.
+  - original: My notes from today read as follows. No decisions were needed today. We went through follow-ups on forms and estate documents and everything is on track. From your side, you'll get Mariko's Social Security statement to complete the survivor analysis and send over your current will and the beneficiary designations on your retirement accounts. Let's pencil in Thursday, June 25 for our next meeting. 
   - existing interpretation: topic cue scores={'retirement_planning': 3, 'estate_and_trusts': 3, 'housing_and_debt': 1, 'follow_up_commitments': 1, 'scheduling_and_admin': 1}; segment topic=retirement_planning
 - `INT-026#T12` reproduced=yes  (Meetings, Sofia Alvarez)
   - original: It doesn't bother me much. Is there any reason it should?

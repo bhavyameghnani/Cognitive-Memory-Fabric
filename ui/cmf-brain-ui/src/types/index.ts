@@ -159,6 +159,18 @@ export interface AskResult {
   agent_run: AgentRun | null;
   /** false while the answer is held for approval: the API then deliberately returns no memory ids */
   released?: boolean;
+  /** present only while withheld: content-free run status (which agents ran, timings, permission checks, approval category) */
+  execution?: ExecutionStatus | null;
+  approval?: { approval_id?: string; status?: string; category?: string } | null;
+  message?: string;
+}
+
+export interface ExecutionStatus {
+  agents: { agent: string; ran: boolean; duration_ms: number | null; llm_calls: number; status?: string | null; stop_reason?: string | null }[];
+  client_identified: boolean;
+  harness: { active: boolean; profile: string | null; outcome: string | null; degraded: boolean;
+             permissions: { allowed: number; denied: number; denied_codes: string[] }; approval: { category: string | null; status: string | null } };
+  note: string;
 }
 
 export interface AgentRun {

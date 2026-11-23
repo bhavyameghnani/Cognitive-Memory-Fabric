@@ -143,13 +143,14 @@ def withheld_report(report: AdvisorReport, approval: dict, message: str = WITHHE
                          validation={"withheld_for_approval": True, "harness_approval": safe_approval(approval)})
 
 
-def withheld_view(approval: dict, request_id: str = "", status: Optional[str] = None) -> dict:
-    """The only API representation of an answer that is pending, rejected or invalidated."""
+def withheld_view(approval: dict, request_id: str = "", status: Optional[str] = None, execution: Optional[dict] = None) -> dict:
+    """The only API representation of an answer that is pending, rejected or invalidated.  `execution` (optional) is the CONTENT-FREE run status of api/agent_run.execution_status:
+    which agents ran, how long, how many model calls, which permission checks passed, and the approval category - never findings, evidence, memory ids, labels, tool names or text."""
     st = status or ("rejected" if approval.get("status") == "rejected" else "pending_approval")
     message = {"rejected": REJECTED_MESSAGE, "approval_invalidated": INVALIDATED_MESSAGE, "approval_expired": EXPIRED_MESSAGE, "already_released": CONSUMED_MESSAGE}.get(st, WITHHELD_MESSAGE)
     stub = withheld_report(AdvisorReport(request_id=request_id, client_id="", question="", summary=""), approval, message)
     return dict(request_id=request_id, client_ids=[], report=stub.model_dump(), retrieved_memory_ids=[], agent_run=None, harness=None, released=False, status=st,
-                approval=safe_approval(approval), message=message)
+                approval=safe_approval(approval), message=message, execution=execution)
 
 
 def released_view(report: AdvisorReport) -> dict:

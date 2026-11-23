@@ -88,6 +88,19 @@ def _turn_item(ex, env, t: dict) -> EvidenceItem:
                         synthetic=bool(env.provenance.synthetic), client_id=env.client_id)
 
 
+def pick_episodes(episodes: list[MemoryItem], cap: int) -> list[MemoryItem]:
+    """At most `cap` of a client's episodes, kept in their (chronological) order.  Retrieval can return many more than the report shows (a history question widens the cap to the
+    whole timeline), so the choice matters: VERIFIED episodes first, then the most recent of the rest.  Taking the first `cap` would keep only the oldest meetings and drop the
+    latest decision."""
+    if len(episodes) <= cap:
+        return list(episodes)
+    order = {id(m): i for i, m in enumerate(episodes)}
+    verified = [m for m in episodes if evidence_class(m) == DEFINITIVE]
+    rest = [m for m in reversed(episodes) if evidence_class(m) != DEFINITIVE]
+    chosen = (verified + rest)[:cap]
+    return sorted(chosen, key=lambda m: order[id(m)])
+
+
 def build_evidence(plan: ExecutionPlan, memory: dict[str, MemoryContext], tools: ToolSelectorState) -> tuple[list[EvidenceItem], dict]:
     """Order: current memory -> tool results -> superseded history -> recent events. Returns (items with handles, removal record)."""
     allowed = set(plan.client_ids) or set(memory)
@@ -129,7 +142,7 @@ def build_evidence(plan: ExecutionPlan, memory: dict[str, MemoryContext], tools:
             if m.memory_id not in seen and owned(cid, m):
                 seen.add(m.memory_id)
                 recent.append(_mem_item("Unresolved item", m, "memory", conflicted))
-        for m in ctx.episodes[:EPISODES_PER_CLIENT]:
+        for m in pick_episodes(ctx.episodes, EPISODES_PER_CLIENT):
             if m.memory_id not in seen and owned(cid, m):
                 seen.add(m.memory_id)
                 recent.append(_mem_item("Episode", m, "conversation_evidence" if m.evidence else "memory", conflicted))

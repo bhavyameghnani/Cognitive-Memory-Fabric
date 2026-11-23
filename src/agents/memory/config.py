@@ -48,6 +48,7 @@ class FilterConfig:
 @dataclass
 class RetrievalConfig:
     episode_cap: int = EPISODE_CAP
+    chronology_episode_cap: int = 40      # a HISTORY question about a topic wants the whole timeline of that topic, in order (still bounded, and the omission is reported)
     unresolved_cap: int = 6
     history_cap: int = 6
     working_ttl_hours: float = WORKING_TTL_HOURS

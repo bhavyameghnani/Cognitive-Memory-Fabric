@@ -408,7 +408,8 @@ def deterministic_summary(evidence: list[EvidenceItem], plan: ExecutionPlan) -> 
         return mem
     if tool:
         return tool
-    return f"Evidence was found ({len(evidence)} items) but it does not state a definite answer; see the findings and uncertainties."
+    # no item count here: the evidence verifier treats any number in a summary as a figure that must appear in the evidence, so a count of 13+ would get this safe summary replaced
+    return "Evidence was found but it does not state a definite answer; see the findings and uncertainties."
 
 
 def no_evidence_summary() -> str:

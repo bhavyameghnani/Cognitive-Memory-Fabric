@@ -269,9 +269,9 @@ Subject/context: Buying a home - summary of Friday's call   Time: 2026-01-26T11:
 
   >>> EML-001 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Hi Sofia,
-
+      
       Following Friday's call about buying a home and where the down payment should sit. You've decided to buy within two years, so I'd suggest we build a separate house fund and keep it in cash or short-term holdings rather than in equities. Your 401(k) and the employer match stay as they are.
-
+      
       Warm regards,
       Elena
   (after)  EML-002 [Sofia Alvarez]: Thanks Elena!! Reading on my phone, will go through it properly this weekend. Quick question: it's fine to leave the 401k exactly as is in the meantime?
@@ -292,7 +292,7 @@ Warm regards,
 Elena
   >>> EML-002 [Sofia Alvarez / CLIENT-003; attribution source_stated, high]:
       Thanks Elena!! Reading on my phone, will go through it properly this weekend. Quick question: it's fine to leave the 401k exactly as is in the meantime?
-
+      
       Sofia
   (after)  EML-003 [Elena Rossi]: Yes, the 401(k) and the match stay exactly as they are.
 
@@ -318,7 +318,7 @@ Elena
 Sofia
   >>> EML-003 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Yes, the 401(k) and the match stay exactly as they are.
-
+      
       Elena
   (after)  EML-028 [Elena Rossi]: Hi Sofia,
 
@@ -335,15 +335,15 @@ Subject/context: Samuel's pension and the inherited account - what we covered   
 
   >>> EML-005 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Grace,
-
+      
       Thank you for speaking with me yesterday. I know some of those papers are hard to face, and there's no rush beyond what we agreed.
-
+      
       A short summary:
       1. Death certificates: you have two and have ordered more.
       2. The pension letter from Samuel's employer hasn't arrived yet. I need it for the next calculation.
       3. Samuel's retirement account: you can roll it into your own or keep it as an inherited account. There is no deadline, but I'll prepare a plain-English comparison.
       4. From the company's summary, the pension survivor payment looks like about half of Samuel's pension.
-
+      
       Kind regards,
       Priya
   (after)  EML-006 [Grace Adeyemi]: Thank you Priya. You are very patient. I am worried that half might not be enough. I will look for the letter again this weekend.
@@ -370,7 +370,7 @@ Kind regards,
 Priya
   >>> EML-006 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Thank you Priya. You are very patient. I am worried that half might not be enough. I will look for the letter again this weekend.
-
+      
       Grace
   (after)  EML-009 [Priya Nair]: Grace, please don't worry about the number yet. It comes from a summary, not from the plan's own letter. Once the letter arrives we will know.
 
@@ -399,9 +399,9 @@ Best regards,
 Priya
   >>> EML-007 [Kenji Tanaka / CLIENT-001; attribution source_stated, high]:
       Priya,
-
+      
       Thanks. The healthcare gap is bigger than I had assumed. I'd like to see what part-time consulting at 60 would have to earn. Let me think about it over the next few weeks.
-
+      
       Kenji
   (after)  EML-008 [Priya Nair]: Kenji,
 
@@ -429,7 +429,7 @@ Priya
 Grace
   >>> EML-009 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Grace, please don't worry about the number yet. It comes from a summary, not from the plan's own letter. Once the letter arrives we will know.
-
+      
       Priya
   (after)  EML-015 [Priya Nair]: Dear Grace,
 
@@ -452,7 +452,7 @@ Kind regards,
 Priya
   >>> EML-011 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Thank you Priya. I wish it were paid off. It is all I think about at night. But I do not want to do anything yet.
-
+      
       Grace
   (after)  EML-030 [Priya Nair]: Dear Grace,
 
@@ -469,14 +469,14 @@ Subject/context: Tender offer - what I will compare   Time: 2026-02-18T09:10:00
 
   >>> EML-012 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       Lucas,
-
+      
       Following up on yesterday's call.
-
+      
       - The liquid portfolio is about $1.15 million. Your startup stake is a large part of your net worth but can't easily be sold.
       - You're planning to sell part of your Moreau Labs shares in the tender, so I'll compare three cases (none, half, or all of the offered shares) and check the tax treatment with your accountant.
-
+      
       The deadline is in the offer letter; I'll send you the date.
-
+      
       Daniel
   (after)  EML-013 [Lucas Moreau]: ok thx. what's the deadline again?
 
@@ -503,7 +503,7 @@ Daniel
 Lucas
   >>> EML-014 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       I'll send it once I've re-read the letter.
-
+      
       Daniel
   (after)  EML-022 [Daniel Okafor]: Lucas,
 
@@ -525,9 +525,9 @@ Grace
 Priya
   >>> EML-015 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Grace,
-
+      
       A correction to my February 10 email. I wrote that the survivor payment looked like about half of Samuel's pension. I had read the company's summary too loosely. The form actually gives sixty percent, payable for life, plus an optional lump sum that I haven't evaluated yet. A one-page summary of the form is attached.
-
+      
       Kind regards,
       Priya
   (after)  EML-016 [Grace Adeyemi]: Oh thank you Priya. That is better news. I will tell Folake tonight. Does it mean I do not need the annuity?
@@ -551,7 +551,7 @@ Kind regards,
 Priya
   >>> EML-016 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Oh thank you Priya. That is better news. I will tell Folake tonight. Does it mean I do not need the annuity?
-
+      
       Grace
   (after)  EML-017 [Priya Nair]: Grace, good question, and I would rather answer it in person. The survivor pension is one input. I haven't recommended for or against an annuity, and the decision is yours. We'll talk before you decide.
 
@@ -571,7 +571,7 @@ Priya
 Grace
   >>> EML-017 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Grace, good question, and I would rather answer it in person. The survivor pension is one input. I haven't recommended for or against an annuity, and the decision is yours. We'll talk before you decide.
-
+      
       Priya
 
 ## SEM-045  -  Email THR-006 (email_thread), turn EML-019
@@ -589,7 +589,7 @@ Following your acceptance of the offer, the immediate next steps are:
 Daniel
   >>> EML-019 [Rebecca Holloway / CLIENT-002; attribution source_stated, high]:
       Daniel, thanks. My lawyer says the redlines will take another week. Send me the cash-at-closing model as soon as you have it.
-
+      
       Rebecca
   (after)  EML-020 [Daniel Okafor]: Rebecca,
 
@@ -620,11 +620,11 @@ Daniel
 Rebecca
   >>> EML-020 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       Rebecca,
-
+      
       A correction to my March 12 email, where I wrote "following your acceptance of the offer". That was wrong. You told me you are inclined to accept; you have not signed the letter of intent and your lawyer is still negotiating. I have corrected my record today.
-
+      
       The model is attached. Cash at closing is about $13.5 million after tax and fees.
-
+      
       Daniel
   (after)  EML-021 [Rebecca Holloway]: Thanks for fixing that. Keep it that way until I sign: inclined, not accepted.
 
@@ -641,9 +641,9 @@ Lucas
 Daniel
   >>> EML-022 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       Lucas,
-
+      
       A correction to my February 18 email, where I wrote that you're planning to sell part of your shares. As you told me today, you said you might and you haven't decided; you're waiting for my comparison. The comparison is overdue and I owe it to you. I'll send it by Friday, April 3.
-
+      
       Daniel
   (after)  EML-023 [Lucas Moreau]: yeah. don't let it slip pls
 
@@ -665,13 +665,13 @@ Subject/context: Brian - your decision about the loan   Time: 2026-03-31T10:15:0
 
   >>> EML-024 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Dear Peg,
-
+      
       Following our call yesterday, I'm writing it down in plain words so you have it.
-
+      
       1. You have decided not to lend Brian $80,000, because of the cost of Frank's care.
       2. You will call Brian yourself this weekend.
       3. You'd also like to help Brian with a few hundred dollars toward his equipment.
-
+      
       Kind regards,
       Elena
   (after)  EML-025 [Peg Sullivan]: Dear Elena,
@@ -697,9 +697,9 @@ Sofia
 Elena
   >>> EML-028 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Hi Sofia,
-
+      
       A correction after Friday's call. My January 26 email said you had decided to buy within two years. That overstated what you told me. As you explained on April 10, you are considering a purchase within about two years, with no commitment, and you have decided not to start a house search until the autumn. I have recorded both.
-
+      
       Warm regards,
       Elena
   (after)  EML-029 [Sofia Alvarez]: Yes, that's right. Though honestly the "autumn" part is soft. Mateo has been approached about a role elsewhere, and if that goes anywhere everything changes. I'll tell you more on Thursday.
@@ -720,7 +720,7 @@ Warm regards,
 Elena
   >>> EML-029 [Sofia Alvarez / CLIENT-003; attribution source_stated, high]:
       Yes, that's right. Though honestly the "autumn" part is soft. Mateo has been approached about a role elsewhere, and if that goes anywhere everything changes. I'll tell you more on Thursday.
-
+      
       Sofia
 
 ## SEM-051  -  Email THR-004 (email_thread), turn EML-030
@@ -737,9 +737,9 @@ Priya
 Grace
   >>> EML-030 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Grace,
-
+      
       Following today's call: you have decided to keep the mortgage in place for now. The insurance payout stays in the money-market and short-term Treasury holdings while we plan.
-
+      
       Kind regards,
       Priya
   (after)  EML-031 [Grace Adeyemi]: Yes that is right. Thank you.
@@ -766,7 +766,7 @@ Kind regards,
 Priya
   >>> EML-031 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Yes that is right. Thank you.
-
+      
       Grace
   (after)  EML-050 [Priya Nair]: Dear Grace,
 
@@ -798,9 +798,9 @@ Thank you for writing it down. That is what we talked about. I will call Brian o
 Peg
   >>> EML-034 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Dear Peg,
-
+      
       A correction to my March 31 email. Helping Brian with equipment is not something you decided. As you told me today, it was only a thought, and nothing has been offered. My March 31 email stays in the record as sent.
-
+      
       Kind regards,
       Elena
   (after)  EML-035 [Peg Sullivan]: Thank you dear. It is only a thought. I may think about it again when things settle.
@@ -823,9 +823,9 @@ Priya
 Kenji
   >>> EML-039 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Kenji,
-
+      
       A correction to my May 5 email. The $14,000 is not additional tuition. As you explained on today's call, it covers the program fee, flights and housing; Ren's normal tuition is paid separately and is already in your cash flow. I've corrected the file note and dated it today. My May 5 email is unchanged in the record.
-
+      
       Best regards,
       Priya
   (after)  EML-041 [Kenji Tanaka]: That's right. The program's cost breakdown still hasn't arrived. I'll forward it when it does.
@@ -848,9 +848,9 @@ Kind regards,
 Elena
   >>> EML-042 [Peg Sullivan / CLIENT-006; attribution source_stated, high]:
       Dear Elena,
-
+      
       Thank you. I have not talked with Frank yet. He has had a tired week. Please send me the names of the attorneys.
-
+      
       Peg
   (after)  EML-043 [Elena Rossi]: Dear Peg,
 
@@ -888,7 +888,7 @@ These are estimates only; nothing is final until the election is filed.
 Hannah Park
   >>> EML-045 [Kenji Tanaka / CLIENT-001; attribution source_stated, high]:
       Thank you both. I'm leaning toward five installments, but I'll confirm on Wednesday's call. Please don't treat it as final yet.
-
+      
       Kenji
   (after)  EML-046 [Priya Nair]: Dear Kenji,
 
@@ -916,9 +916,9 @@ Hannah Park
 Kenji
   >>> EML-046 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Kenji,
-
+      
       Following this morning's call: your decision to elect five annual installments starting at 63 is recorded. Please send me the draft election form so I can comment before you submit it. Hannah, no further action is needed beyond keeping your estimate on file.
-
+      
       Best regards,
       Priya
 
@@ -934,7 +934,7 @@ You have not raised it with Lakeshore. My suggestion is to take it to your lawye
 Daniel
   >>> EML-048 [Rebecca Holloway / CLIENT-002; attribution source_stated, high]:
       Agreed, it's an idea. I haven't decided and I haven't spoken to Lakeshore. My lawyer is away until Monday.
-
+      
       Rebecca
   (after)  EML-049 [Daniel Okafor]: Understood. I'll keep it as an open idea. If Lakeshore agreed to fund part of it, your cost would fall. Let's hear your lawyer first.
 
@@ -955,7 +955,7 @@ Daniel
 Rebecca
   >>> EML-049 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       Understood. I'll keep it as an open idea. If Lakeshore agreed to fund part of it, your cost would fall. Let's hear your lawyer first.
-
+      
       Daniel
 
 ## SEM-060  -  Email THR-004 (email_thread), turn EML-050
@@ -972,9 +972,9 @@ Priya
 Grace
   >>> EML-050 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Grace,
-
+      
       A correction. The insurance payout is not reserved for paying off the mortgage; my February 12 email labelled it that way when what you had expressed was a wish. As you described on June 5, the money is for Folake's tuition (part of it, so you feel safe) and for a gift to Tobi of up to $15,000. That amount is a ceiling, not an instruction.
-
+      
       Kind regards,
       Priya
   (after)  EML-053 [Grace Adeyemi]: Yes. Thank you for fixing it. I will think about how to explain it to Tobi.
@@ -996,9 +996,9 @@ I'll mail you a short list of two elder-law attorneys today. The choice of whom 
 Elena
   >>> EML-051 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Dear Peg,
-
+      
       Following today's call: you have decided against Maplewood Commons for now, because Frank wants to stay at home. You may revisit it if his needs change. No deposit will be paid.
-
+      
       Kind regards,
       Elena
   (after)  EML-054 [Peg Sullivan]: That is right dear. Thank you.
@@ -1010,11 +1010,11 @@ Subject/context: Beneficiary forms and Folake's share   Time: 2026-06-08T15:20:0
 
   >>> EML-052 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Grace,
-
+      
       Following today's call about beneficiary forms. Two things:
       1. You told me Tobi and Folake will be equal beneficiaries and that you are sending the signed forms back. Once they arrive I will check them against your wishes.
       2. Whether Folake's share should be held in a trust is an open question. I'm not recommending either way yet; I'd like an estate attorney's view first.
-
+      
       Kind regards,
       Priya
   (after)  EML-055 [Grace Adeyemi]: Dear Priya, I posted two of the three forms this morning. I cannot find the third. I will keep looking.
@@ -1037,7 +1037,7 @@ Kind regards,
 Priya
   >>> EML-055 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Dear Priya, I posted two of the three forms this morning. I cannot find the third. I will keep looking.
-
+      
       Grace
   (after)  EML-056 [Priya Nair]: Grace, that's fine. If you can't find it, I can send you a request form to sign so we can get a copy from the provider. Please tell me which account it belongs to.
 
@@ -1059,9 +1059,9 @@ Could you confirm, and tell me anything that needs to happen in a particular ord
 Elena Rossi
   >>> EML-058 [Dennis Hall / EXT-002; attribution source_stated, high]:
       Dear Elena, dear Peg,
-
+      
       Confirmed. Withholding at 12 percent is fine. The charitable distribution must go directly from the IRA custodian to the church, so please don't have Peg withdraw the cash first.
-
+      
       Dennis Hall
   (after)  EML-059 [Peg Sullivan]: Dear Dennis and Elena,
 
@@ -1090,9 +1090,9 @@ Confirmed. Withholding at 12 percent is fine. The charitable distribution must g
 Dennis Hall
   >>> EML-059 [Peg Sullivan / CLIENT-006; attribution source_stated, high]:
       Dear Dennis and Elena,
-
+      
       I want the six thousand to go to the church. And the rest monthly as you said.
-
+      
       Peg
 
 ## SEM-066  -  Email THR-016 (email_thread), turn EML-062
@@ -1100,9 +1100,9 @@ Subject/context: Reworked budget with childcare   Time: 2026-06-18T09:30:00
 
   >>> EML-062 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Hi Sofia,
-
+      
       Following Wednesday's call, the reworked monthly budget is attached. I've used the $40,000 in the house fund as a cushion for the childcare gap while we see how the fees settle. Your 401(k) match is untouched.
-
+      
       Warm regards,
       Elena
   (after)  EML-064 [Sofia Alvarez]: Thanks Elena, I'll look at it over the weekend. Lucia has a cold!!
@@ -1131,11 +1131,11 @@ Elena
 Sofia
   >>> EML-066 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Hi Sofia,
-
+      
       A correction to my June 18 email. The $40,000 in the house fund is not a childcare cushion; it remains house money. The childcare gap will be covered by trimming your brokerage contributions by about $800 a month, with the 401(k) match untouched.
-
+      
       I can't change the contribution instruction until you confirm it by reply.
-
+      
       Warm regards,
       Elena
   (after)  EML-067 [Sofia Alvarez]: Confirming: reduce my brokerage contributions by $800 a month starting in July. The match stays. The house fund stays.
@@ -1157,11 +1157,11 @@ Daniel
 Rebecca
   >>> EML-068 [Daniel Okafor / ADVISOR-002; attribution source_stated, medium]:
       Rebecca,
-
+      
       A correction after yesterday's call. Version 1 assumed your salary stops at closing. You told me section six of the draft keeps you in a paid consulting role for the twelve months after closing, at your current salary. Version 2 reflects that: portfolio withdrawals begin only after those twelve months, and the spending account is larger than it needs to be.
-
+      
       My recommendation is to resize the spending account. I haven't changed anything.
-
+      
       Daniel
   (after)  EML-069 [Rebecca Holloway]: Good. Resize it after the escrow is settled, not before.
 
@@ -1172,9 +1172,9 @@ Subject/context: Teams link   Time: 2026-04-22T11:40:00
 
   >>> EML-070 [Priya Nair / ADVISOR-001; attribution source_stated, medium]:
       Dear Kenji,
-
+      
       The Teams link for our video meetings is unchanged, in case you need it again. No reply needed.
-
+      
       Priya
   (after)  EML-071 [Kenji Tanaka]: Thanks Priya, I have it.
 
@@ -1190,7 +1190,7 @@ The Teams link for our video meetings is unchanged, in case you need it again. N
 Priya
   >>> EML-071 [Kenji Tanaka / CLIENT-001; attribution source_stated, high]:
       Thanks Priya, I have it.
-
+      
       Kenji
 
 ## SEM-071  -  Email THR-018 (email_thread), turn EML-072
@@ -1198,9 +1198,9 @@ Subject/context: Secure portal link   Time: 2026-05-12T09:10:00
 
   >>> EML-072 [Elena Rossi / ADVISOR-003; attribution source_stated, medium]:
       Hi Sofia,
-
+      
       The secure-portal link I sent earlier has expired. I have sent a fresh one in a separate message. Nothing else is needed from you.
-
+      
       Elena
   (after)  EML-073 [Sofia Alvarez]: Got it, thank you. I was able to log in.
 
@@ -1216,7 +1216,7 @@ The secure-portal link I sent earlier has expired. I have sent a fresh one in a 
 Elena
   >>> EML-073 [Sofia Alvarez / CLIENT-003; attribution source_stated, high]:
       Got it, thank you. I was able to log in.
-
+      
       Sofia
 
 ## SEM-073  -  Email THR-019 (email_thread), turn EML-075
@@ -1229,7 +1229,7 @@ A quick note that I am out of the office on Monday and back on Tuesday. I will a
 Daniel
   >>> EML-075 [Lucas Moreau / CLIENT-005; attribution source_stated, high]:
       No problem. Thanks for letting me know.
-
+      
       Lucas
 
 ## SEM-074  -  Email THR-020 (email_thread), turn EML-076
@@ -1237,9 +1237,9 @@ Subject/context: Scanned pages   Time: 2026-05-14T15:05:00
 
   >>> EML-076 [Grace Adeyemi / CLIENT-004; attribution source_stated, high]:
       Dear Priya,
-
+      
       I scanned the pages and uploaded them to the portal this afternoon. Could you let me know that they arrived?
-
+      
       Grace
   (after)  EML-077 [Priya Nair]: Hello Grace,
 
@@ -1252,9 +1252,9 @@ Subject/context: Our next call   Time: 2026-06-19T17:30:00
 
   >>> EML-078 [Peg Sullivan / CLIENT-006; attribution source_stated, high]:
       Elena dear,
-
+      
       Something may come up and I may need to move our next call a little. May I tell you nearer the time?
-
+      
       Peg
   (after)  EML-079 [Elena Rossi]: Of course, Peg. Just let me know when you can.
 
@@ -1270,7 +1270,7 @@ I would like to find a time for our next review. Would the week of July 6 suit y
 Daniel
   >>> EML-081 [Rebecca Holloway / CLIENT-002; attribution source_stated, high]:
       That week works for me. Please send whichever day suits you.
-
+      
       Rebecca
 
 ## SEM-077  -  Meetings INT-001 (meeting), turn INT-001#T1

@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from agents.memory import attribution
 from agents.memory.config import NUMERIC_TOPICS
 from agents.memory.integrity import HC, Principal, _canon
 from agents.memory.store import MemoryStore, h
@@ -23,10 +24,16 @@ def _slot(ep: dict) -> str:
     return f"{ep['topic']}|{ep['subject'] or ep['topic']}"
 
 
-def eligible(ep: dict) -> bool:
-    """May this episode create or reinforce a semantic value?"""
+def eligible(ep: dict, client_ok: Optional[bool] = None) -> bool:
+    """May this episode create or reinforce a semantic value?  M1: only CLIENT-attributable evidence may: the client's own statement, or an advisor's account that a client-spoken
+    evidence row confirms (`client_ok`, computed by the Consolidator from the stored evidence).  An advisor-spoken episode is otherwise excluded - including rows stored before this
+    policy existed - and an episode recorded as an advisor-reported decision or interpretation never qualifies."""
     v = ep["value_text"]
     if ep["certainty"] not in ("confirmed", "correction") or ep["status"] == "unconfirmed" or not v:
+        return False
+    if ep.get("event_type") in attribution.NON_CLIENT_EVENTS:
+        return False
+    if ep.get("speaker_role") not in (None, "Client") and not client_ok:
         return False
     return bool(re.fullmatch(r"\d+(?:\.\d+)?", v)) if ep["topic"] in NUMERIC_TOPICS else True
 
@@ -44,10 +51,10 @@ class Version:
     conflicts: list[dict] = field(default_factory=list)
 
 
-def fold(episodes: list[dict]) -> list[Version]:
-    """Pure fold of one slot's eligible episodes (time ordered) into versions."""
+def fold(episodes: list[dict], attributable: Optional[set] = None) -> list[Version]:
+    """Pure fold of one slot's eligible episodes (time ordered) into versions.  `attributable` = memory ids of advisor-spoken episodes that a client-spoken row confirms (None: none do)."""
     chain: list[Version] = []
-    for ep in sorted((e for e in episodes if eligible(e)), key=_order):
+    for ep in sorted((e for e in episodes if eligible(e, e["memory_id"] in (attributable or ()))), key=_order):
         cur = chain[-1] if chain else None
         if cur is None:
             chain.append(Version(ep["value_text"], ep["event_date"], ep))
@@ -82,7 +89,7 @@ class Consolidator:
     def _semantic(self, client_id: str, slot: str, slot_eps: list[dict], out: dict) -> None:
         st = self.store
         pr = Principal.service("consolidation", [client_id])      # consolidation may only touch the ONE client being consolidated
-        desired = fold(slot_eps)
+        desired = fold(slot_eps, self._attributable(slot_eps))
         if self.validator is not None:   # semantic memory is still written only here; the validator can only REMOVE candidates versions
             kept = []
             for v in desired:
@@ -122,11 +129,16 @@ class Consolidator:
             mid = "MEM-SEM-" + h(client_id, slot, next_no, v.value, v.valid_from, n=12)
             ev = [dict(source_type="conversation", interaction_id=v.creator["interaction_id"], turn_index=v.creator["turn_index"], speaker=v.creator["speaker_role"],
                        excerpt=self._excerpt(v.creator), role="primary")]
+            if v.creator["speaker_role"] == "Advisor":        # M1: an advisor-sourced version keeps the CLIENT's confirming row, so the boundary can see why it was allowed
+                for e in st.evidence_map([v.creator["memory_id"]])[v.creator["memory_id"]]:
+                    if e.speaker == "Client" and (e.interaction_id, e.turn_index) != (v.creator["interaction_id"], v.creator["turn_index"]):
+                        ev.append(dict(source_type="conversation", interaction_id=e.interaction_id, turn_index=e.turn_index, speaker="Client", excerpt=e.excerpt, role="supporting"))
             rec = dict(memory_id=mid, client_id=client_id, memory_type="semantic", topic=topic, subject=subject, title=f"{subject}: {v.value}",
-                       content=f"{subject.replace('_', ' ')} = {v.value} (valid from {v.valid_from})", value_text=v.value, certainty="confirmed", source_role="System",
+                       content=f"{subject.replace('_', ' ')} = {v.value} (valid from {v.valid_from})", value_text=v.value, certainty="confirmed", source_role=v.creator["speaker_role"],
                        status="active", confidence=0.9, event_date=v.valid_from, valid_from=v.valid_from, version_no=next_no, supersedes_id=prev_id,
                        origin="consolidation", content_hash=h(client_id, slot, next_no, v.value, v.valid_from, n=40))
-            det = dict(slot_key=slot, basis=f"{v.creator['certainty']} episode {v.creator['interaction_id']}.{v.creator['turn_index']}", supporting_episodes=1)
+            det = dict(slot_key=slot, basis=f"{v.creator['certainty']} episode {v.creator['interaction_id']}.{v.creator['turn_index']}; source: {v.creator['speaker_role']} ("
+                                            f"{'client_direct' if v.creator['speaker_role'] == 'Client' else 'advisor_reported_client, client-confirmed'})", supporting_episodes=1)
             _, created = st.insert_memory(rec, det, ev, reason=f"new version {next_no} from {v.creator['memory_id']}", principal=pr)
             if created:
                 out["versions_created"] += 1
@@ -150,6 +162,14 @@ class Consolidator:
             row = st.get(mid)
             if row and row["supporting_episodes"] != 1 + len(v.supports):
                 st.set_semantic_support(mid, 1 + len(v.supports), principal=pr)
+
+    def _attributable(self, eps: list[dict]) -> set:
+        """M1: the advisor-spoken episodes whose cited evidence includes a client-spoken row that confirms them (the only advisor-sourced episodes that may reach semantic memory)."""
+        adv = [e for e in eps if e.get("speaker_role") == "Advisor"]
+        if not adv:
+            return set()
+        evs = self.store.evidence_map([e["memory_id"] for e in adv])
+        return {e["memory_id"] for e in adv if attribution.client_confirms([dict(speaker=x.speaker, excerpt=x.excerpt) for x in evs[e["memory_id"]]], e.get("value_text"))}
 
     @staticmethod
     def _live_chain(stored: list[dict]) -> list[dict]:
@@ -204,12 +224,13 @@ class Consolidator:
                 if tgt:
                     out["relationships"] += st.add_relationship(ep["memory_id"], tgt[-1]["memory_id"], "explores", principal=pr)
             elif ep["certainty"] == "correction":
+                can_replace = ep.get("event_type") not in attribution.NON_CLIENT_EVENTS and (ep.get("speaker_role") in (None, "Client") or ep["memory_id"] in self._attributable([ep]))   # M1
                 earlier = [e for e in slot_eps if _order(e) < _order(ep) and e["memory_id"] != ep["memory_id"]]
                 target = next((e for e in reversed(earlier) if ep["corrects_value"] and e["value_text"] and _same(e["value_text"], ep["corrects_value"])), None)
                 if target:
                     out["relationships"] += st.add_relationship(ep["memory_id"], target["memory_id"], "corrects", f"corrects value {ep['corrects_value']}", principal=pr)
                     # only a wrongly recorded CONFIRMED decision is superseded; explorations and statements stay as they were
-                    if target["certainty"] == "confirmed" and target["status"] == "active":
+                    if can_replace and target["certainty"] == "confirmed" and target["status"] == "active":
                         st.set_status(target["memory_id"], "superseded", "wrongly recorded decision corrected", "consolidation", related=ep["memory_id"], principal=pr)
                         out["superseded_episodes"] += 1
 

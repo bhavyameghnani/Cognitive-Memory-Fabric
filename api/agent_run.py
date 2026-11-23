@@ -12,6 +12,36 @@ def _g(o: Any, name: str, default: Any = None) -> Any:
     return getattr(o, name, default)
 
 
+_AGENTS = (("Planner", "planner"), ("Memory", "memory"), ("Tool Selector", "tool_selector"), ("Report", "report"))
+
+
+def execution_status(res: Any) -> dict:
+    """CONTENT-FREE run status for an answer that is WITHHELD pending approval: which of the four agents ran, how long each took, how many model calls it made, whether the harness
+    allowed or denied each permission check, and the approval category.  Deliberately excludes everything derived from the answer or the data: findings, evidence, memory ids, counts of
+    retrieved memories, tool names or arguments, missing-information text.  Only fixed codes and numbers about the run itself."""
+    timings = _g(res, "timings_ms", {}) or {}
+    harness = _g(res, "harness", None) or {}
+    calls = ((harness.get("budget") or {}).get("llm_calls_by_agent")) or {}
+    tools = _g(res, "tools")
+    agents = []
+    for label, key in _AGENTS:
+        row = dict(agent=label, ran=key in timings, duration_ms=timings.get(key), llm_calls=int(calls.get(key, 0) or 0))
+        if key == "tool_selector":
+            row.update(status=_g(tools, "completion_status"), stop_reason=_g(tools, "stop_reason"))
+        agents.append(row)
+    decisions = harness.get("permission_decisions") or []
+    approval = harness.get("approval") or {}
+    return dict(
+        agents=agents,
+        client_identified=bool(_g(_g(res, "plan"), "client_ids", [])),
+        harness=dict(active=bool(harness), profile=harness.get("profile"), outcome=harness.get("outcome"), degraded=bool(harness.get("degraded_reasons")),
+                     permissions=dict(allowed=sum(1 for d in decisions if d.get("allowed")), denied=sum(1 for d in decisions if not d.get("allowed")),
+                                      denied_codes=sorted({str(d.get("code")) for d in decisions if not d.get("allowed")})),
+                     approval=dict(category=approval.get("category"), status=approval.get("status"))),
+        note="Content-free status of this run. The answer itself, its evidence and the retrieved memories stay withheld until a reviewer approves.",
+    )
+
+
 def build_agent_run(res: Any) -> dict:
     plan, tools, report = _g(res, "plan"), _g(res, "tools"), _g(res, "report")
     cited = {e.memory_id for e in (_g(report, "evidence", []) or []) if _g(e, "memory_id")}
