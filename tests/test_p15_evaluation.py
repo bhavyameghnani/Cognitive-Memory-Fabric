@@ -15,6 +15,8 @@ from harness import compression  # noqa: E402
 from harness.evaluation import p15, p15_corpus  # noqa: E402
 from harness.evaluation.p15_corpus import CATEGORIES, CORPUS, N, V  # noqa: E402
 
+M1_CAUGHT_EARLY = {"f02"}      # corpus cases the M1 boundary refuses (explicitly non-final wording) before any claim matcher is reached
+
 
 @pytest.fixture(scope="module")
 def claims():
@@ -71,7 +73,9 @@ def test_the_shipped_matcher_flags_restore_after_the_before_measurement():
 def test_the_memory_matcher_has_no_false_positive_and_is_never_worse_than_shipped_in_any_category(claims):
     new, old, base = claims["memory_current"], claims["memory_matcher_rules_off"], claims["memory_p141_baseline"]
     assert new["overall"]["fp"] == 0 and new["overall"]["false_positive_rate"] == 0.0 and new["overall"]["precision"] == 1.0
-    assert old["overall"]["fp"] == 6 and base["overall"]["fp"] == 30 and claims["none (no verification)"]["overall"]["fp"] == 43      # the documented before / before-before / no-verification numbers
+    # the documented before / before-before / no-verification numbers.  M1: f02 ("proposes to retire at 63, subject to approval") is now refused by the boundary's finality gate before any
+    # matcher runs, so the rules-off run has 5 false positives instead of 6 (measured: the other two baselines, 30 and 43, are unchanged)
+    assert old["overall"]["fp"] == 6 - len(M1_CAUGHT_EARLY) and base["overall"]["fp"] == 30 and claims["none (no verification)"]["overall"]["fp"] == 43
     assert new["overall"]["fn"] <= old["overall"]["fn"] == 8                                                          # 7 when P1.5 shipped; P1.4.3 adds f05 (a REJECTED value is no longer a current value) to BOTH runs because the lexicon is shared; recorded, not hidden
     for cat in CATEGORIES:                                                                                            # a high aggregate can hide a category: check each one
         assert new["by_category"][cat]["fp"] <= old["by_category"][cat]["fp"] and new["by_category"][cat]["fn"] <= old["by_category"][cat]["fn"], cat
@@ -82,7 +86,7 @@ def test_the_six_false_positives_of_shipped_p142_are_each_fixed_and_stay_fixed(c
     now = {r["id"]: r["actual"] for r in claims["memory_current"]["rows"]}
     was = {r["id"]: r["actual"] for r in claims["memory_matcher_rules_off"]["rows"]}
     for cid in ("c06", "e02", "e09", "f01", "f02", "f10"):
-        assert was[cid] == V and now[cid] == N, cid
+        assert (was[cid] == V or cid in M1_CAUGHT_EARLY) and now[cid] == N, cid                                           # M1 catches f02 earlier (non-final wording), so `was` is N for it
     assert all(now[c.id] == N for c in CORPUS if c.category == "wrong_client" and c.expected == N)                    # foreign / ownerless evidence is never accepted
 
 

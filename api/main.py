@@ -39,7 +39,7 @@ from agents.memory.integrity import Principal  # noqa: E402
 from agents.memory.config import GLOBAL_CLIENT  # noqa: E402
 from agents.memory.store import MemoryStore, to_item  # noqa: E402
 from api import datasource  # noqa: E402
-from api.agent_run import build_agent_run  # noqa: E402
+from api.agent_run import build_agent_run, execution_status  # noqa: E402
 from harness import AuthContext, Harness, HarnessConfig, PermissionDenied, PermissionGate  # noqa: E402
 from harness.approval import ApprovalRequired  # noqa: E402
 from harness.approval_store import ApprovalStoreError, norm_subject  # noqa: E402
@@ -397,7 +397,11 @@ def ask(body: AskBody, request: Request) -> dict:
     except Exception as e:  # LLM down, planner rejected, ...
         raise HTTPException(503, f"{type(e).__name__}: {e}")
     if not getattr(res, "released", True):                    # pending approval: the ONLY representation that may leave the process (no findings, evidence, ids, conflicts, tools)
-        return withheld_view((getattr(res, "harness", None) or {}).get("approval") or {"status": "pending"}, res.plan.request_id)
+        try:
+            execution = execution_status(res)                  # content-free: which agents ran, durations, permission checks (never findings, evidence or ids)
+        except Exception:
+            execution = None
+        return withheld_view((getattr(res, "harness", None) or {}).get("approval") or {"status": "pending"}, res.plan.request_id, execution=execution)
     used: list[str] = []
     for ctx in res.memory.values():
         for group in (ctx.current, ctx.history, ctx.episodes, ctx.procedures, ctx.working, ctx.unresolved):

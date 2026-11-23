@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional
 
-from agents.memory import rules
+from agents.memory import attribution, rules
 from agents.memory.config import CERTAINTY_RANK, EXTRACTION_AGENT, FilterConfig, NUMERIC_TOPICS
 from agents.memory.prompts import EXTRACTION_SYSTEM, build_user_prompt
 from agents.memory.integrity import Principal
@@ -62,6 +62,8 @@ class Decision:
     notes: list[str] = field(default_factory=list)
     confidence: Optional[float] = None      # set by the LLM-first path (measured agreement confidence); None = the rules pipeline's fixed table
     extra_evidence: list[dict] = field(default_factory=list)   # LLM-first: e.g. the client's confirming reply when the content was stated in an earlier turn
+    attribution: str = ""                  # M1: client_direct | advisor_reported_client | advisor_interpretation | system_inference | ambiguous (agents.memory.attribution)
+    needs_review: bool = False              # M1: the policy could not resolve the meaning (abstained to a weaker certainty)
 
     @property
     def kept(self) -> bool:
@@ -239,7 +241,36 @@ def filter_memory_candidates(cands: list[tuple[MemoryCandidate, str]], ctx: Meet
         seen[key] = d
         accepted_excerpts.append((cand.turn_index, rules.norm(excerpt)))
         decisions.append(d)
+    for d in decisions:
+        if d.kept:
+            enforce_policy(d, ctx)         # M1: speaker-conditioned ceiling and finality, downgrade only
     return decisions
+
+
+def enforce_policy(d: Decision, ctx: MeetingContext) -> None:
+    """M1 evidence policy (agents.memory.attribution) on ONE kept decision, in place: the certainty can only go down.  Idempotent, so every producer (rules, LLM-first) and the
+    persistence step may call it again.  The speaker comes from the cited TURN of the data, never from the candidate."""
+    c = d.final
+    if c is None:
+        return
+    row = ctx.turn(c.turn_index) or {}
+    if c.certainty in attribution.STRONG and row.get("speaker") == "Advisor" and not attribution.client_confirms(d.extra_evidence, c.value):
+        conf = attribution.find_client_confirmation(ctx.rows, c.turn_index)        # the client's immediate, unhedged affirmation, cited as supporting evidence
+        if conf is not None and not any(e.get("turn_index") == conf["turn_index"] for e in d.extra_evidence):
+            d.extra_evidence = list(d.extra_evidence) + [conf]
+            d.notes.append(f"client confirmation: turn {conf['turn_index']} ({conf['excerpt'][:40]!r})")
+    v = attribution.assess(c.certainty, row.get("speaker"), c.excerpt, row.get("utterance", ""), d.extra_evidence, d.origin, c.value)
+    d.attribution = v.attribution
+    if v.needs_review and "needs review" not in d.notes:
+        d.notes.append("needs review")
+    d.needs_review = d.needs_review or v.needs_review
+    if v.certainty != c.certainty:
+        d.final = c.model_copy(update=dict(certainty=v.certainty))
+        d.certainty_out, d.decision = v.certainty, "downgraded"
+        d.notes.extend(n for n in v.notes if n not in d.notes)
+        d.reason = "evidence policy: " + "; ".join(v.notes)
+        if d.confidence is not None:
+            d.confidence = min(d.confidence, 0.3)        # a measured bucket confidence no longer describes a claim that was just lowered
 
 
 # ---------------------------------------------------------------------------------------------- stage 4
@@ -248,9 +279,11 @@ def classify_memory(d: Decision) -> Classification:
     assert c is not None
     proposal = bool(c.reusable_procedure and c.speaker_role == "Advisor" and d.origin == "conversation_llm" and rules.PROCEDURE_CUE.search(rules.norm(c.excerpt)))
     numeric_ok = c.value is not None and (c.topic not in NUMERIC_TOPICS or c.value.replace(".", "", 1).isdigit())
+    attr = d.attribution or attribution.classify_attribution(c.speaker_role, c.excerpt, origin=d.origin)
+    client_ok = attr == attribution.CLIENT_DIRECT or (attr == attribution.ADVISOR_REPORTED and attribution.client_confirms(d.extra_evidence, c.value))
     return Classification(buckets=["episodic"] + (["procedural"] if proposal else []), status="unconfirmed" if c.certainty == "unconfirmed" else "active",
-                          event_type=rules.event_type_for(c.certainty), procedure_proposal=proposal,
-                          semantic_eligible=c.certainty in ("confirmed", "correction") and numeric_ok)
+                          event_type=attribution.event_type_for(attr, c.certainty, rules.event_type_for(c.certainty)), procedure_proposal=proposal,
+                          semantic_eligible=c.certainty in ("confirmed", "correction") and numeric_ok and client_ok)
 
 
 def route_memory(cls: Classification) -> list[str]:
@@ -259,16 +292,20 @@ def route_memory(cls: Classification) -> list[str]:
 
 
 # ---------------------------------------------------------------------------------------------- stage 8 (episodic/procedural)
-def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: Classification, model: str, selection_note: str = "", request_id: str = "") -> list[tuple[str, bool]]:
-    """Returns [(memory_id, created)]; created is False when the same memory (content hash) was already stored."""
+def memory_rows(ctx: MeetingContext, d: Decision, cls: Classification, model: str, selection_note: str = "") -> list[tuple]:
+    """[(memory_type, record, details, evidence)] for ONE kept decision, built exactly as they are stored.  Pure (no database access): the direct path inserts them at once
+    (persist_decision) and the staged path (agents/memory/staging.py) keeps them as a PROPOSAL until a human approves it, so both write byte-identical rows."""
+    before = d.final.certainty if d.final is not None else None
+    enforce_policy(d, ctx)          # M1: the ceiling again on exactly what is about to be stored (a Decision may have been built by hand)
+    if d.final is not None and d.final.certainty != before:
+        cls = classify_memory(d)    # status / event type follow the certainty that is actually stored
     c = d.final
     assert c is not None
     # observation time = the CITED turn's own timestamp (identical for every turn of a meeting; per message in an email thread or chat)
     ts = (ctx.turn(c.turn_index) or {}).get("interaction_datetime") or ctx.ts
     ev = [dict(source_type="conversation", interaction_id=ctx.interaction_id, turn_index=c.turn_index, speaker=c.speaker_role, excerpt=c.excerpt, role="primary")]
     ev += [dict(source_type="conversation", interaction_id=ctx.interaction_id, **x) for x in d.extra_evidence]
-    ids: list[tuple[str, bool]] = []
-    who = Principal.service("ingestion", [ctx.client_id], request_id=request_id)      # scope = the client of the verified meeting row
+    rows: list[tuple] = []
     for mtype in route_memory(cls):
         digest = h(ctx.client_id, mtype, ctx.interaction_id, c.turn_index, c.topic, c.subject, rules.norm(c.value or ""), c.certainty, rules.norm(c.excerpt), n=40)
         base = dict(client_id=ctx.client_id, memory_type=mtype, topic=c.topic, subject=c.subject, title=f"{c.topic}: {c.certainty}", content=c.statement, value_text=c.value,
@@ -278,11 +315,21 @@ def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: 
         if mtype == "episodic":
             rec = dict(base, memory_id="MEM-EPI-" + digest[:12], status=cls.status)
             det = dict(interaction_id=ctx.interaction_id, turn_index=c.turn_index, event_ts=ts, speaker_role=c.speaker_role, event_type=cls.event_type,
-                       selection_note=(selection_note + "; " + "; ".join(d.notes))[:400].strip("; "), candidate_id=None)
+                       selection_note=(selection_note + "; attribution=" + (d.attribution or "unknown") + "; " + "; ".join(d.notes))[:400].strip("; "), candidate_id=None)
         else:  # procedural proposal from an advisor turn: never active until a human approves it
             rec = dict(base, memory_id="MEM-PRO-" + digest[:12], status="candidate", valid_from=ts[:10])
             det = dict(procedure_name=c.statement[:80], steps=json.dumps([c.statement]), topics=c.topic, keywords="", approval_status="proposed", approver=None,
                        source_ref=f"{ctx.interaction_id}.{c.turn_index}")
-        mid, created = store.insert_memory(rec, det, ev, reason=f"created from {ctx.interaction_id} turn {c.turn_index} ({d.origin})", principal=who)
+        rows.append((mtype, rec, det, ev))
+    return rows
+
+
+def persist_decision(store: MemoryStore, ctx: MeetingContext, d: Decision, cls: Classification, model: str, selection_note: str = "", request_id: str = "") -> list[tuple[str, bool]]:
+    """Returns [(memory_id, created)]; created is False when the same memory (content hash) was already stored.  DIRECT formation only: in staged mode the integrity boundary refuses the
+    `ingestion` identity (see agents/memory/staging.py) and rows are proposed instead."""
+    who = Principal.service("ingestion", [ctx.client_id], request_id=request_id)      # scope = the client of the verified meeting row
+    ids: list[tuple[str, bool]] = []
+    for mtype, rec, det, ev in memory_rows(ctx, d, cls, model, selection_note):
+        mid, created = store.insert_memory(rec, det, ev, reason=f"created from {ctx.interaction_id} turn {d.final.turn_index} ({d.origin})", principal=who)
         ids.append((mid, created))
     return ids

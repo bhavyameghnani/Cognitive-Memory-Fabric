@@ -170,7 +170,7 @@ class ToolSelector:
             if verdict == "ok" and n >= (limit or self.cfg.max_calls_per_iteration):
                 verdict, msg = "rejected", f"too many calls in one turn (max {limit or self.cfg.max_calls_per_iteration})"
             if verdict == "ok" and executed + len(to_run) >= self.cfg.max_executions:
-                verdict, msg = "rejected", "execution budget exhausted"
+                verdict, msg = "rejected", f"execution budget exhausted ({executed + len(to_run)} of {self.cfg.max_executions} executions used; invalid and repeated calls do not count)"
             if verdict == "ok":
                 batch_keys.add(call_key(c.tool, args, validator.tools[c.tool]["input_schema"]))
                 to_run.append(ex)
@@ -193,6 +193,7 @@ class ToolSelector:
             from schemas.tools import Envelope
             ex.result, ex.status = Envelope.model_validate(res), "success"
             validator.done.add(call_key(ex.tool, ex.arguments, validator.tools[ex.tool]["input_schema"]))
+            validator.record_success(ex.tool, ex.arguments)
         except asyncio.TimeoutError:
             ex.status, ex.error = "timeout", f"no answer within {self.cfg.call_timeout_s:g} s"
         except ToolCallError as e:
@@ -254,7 +255,8 @@ class ToolSelector:
         """Model unavailable on iteration 1: run only the Planner's suggested tools that need nothing but client_id."""
         by = {t["name"]: t for t in catalog}
         calls = [PlannedCall(tool=t, arguments={"client_id": c}, rationale="fallback: tool suggested by the Planner")
-                 for t in plan.required_tools if t in by and set(by[t]["input_schema"].get("required", [])) == {"client_id"} for c in plan.client_ids]
+                 for t in plan.required_tools if t in by and t != SOURCE_TOOL and set(by[t]["input_schema"].get("required", [])) == {"client_id"} for c in plan.client_ids]
+        # get_source_evidence needs a selector (a search phrase or interaction/turn ids) that only discovery or a tool result can supply: a call with client_id alone is never valid
         self.tracer.event(COMPONENT, "fallback", calls=[{"tool": c.tool, "arguments": c.arguments} for c in calls])
         if calls:
             await self._process(calls, 1, validator, state, counter, catalog, limit=self.cfg.max_executions)

@@ -357,13 +357,14 @@ class _EvidenceToolbox(Toolbox):
         a = arguments
         if a.get("entity_id") == "HANG":
             await asyncio.sleep(5)
-        if ("interaction_id" in a or "turn_index" in a) and ("entity_type" in a or "entity_id" in a):
+        if a.get("interaction_id") == "INT-404":                # a well-formed conversation call the service refuses: no such turn
             from agents.tool_selector.toolbox import ToolCallError
             raise ToolCallError(f"no turn {a.get('turn_index')} of {a.get('interaction_id')} for {a['client_id']}")
         return await super().call("get_client_profile", {"client_id": a["client_id"]})
 
 
-MIXED = dict(client_id=R, entity_type="goal", entity_id="GOAL-1", interaction_id="0", turn_index=0)
+MIXED = dict(client_id=R, entity_type="goal", entity_id="GOAL-1", interaction_id="0", turn_index=0)     # mutually exclusive modes: refused BEFORE it runs (tests/test_source_evidence_calls.py)
+FAILS = dict(client_id=R, interaction_id="INT-404", turn_index=9)                                          # well-formed, executes, and the service answers with an error
 ENTITY = dict(client_id=R, entity_type="goal", entity_id="GOAL-1")
 CONVO = dict(client_id=R, interaction_id="INT-1", turn_index=2)
 
@@ -396,7 +397,7 @@ class SourceEvidenceModes(unittest.TestCase):
         self.assertIn("mutually exclusive", llm.calls[0]["system"])
 
     def test_identical_failed_call_not_executed_again(self):
-        st, tb, llm = self.go([decide(call("get_source_evidence", **MIXED)), decide(call("get_source_evidence", **MIXED)), finish()])
+        st, tb, llm = self.go([decide(call("get_source_evidence", **FAILS)), decide(call("get_source_evidence", **FAILS)), finish()])
         self.assertEqual([e.status for e in st.executions], ["error", "rejected"])
         self.assertIn("failed", st.executions[1].error)
         self.assertIn("correct the arguments or choose another tool", st.executions[1].error)
@@ -404,13 +405,13 @@ class SourceEvidenceModes(unittest.TestCase):
         self.assertIn("identical arguments and failed", llm.calls[2]["user"])  # the model is told why
 
     def test_batch_duplicate_of_failing_call_runs_once_then_is_rejected(self):
-        st, tb, _ = self.go([decide(call("get_source_evidence", **MIXED), call("get_source_evidence", **MIXED)),
-                             decide(call("get_source_evidence", **MIXED)), finish()])
+        st, tb, _ = self.go([decide(call("get_source_evidence", **FAILS), call("get_source_evidence", **FAILS)),
+                             decide(call("get_source_evidence", **FAILS)), finish()])
         self.assertEqual([e.status for e in st.executions], ["error", "duplicate", "rejected"])
         self.assertEqual(len(tb.seen), 1)
 
     def test_corrected_call_after_failure_executes(self):
-        st, tb, _ = self.go([decide(call("get_source_evidence", **MIXED)), decide(call("get_source_evidence", **ENTITY)), decide(call("get_source_evidence", **CONVO)), finish()])
+        st, tb, _ = self.go([decide(call("get_source_evidence", **FAILS)), decide(call("get_source_evidence", **ENTITY)), decide(call("get_source_evidence", **CONVO)), finish()])
         self.assertEqual([e.status for e in st.executions], ["error", "success", "success"])
         self.assertEqual(len(tb.seen), 3)
         self.assertEqual(st.completion_status, "complete")
@@ -424,15 +425,17 @@ class SourceEvidenceModes(unittest.TestCase):
     def test_rejected_calls_are_not_recorded_as_failures(self):
         from agents.tool_selector.validator import CallValidator
         from schemas.tools import PlannedCall
-        cat = [{"name": "get_source_evidence", "description": "", "input_schema": {"type": "object", "properties": {"client_id": {"type": "string"}, "entity_type": {"type": "string"}},
-                                                                                   "required": ["client_id"]}}]
+        cat = [{"name": "get_source_evidence", "description": "", "input_schema": {"type": "object", "properties": {"client_id": {"type": "string"}, "entity_type": {"type": "string"}, "entity_id": {"type": "string"},
+                                                                                                         "interaction_id": {"type": "string"}}, "required": ["client_id"]}}]
         v = CallValidator(cat, [K])
         bad = PlannedCall(tool="get_source_evidence", arguments={"client_id": R})   # client not in plan
         self.assertEqual(v.validate(bad, set())[0], "rejected")
         self.assertEqual(v.failed, set())
-        v.record_failure("get_source_evidence", {"client_id": K, "entity_type": ""})   # cleaned arguments produce the same key
-        self.assertEqual(v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K}), set())[0], "rejected")
-        self.assertEqual(v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K, "entity_type": "goal"}), set())[0], "ok")
+        v.record_failure("get_source_evidence", {"client_id": K, "entity_type": "goal", "entity_id": "GOAL-1", "interaction_id": ""})   # cleaned arguments produce the same key
+        again = v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K, "entity_type": "goal", "entity_id": "GOAL-1"}), set())
+        self.assertEqual(again[0], "rejected")
+        self.assertIn("identical arguments and failed", again[1])
+        self.assertEqual(v.validate(PlannedCall(tool="get_source_evidence", arguments={"client_id": K, "entity_type": "goal", "entity_id": "GOAL-2"}), set())[0], "ok")
 
     def test_success_duplicate_and_scope_checks_unchanged(self):
         st, tb, _ = self.go([decide(call("get_source_evidence", **ENTITY)), decide(call("get_source_evidence", **ENTITY),

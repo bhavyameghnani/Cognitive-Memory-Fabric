@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from agents.memory import rules
-from agents.memory.config import CERTAINTY_WEIGHT, RetrievalConfig
+from agents.memory.config import CERTAINTY_WEIGHT, EPISODE_CAP, RetrievalConfig
 from agents.memory.integrity import Principal
 from agents.memory.store import MemoryStore, to_item
 from agents.planner.topics import TOPICS, infer_topics
@@ -55,6 +55,13 @@ def unresolved_items(episodes: list[dict]) -> list[dict]:
     return out
 
 
+def _episode_cap(cfg: RetrievalConfig, plan: ExecutionPlan, topics: list) -> int:
+    """Chronology mode: a HISTORY question about identified topics widens the DEFAULT cap to the whole (bounded) timeline.  A caller that set its own episode_cap keeps it."""
+    if plan.task_type == "history" and topics and cfg.episode_cap == EPISODE_CAP:
+        return max(cfg.episode_cap, cfg.chronology_episode_cap)
+    return cfg.episode_cap
+
+
 def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, request_id: str, cfg: Optional[RetrievalConfig] = None,
                      as_of: Optional[str] = None, session_id: Optional[str] = None) -> MemoryContext:
     cfg = cfg or RetrievalConfig()
@@ -93,7 +100,8 @@ def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, re
     omitted = 0
     if "episodic" in cats and not (scan_all):
         pool = [e for e in all_eps if e["status"] in ("active", "unconfirmed") or (history_wanted and e["status"] == "superseded")]
-        ranked = sorted(pool, key=lambda r: -relevance(r, kw))[: cfg.episode_cap]
+        cap = _episode_cap(cfg, plan, topics)                                                                         # chronology mode: the topic's whole timeline, not the 8 most relevant
+        ranked = sorted(pool, key=lambda r: -relevance(r, kw))[: cap]
         ep_rows = sorted(ranked, key=_ord)
         omitted = len(pool) - len(ep_rows)
     unres = unresolved_items([e for e in all_eps if e["status"] != "superseded"])[: cfg.unresolved_cap]
@@ -143,9 +151,54 @@ def retrieve_context(store: MemoryStore, plan: ExecutionPlan, client_id: str, re
         ctx.contradictions.append(f"review required ({c['kind']}): {c['detail'] or 'two memories disagree'} [memories {c['memory_id']} / {c['other_memory_id']}; open conflict {c['conflict_id']}]")
     ctx.contradictions = list(dict.fromkeys(ctx.contradictions))
     if omitted:
-        ctx.notes.append(f"{omitted} further episode(s) omitted (cap {cfg.episode_cap}); narrow the topic or period to see them")
+        ctx.notes.append(f"{omitted} further episode(s) omitted (cap {_episode_cap(cfg, plan, topics)}); narrow the topic or period to see them")
     for r in rows_all:
         if r["memory_type"] in ("episodic", "semantic") and rules.CONDITIONAL_ON_CLOSING.search(r["content"] + " " + " ".join(e.excerpt for e in ev.get(r["memory_id"], []))):
             ctx.notes.append(f"{r['memory_id']}: stated as conditional on the sale closing; it is not a current asset")
     ctx.notes = list(dict.fromkeys(ctx.notes))
     return ctx
+
+
+
+# ------------------------------------------------------------------------------------------------------------------- chronology anchors
+def chronology_anchors(contexts: dict, topics: Optional[list] = None) -> list[dict]:
+    """Where in the SOURCE conversations the stored memory of a topic says its history is anchored, so the Tool Selector retrieves the right source turns within its fixed budget.
+
+    Pure function of what the Memory Orchestrator already retrieved (no new store access).  The memory is only a POINTER here: the report quotes the original source turn, never the memory's
+    stored excerpt.  Roles, in the order the Tool Selector ranks them:
+      version_change   a stored semantic version cites this turn (the chain of recorded values is anchored on these turns)
+      clarification    a CLIENT episode that is exploratory / unconfirmed / hypothetical / a correction and follows an ADVISOR-sourced confirmed episode of the same topic
+      client_decision  a client-spoken confirmed episode
+      episode          any other episode of the topic
+    Each anchor: {interaction_id, turn_index, date, role, topic, value, speaker_role, certainty}.
+    """
+    out: dict[tuple, dict] = {}
+    rank = {"version_change": 0, "clarification": 1, "client_decision": 2, "episode": 3}
+
+    def put(m, role: str, date: Optional[str]) -> None:
+        for ev in (m.evidence[:1] if m.evidence else []):
+            key = (ev.interaction_id, ev.turn_index)
+            cur = out.get(key)
+            if cur is None or rank[role] < rank[cur["role"]]:
+                out[key] = dict(interaction_id=ev.interaction_id, turn_index=ev.turn_index, date=(date or m.event_date or m.valid_from or ""), role=role, topic=m.topic,
+                                value=m.value_text, speaker_role=m.source_role, certainty=m.certainty)
+
+    for ctx in (contexts or {}).values():
+        want = set(topics or ctx.topics or [])
+        in_topic = lambda m: not want or m.topic in want  # noqa: E731
+        for m in list(ctx.history) + list(ctx.current):
+            if in_topic(m) and m.memory_type == "semantic":
+                put(m, "version_change", m.valid_from)
+        eps = sorted((m for m in ctx.episodes if in_topic(m)), key=lambda m: (m.event_date or "", m.evidence[0].turn_index if m.evidence else 0))
+        advisor_confirmed: dict[str, str] = {}
+        for m in eps:
+            if m.source_role == "Advisor" and m.certainty in ("confirmed", "correction"):
+                advisor_confirmed[m.topic] = m.event_date or ""
+            if m.source_role == "Client" and (m.certainty in ("exploratory", "hypothetical", "unconfirmed", "correction") or m.corrects_value) and m.topic in advisor_confirmed \
+                    and (m.event_date or "") >= advisor_confirmed[m.topic]:
+                put(m, "clarification", m.event_date)
+            elif m.source_role == "Client" and m.certainty in ("confirmed", "correction"):
+                put(m, "client_decision", m.event_date)
+            else:
+                put(m, "episode", m.event_date)
+    return sorted(out.values(), key=lambda a: (a["date"], a["interaction_id"], a["turn_index"]))

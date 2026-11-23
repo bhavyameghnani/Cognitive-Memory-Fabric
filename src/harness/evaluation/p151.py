@@ -42,7 +42,7 @@ def derived_verdict(c: Case15) -> str:
         return N
     idx = max(i for (_, i) in run.conv.rows)
     rec = dict(memory_id="SEM-" + c.id, client_id=c.client, memory_type="semantic", topic="retirement_age", subject="derived", title="t", content="retirement age = " + (c.value or ""),
-               value_text=c.value or None, certainty="confirmed", status="active", origin="consolidation", content_hash="sem" + c.id, event_date="2026-06-01", valid_from="2026-06-01", version_no=1)
+               value_text=c.value or None, certainty="confirmed", source_role="Client", status="active", origin="consolidation", content_hash="sem" + c.id, event_date="2026-06-01", valid_from="2026-06-01", version_no=1)
     ev = dict(source_type="conversation", interaction_id="INT-P15", turn_index=idx, speaker="Client", excerpt=c.evidence)
     try:
         run.store.insert_memory(rec, dict(slot_key="retirement_age|derived", basis="b", supporting_episodes=1), [ev], principal=Principal.service("consolidation", [c.client]))
@@ -168,7 +168,7 @@ def run_scenarios() -> list:
     unver = w.store.get(_fabricated(w))
     try:
         w.store.insert_memory(dict(memory_id="SEM-D70", client_id=K, memory_type="semantic", topic="liquidity_reserve", subject="eval_derived", title="t", content="reserve = 70", value_text="70",
-                                   certainty="confirmed", status="active", origin="consolidation", content_hash="d70", event_date="2026-05-01", valid_from="2026-05-01", version_no=1),
+                                   certainty="confirmed", source_role="Client", status="active", origin="consolidation", content_hash="d70", event_date="2026-05-01", valid_from="2026-05-01", version_no=1),
                               dict(slot_key="liquidity_reserve|eval_derived", basis="b", supporting_episodes=1), [dict(EVD)], principal=Principal.service("consolidation", [K]))
         dv = w.store.get("SEM-D70")["verification"]
     except MemoryWriteRejected as ex:

@@ -32,7 +32,7 @@ EV = dict(source_type="conversation", interaction_id="INT-090", turn_index=2, sp
 
 def mk(mid, topic="retirement_age", subject="retirement_age", **kw):
     r = dict(memory_id=mid, client_id=K, memory_type="semantic", topic=topic, subject=subject, title="t", content="retirement age = 63", value_text="63", certainty="confirmed",
-             status="active", origin="consolidation", content_hash=mid, event_date="2026-05-01", valid_from="2026-05-01", version_no=50)
+             source_role="Client", status="active", origin="consolidation", content_hash=mid, event_date="2026-05-01", valid_from="2026-05-01", version_no=50)
     r.update(kw)
     return r
 
@@ -174,7 +174,7 @@ def test_an_existing_p142_database_is_migrated_to_the_canonical_index(tmp_path):
     s.init()
     assert s.integrity_ready()
     assert s.query("SELECT 1 AS x FROM sqlite_master WHERE name='uq_active_semantic_slot_canonical'") and not s.query("SELECT 1 AS x FROM sqlite_master WHERE name='uq_active_semantic_slot'")
-    assert int(s.query("PRAGMA user_version")[0]["user_version"]) == 123
+    assert int(s.query("PRAGMA user_version")[0]["user_version"]) == 130
     s.close()
 
 

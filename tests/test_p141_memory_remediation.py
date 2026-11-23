@@ -17,7 +17,7 @@ from agents.memory.integrity import PROCEDURES_FILE, Principal, _h, classify_tem
 from agents.memory.store import MemoryStore  # noqa: E402
 from test_memory_support import CONV, K090_T2, KENJI, KENJI_MEETINGS, KENJI_SCRIPT, REBECCA, make  # noqa: E402
 from test_p0_security import bearer, first_episode, world  # noqa: E402,F401  (the real-app fixture)
-from test_p14_memory_integrity import (EDET, KEV, KEV2, KI, KP, RDET, REV, RI, RP, TURNS, at, erec, put, rig, row)  # noqa: E402
+from test_p14_memory_integrity import (EDET, KEV, KEV2, KI, KP, RDET, REV, RI, RP, TURNS, at, confirmed, erec, put, rig, row)  # noqa: E402
 
 CP = Principal.service("consolidation", [KENJI], request_id="REQ-141")
 SDET = dict(slot_key="retirement_age|retirement_age", basis="test", supporting_episodes=1)
@@ -27,7 +27,7 @@ NEWER_EV = dict(source_type="conversation", interaction_id="INT-149", turn_index
 
 def srec(mid, value="63", **kw):
     base = dict(memory_id=mid, client_id=KENJI, memory_type="semantic", topic="retirement_age", subject="retirement_age", title=f"retirement_age: {value}",
-                content=f"retirement age = {value} (valid from 2026-05-01)", value_text=value, certainty="confirmed", source_role="System", status="active", confidence=0.9,
+                content=f"retirement age = {value} (valid from 2026-05-01)", value_text=value, certainty="confirmed", source_role="Client", status="active", confidence=0.9,
                 event_date="2026-05-01", valid_from="2026-05-01", version_no=1, supersedes_id=None, origin="consolidation", content_hash=mid)
     base.update(kw)
     return base
@@ -95,7 +95,7 @@ def test_h1_newer_conflicting_evidence_is_recorded_as_a_review_requirement_and_n
     orch, store, old, cor = _corrected_world()
     ev = dict(source_type="conversation", interaction_id="INT-149", turn_index=3, speaker="Advisor", excerpt=LATER_65)
     mid, created = store.insert_memory(erec("LATER", h="later", content=LATER_65, value_text="65", event_date="2026-06-30", source_role="Advisor"),
-                                       dict(interaction_id="INT-149", turn_index=3, event_ts="2026-06-30T08:00:00", speaker_role="Advisor", event_type="decision"), [ev], principal=KI)
+                                       dict(interaction_id="INT-149", turn_index=3, event_ts="2026-06-30T08:00:00", speaker_role="Advisor", event_type="decision"), confirmed([ev]), principal=KI)
     assert created and row(store, "LATER")["verification"] == "verified"
     out = orch.consolidator.consolidate_client(KENJI)
     assert out.get("conflicts_recorded") == 1
@@ -165,13 +165,13 @@ def test_h2_every_mutation_path_refuses_a_missing_principal_before_looking_at_th
 @pytest.mark.parametrize("actor", ["mallory", "system", "admin", "Kenji Tanaka", "consolidation", "ttl_expiry"])
 def test_h2_an_actor_string_is_not_an_identity(actor):
     store, _ = _two_rows()
-    victim = store.insert_memory(erec("R9", client=REBECCA, h="r9", content="decline", event_date=RDET["event_ts"][:10]), dict(RDET), [REV], principal=RI)[0]
+    victim = store.insert_memory(erec("R9", client=REBECCA, h="r9", content="decline", event_date=RDET["event_ts"][:10], source_role="Advisor"), dict(RDET), confirmed([REV]), principal=RI)[0]
     before = counts(store)
     with pytest.raises(ScopeDenied) as e:
         store.set_status(victim, "expired", "gone", actor)                                       # the pre-P1.4.1 legacy call shape
     assert e.value.code == "missing_principal"
     with pytest.raises(ScopeDenied):
-        store.insert_memory(erec("R10", client=REBECCA, h="r10"), dict(RDET), [REV], actor=actor)
+        store.insert_memory(erec("R10", client=REBECCA, h="r10", source_role="Advisor"), dict(RDET), confirmed([REV]), actor=actor)
     with pytest.raises(ScopeDenied):
         store.add_relationship(victim, victim, "related_to", principal=None)
     assert counts(store) == before and row(store, victim)["status"] == "active"
@@ -378,7 +378,7 @@ def test_h3_missing_or_ambiguous_evidence_never_becomes_verified():
 def _world2():
     store, log, _ = rig()
     put(store, "K1")
-    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RDET["event_ts"][:10]), dict(RDET), [REV], principal=RI)
+    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RDET["event_ts"][:10], source_role="Advisor"), dict(RDET), confirmed([REV]), principal=RI)
     return store, log
 
 
@@ -388,7 +388,7 @@ def test_h4_a_cross_client_or_nonexistent_supersedes_id_is_refused_identically_a
     errs = []
     for ref in ("K1", "NO-SUCH-MEMORY"):                                                              # K1 is Kenji's; the writer is Rebecca's ingestion service
         with pytest.raises(MemoryWriteRejected) as e:
-            store.insert_memory(erec("R2", client=REBECCA, h="r2", content="decline", event_date=RDET["event_ts"][:10], supersedes_id=ref), dict(RDET), [REV], principal=RI)
+            store.insert_memory(erec("R2", client=REBECCA, h="r2", content="decline", event_date=RDET["event_ts"][:10], supersedes_id=ref, source_role="Advisor"), dict(RDET), confirmed([REV]), principal=RI)
         errs.append((type(e.value).__name__, e.value.code, e.value.message))
     assert errs[0] == errs[1] and errs[0][1] == "reference_not_found"
     assert "FOREIGN" not in str(errs) and "UNIQUE" not in str(errs) and store.count("memory_records") == n and store.get("R2") is None
@@ -558,7 +558,7 @@ def test_m3_ordinary_callers_cannot_change_the_schema_through_execute_or_query(s
     assert triggers == {r["name"] for r in store.query("SELECT name FROM sqlite_master WHERE type='trigger'")} and store.integrity_ready()
     with pytest.raises(sqlite3.IntegrityError):
         store.execute("UPDATE {S}memory_records SET status='expired' WHERE memory_id='M1'")                     # and the guard is still live
-    assert store.query("PRAGMA user_version")[0]["user_version"] == 123                                          # reading a pragma stays possible
+    assert store.query("PRAGMA user_version")[0]["user_version"] == 130                                          # reading a pragma stays possible
 
 
 def test_m3_a_statement_prepared_during_maintenance_cannot_be_replayed_by_an_application_call():

@@ -122,7 +122,7 @@ def _derived_status(claim, source, derived_value="63"):
     idx = max(i for (_, i) in run.conv.rows)
     mid = "SEM-G"
     rec = dict(memory_id=mid, client_id=K, memory_type="semantic", topic="retirement_age", subject="g", title="t", content="retirement age = " + derived_value, value_text=derived_value,
-               certainty="confirmed", status="active", origin="consolidation", content_hash=mid, event_date="2026-06-01", valid_from="2026-06-01", version_no=1)
+               certainty="confirmed", source_role="Client", status="active", origin="consolidation", content_hash=mid, event_date="2026-06-01", valid_from="2026-06-01", version_no=1)
     ev = dict(source_type="conversation", interaction_id="INT-P15", turn_index=idx, speaker="Client", excerpt=source)
     run.store.insert_memory(rec, dict(slot_key="retirement_age|g", basis="b", supporting_episodes=1), [ev], principal=Principal.service("consolidation", [K]))
     return ep, run.store.get(mid)["verification"], run

@@ -73,7 +73,8 @@ class EmailIngestTests(unittest.TestCase):
         out = o.ingest_meeting("THR-001")
         self.assertEqual(out["stored"], 1)
         ep = store.records(SOFIA, "episodic")
-        self.assertEqual([(e["event_date"], e["certainty"]) for e in ep], [("2026-04-13", "correction")])
+        # M1: the advisor's own email correction ("my January 26 email was wrong") has no client-spoken confirmation, so it is kept, dated by its own message and fully cited, at most `unconfirmed`
+        self.assertEqual([(e["event_date"], e["certainty"]) for e in ep], [("2026-04-13", "unconfirmed")])
         ev = store.evidence_map([ep[0]["memory_id"]])[ep[0]["memory_id"]]
         self.assertEqual([(e.interaction_id, e.turn_index) for e in ev], [("THR-001", 4)])
 

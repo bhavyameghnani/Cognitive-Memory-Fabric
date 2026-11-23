@@ -214,6 +214,18 @@ def build_world(kenji_meetings=None, rebecca: bool = False):
     return mem
 
 
+def _confirmed(evidence: list) -> list:
+    """M1 (agents/memory/attribution.py): an advisor recap is client-confirmed only when a client-spoken row confirms it.  The real data has the client's reply as the NEXT turn, so the
+    seeded evaluation memories cite it as supporting evidence, exactly as ingestion does."""
+    from services.conversations import shared
+    conv, out = shared(), list(evidence)
+    for e in evidence:
+        nxt = conv.turn(e["interaction_id"], int(e["turn_index"]) + 1)
+        if e.get("speaker") == "Advisor" and nxt and nxt["speaker"] == "Client":
+            out.append(dict(source_type="conversation", interaction_id=e["interaction_id"], turn_index=nxt["turn_index"], speaker="Client", excerpt=nxt["utterance"], role="supporting"))
+    return out
+
+
 def corrected_world(with_conflict: bool = True):
     """Scenario-4 world: ingest + consolidate, a person corrects the active semantic value (65 -> 63, INT-090 turn 11), the meeting that states 63 is ingested AFTER the correction,
     then (optionally) a later turn restating 65 arrives.  Returns (world, correction_memory_id)."""
@@ -226,7 +238,7 @@ def corrected_world(with_conflict: bool = True):
     if with_conflict:
         st.insert_memory(dict(memory_id="MEM-EVAL-LATER", client_id=K, memory_type="episodic", topic="retirement_age", subject="retirement_age", content=LATER_65, value_text="65",
                               certainty="confirmed", source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-06-30", content_hash="eval-later"),
-                         dict(DET_LATER), [EV_LATER], principal=Principal.service("ingestion", [K]))
+                         dict(DET_LATER), _confirmed([EV_LATER]), principal=Principal.service("ingestion", [K]))
         mem.consolidator.consolidate_client(K)
     return mem, cor
 
@@ -411,7 +423,7 @@ def evaluate_temporal() -> dict:
     forged = None
     try:
         st.insert_memory(dict(memory_id="MEM-EVAL-F", client_id=K, memory_type="semantic", topic="retirement_age", subject="eval_slot", title="t", content="retirement age = 63", value_text="63",
-                              certainty="confirmed", status="active", origin="consolidation", content_hash="evalf", event_date="2026-05-01", valid_from="1999-01-01", version_no=9),
+                              certainty="confirmed", source_role="Client", status="active", origin="consolidation", content_hash="evalf", event_date="2026-05-01", valid_from="1999-01-01", version_no=9),
                          dict(slot_key="retirement_age|eval_slot", basis="b", supporting_episodes=1),
                          [dict(source_type="conversation", interaction_id="INT-090", turn_index=2, speaker="Client", excerpt="We've decided: 63.")], principal=Principal.service("consolidation", [K]))
     except MemoryWriteRejected as e:
@@ -426,7 +438,7 @@ def evaluate_temporal() -> dict:
     check("human_correction_preservation", "the correction is still the one active version after 3 consolidations",
           row["status"] == "active" and [r["memory_id"] for r in cst.records(K, "semantic", statuses=["active"], topics=["retirement_age"])] == [cor])
     cst.insert_memory(dict(memory_id="MEM-EVAL-LATER", client_id=K, memory_type="episodic", topic="retirement_age", subject="retirement_age", content=LATER_65, value_text="65", certainty="confirmed",
-                           source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-06-30", content_hash="eval-later"), dict(DET_LATER), [EV_LATER],
+                           source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-06-30", content_hash="eval-later"), dict(DET_LATER), _confirmed([EV_LATER]),
                       principal=Principal.service("ingestion", [K]))
     for _ in range(3):
         cw.consolidator.consolidate_client(K)
@@ -486,7 +498,7 @@ def evaluate_cache() -> dict:
     st = cw.store
     dv0 = data_version(st)
     st.insert_memory(dict(memory_id="MEM-EVAL-LATER", client_id=K, memory_type="episodic", topic="retirement_age", subject="retirement_age", content=LATER_65, value_text="65", certainty="confirmed",
-                          source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-06-30", content_hash="eval-later"), dict(DET_LATER), [EV_LATER],
+                          source_role="Advisor", status="active", origin="conversation_llm", event_date="2026-06-30", content_hash="eval-later"), dict(DET_LATER), _confirmed([EV_LATER]),
                      principal=Principal.service("ingestion", [K]))
     dv1 = data_version(st)
     cw.consolidator.consolidate_client(K)

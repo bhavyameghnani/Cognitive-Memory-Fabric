@@ -82,7 +82,8 @@ def test_a_pristine_database_has_exactly_the_canonical_triggers(pristine):
     st = _open(path)
     assert len(defs) == 40 and st.integrity_ready() and st.trigger_mismatches() == {}
     have = {r["name"] for r in st.query("SELECT name FROM sqlite_master WHERE type='trigger'")}
-    assert have == set(defs)                                                        # nothing missing, nothing unexpected
+    assert have == set(defs) | set(st._proposal_trigger_definitions())             # nothing missing, nothing unexpected (M2 adds the staged-formation triggers, checked by their own set)
+    assert st.proposal_trigger_mismatches() == {}
     st.close()
 
 

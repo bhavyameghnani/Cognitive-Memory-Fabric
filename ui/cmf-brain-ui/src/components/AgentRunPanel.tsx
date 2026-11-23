@@ -8,6 +8,28 @@ const GROUP_LABEL: Record<string, string> = { current: 'current facts', history:
 
 const fmt = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`);
 
+/** What the Report agent did with its draft, in plain words: the model's output passes safety checks and can be cut down, so "ran" and "has findings" are different things. */
+const len = (v: unknown) => (Array.isArray(v) ? v.length : 0);
+const ReportOutcome: React.FC<{ validation: Record<string, unknown> }> = ({ validation: v }) => {
+  const called = v.model_called === true;
+  const demoted = len(v.findings_demoted), dropped = len(v.findings_dropped), rejected = len(v.claims_rejected);
+  const he = (v.harness_evidence ?? {}) as Record<string, unknown>;
+  const withheld = len(he.withheld);
+  const lines: string[] = [];
+  lines.push(called ? `Report agent ran and called the model${v.mode ? ` (mode: ${String(v.mode).replace(/_/g, ' ')})` : ''}.` : `Report agent ran without calling the model${v.mode ? ` (mode: ${String(v.mode).replace(/_/g, ' ')})` : ''}.`);
+  if (demoted) lines.push(`${demoted} drafted finding${demoted > 1 ? 's were' : ' was'} moved out of the findings because they cite unverified memories.`);
+  if (dropped) lines.push(`${dropped} finding${dropped > 1 ? 's were' : ' was'} dropped (not supported by the evidence).`);
+  if (rejected) lines.push(`${rejected} claim${rejected > 1 ? 's were' : ' was'} rejected by claim validation.`);
+  if (withheld) lines.push(`${withheld} statement${withheld > 1 ? 's were' : ' was'} withheld by the evidence verifier.`);
+  if (typeof v.summary_replaced === 'string' && v.summary_replaced.trim()) lines.push(`The drafted summary was replaced by a safe one:${v.summary_replaced}`);
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2">
+      <h5 className="text-[11px] font-semibold text-slate-300 mb-1">Report agent outcome</h5>
+      <ul className="space-y-0.5 text-[11px] text-slate-400 list-disc list-inside">{lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
+    </div>
+  );
+};
+
 export const AgentRunPanel: React.FC<{ run: AgentRun; onSelectMemory: (id: string) => void }> = ({ run, onSelectMemory }) => {
   const total = Math.max(run.timings_ms.total ?? 0, 1);
   const groups = Object.entries(run.memory.by_group).filter(([, n]) => n > 0);
@@ -30,6 +52,8 @@ export const AgentRunPanel: React.FC<{ run: AgentRun; onSelectMemory: (id: strin
           {STAGES.map(([k, label]) => <div key={k} className="text-[10px]"><p className="text-slate-400">{label}</p><p className="font-mono text-slate-200">{fmt(run.timings_ms[k] ?? 0)}</p></div>)}
         </div>
       </div>
+
+      <ReportOutcome validation={run.report.validation} />
 
       <div>
         <h5 className="text-[11px] font-semibold text-slate-300 mb-1">Plan{run.plan.task_type ? ` · ${run.plan.task_type}` : ''}</h5>

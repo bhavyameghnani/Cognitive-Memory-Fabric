@@ -133,7 +133,10 @@ class PegOpenItemsTests(unittest.TestCase):
         self.assertNotIn("brian_loan", {u.subject for u in ctx.unresolved})          # the loan was decided (declined)
         ingest(orch, ["INT-125"])
         ctx = orch.retrieve(plan("What is still unresolved for Peg?", [PEG], [], task_type="followup_review", rid="REQ-2"))[PEG]
-        self.assertEqual([(u.subject, u.certainty) for u in ctx.unresolved], [("brian_equipment", "exploratory")])     # Maplewood now settled, Brian equipment still open
+        # Maplewood is settled by the client-confirmed decision (INT-125 turn 13), Brian's equipment is still open.  M1: the rule safety net also finds the ADVISOR's re-statement at turn 5
+        # ("I'll record that you've decided against Maplewood..."), which no client reply follows; it used to be stored as a second CONFIRMED decision and is now an unconfirmed,
+        # advisor-reported housing item.  (Known limitation: it is not yet merged into the client's own earlier statement at turn 4.)
+        self.assertEqual([(u.subject, u.certainty) for u in ctx.unresolved], [("brian_equipment", "exploratory"), ("housing_property", "unconfirmed")])
         self.assertEqual([e for e in ctx.episodes], [])
 
     def test_peg_pension_survivor_amount_stays_open(self):
@@ -188,17 +191,18 @@ class GraceSurvivorCorrectionTests(unittest.TestCase):
 
 
 class CorrectionSupersedesWrongDecisionTests(unittest.TestCase):
-    """Rebecca INT-058: 'my earlier note that you had accepted the Lakeshore offer was wrong'.  The wrongly recorded decision itself is not in the CSV, so it is
-    seeded directly from the real INT-058 turn 3 wording; the correction goes through the normal pipeline."""
+    """Rebecca INT-058: 'my earlier note that you had accepted the Lakeshore offer was wrong'.  The wrongly recorded decision itself is not in the CSV.  M1: an advisor's note that
+    'you had accepted' is an advisor-reported decision (at most unconfirmed), so the over-claimed CONFIRMED 'accepted' is seeded from the CLIENT's own turn-4 sentence ("I said I was
+    inclined to accept."); the correction (the advisor's turn 13, confirmed by the client's 'Correct.') goes through the normal pipeline."""
 
     def test_confirmed_decision_is_superseded_only_by_a_correction_of_that_value(self):
         orch, store, _, _ = make({"INT-058": [cand(13, "I've corrected my own record: my earlier note that you had accepted the Lakeshore offer was wrong; you are inclined to accept and have not signed.",
                                                     "business_sale", "correction", None, subject="lakeshore_offer", role="Advisor", corrects="accepted")]})
-        ex = "After our last meeting, my note says you had accepted the Lakeshore offer."
+        ex = "I said I was inclined to accept."
         rec = dict(memory_id="MEM-EPI-seeded0001", client_id=REBECCA, memory_type="episodic", topic="business_sale", subject="lakeshore_offer", content="accepted the Lakeshore offer",
-                   value_text="accepted", certainty="confirmed", source_role="Advisor", status="active", origin="conversation_llm", event_date=CONV.turn("INT-058", 3)["interaction_datetime"][:10], content_hash="seed1")
-        det = dict(interaction_id="INT-058", turn_index=3, event_ts=CONV.turn("INT-058", 3)["interaction_datetime"], speaker_role="Advisor", event_type="decision")
-        store.insert_memory(rec, det, [dict(source_type="conversation", interaction_id="INT-058", turn_index=3, speaker="Advisor", excerpt=ex)], principal=svc("ingestion", REBECCA))
+                   value_text="accepted", certainty="confirmed", source_role="Client", status="active", origin="conversation_llm", event_date=CONV.turn("INT-058", 4)["interaction_datetime"][:10], content_hash="seed1")
+        det = dict(interaction_id="INT-058", turn_index=4, event_ts=CONV.turn("INT-058", 4)["interaction_datetime"], speaker_role="Client", event_type="decision")
+        store.insert_memory(rec, det, [dict(source_type="conversation", interaction_id="INT-058", turn_index=4, speaker="Client", excerpt=ex)], principal=svc("ingestion", REBECCA))
         orch.ingest_meeting("INT-058")
         self.assertEqual(store.get("MEM-EPI-seeded0001")["status"], "superseded")
         events = store.lifecycle_events("MEM-EPI-seeded0001")

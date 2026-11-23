@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from agents.memory import ingest as ing
-from agents.memory import llm_first
+from agents.memory import llm_first, staging
 from agents.memory import retrieve as ret
 from agents.memory.config import GLOBAL_CLIENT, OrchestratorConfig
 from agents.memory.consolidate import Consolidator
@@ -43,12 +43,15 @@ class MemoryOrchestrator:
         self.write_validator = write_validator          # optional harness MemoryWriteValidator (independent pre-persistence check)
         self.verifier_llm = llm_first.make_verifier_llm(llm)   # used only when cfg.ingest_mode == "llm_first"
         self.consolidator = Consolidator(self.store, validator=write_validator)
+        self.proposals = staging.Proposals(self.store)           # M2: staged formation (proposals -> approval -> promotion)
         # durable-write audit events go to this orchestrator's CURRENT tracer (the pipeline swaps it per request, so it is read lazily)
         self.store.boundary.emit_fn = lambda component, name, **payload: self.tracer.event(component, name, **payload)
 
     # ------------------------------------------------------------------ setup
     def init(self, reset: bool = False) -> dict:
         self.store.init(reset=reset)
+        if self.cfg.formation_mode == "staged":
+            self.proposals.set_staged("memory orchestrator init")     # one-way: the ingestion identity can no longer write memories directly into this store
         return {"procedures_loaded": self.load_curated_procedures()}
 
     def load_curated_procedures(self) -> int:
@@ -95,7 +98,16 @@ class MemoryOrchestrator:
                 if d.kept and self.write_validator is not None:   # independent re-check; may reject or downgrade, never upgrade
                     self.write_validator.apply(d, self.write_validator.review(d, ctx))
                 mem_id, decision, reason = None, d.decision, d.reason
-                if d.kept:
+                if d.kept and self.proposals.formation_mode() == "staged":
+                    # M2: extraction PROPOSES.  The proposal is validated and submitted for human approval; no production memory is written until a person approves and `promote` runs.
+                    rid = getattr(self.tracer, "request_id", "") or ""
+                    pids = self.proposals.propose(ctx, d, ing.classify_memory(d), model=getattr(self.llm, "model", "unknown"), selection_note="selected: " + why.get(d.final.turn_index, "rule"),
+                                                  request_id=rid, extraction=dict(ingest_mode=self.cfg.ingest_mode, verifier=getattr(self.verifier_llm, "model", "")))
+                    who = Principal.service("ingestion", [ctx.client_id], request_id=rid)
+                    states = [self.proposals.advance(p, who) for p in pids]
+                    reason = f"staged: proposal {', '.join(pids)} -> {', '.join(states)}"
+                    kept += 1
+                elif d.kept:
                     cls = ing.classify_memory(d)
                     done = ing.persist_decision(st, ctx, d, cls, getattr(self.llm, "model", "unknown"), "selected: " + why.get(d.final.turn_index, "rule"),
                                                 request_id=getattr(self.tracer, "request_id", "") or "")

@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-from agents.memory import rules
+from agents.memory import attribution, rules
 from agents.memory.config import CERTAINTY_RANK
 from agents.memory.store import EvidenceError
 
@@ -108,6 +108,11 @@ class MemoryWriteValidator:
             elif kind in ("reported_preference", "inference"):
                 out = "unconfirmed"
                 reasons.append(f"a {kind.replace('_', ' ')} is kept as unconfirmed, not as a confirmed fact or constraint")
+        # M1: the SAME evidence policy as extraction (speaker attribution, finality), computed again from the DATA, so this independent check cannot be bypassed by a Decision built elsewhere
+        pv = attribution.assess(out, row["speaker"], c.excerpt, row.get("utterance", ""), d.extra_evidence, d.origin, c.value)
+        if pv.certainty != out:
+            out = pv.certainty
+            reasons.extend(pv.notes)
         if CERTAINTY_RANK.get(out, 0) > CERTAINTY_RANK.get(cin, 0):   # defensive: upgrades are impossible by construction
             out = cin
         return self._done(ctx, d, WriteVerdict("downgrade" if out != cin else "accept", kind, cin, out, reasons))
@@ -131,6 +136,17 @@ class MemoryWriteValidator:
             d.reason = "write validator: " + "; ".join(v.reasons)
 
     # ------------------------------------------------------------------ semantic versions (called by Consolidator)
+    @staticmethod
+    def _client_attributable(ep: dict, store) -> bool:
+        """M1: is the creating episode the client's own statement, or an advisor's account CONFIRMED by a client-spoken evidence row?  (Absent speaker data fails closed.)"""
+        role = ep.get("speaker_role")
+        if role == "Client":
+            return True
+        if role != "Advisor" or store is None:
+            return False
+        evs = store.evidence_map([ep["memory_id"]]).get(ep["memory_id"], [])
+        return attribution.client_confirms([dict(speaker=e.speaker, excerpt=e.excerpt) for e in evs], ep.get("value_text"))
+
     def approve_semantic(self, client_id: str, version, store) -> tuple:
         ep = version.creator
         topic = ep["topic"]
@@ -139,6 +155,8 @@ class MemoryWriteValidator:
             why = f"creating episode is {ep['certainty']}, not confirmed"
         elif ep["status"] != "active":
             why = f"creating episode status is {ep['status']}"
+        elif not self._client_attributable(ep, store):
+            why = "creating episode is not client-attributable: an advisor's account of the client's decision, without client-spoken confirmation, cannot become a semantic value"
         else:
             kind = classify_statement(ep["content"], ep["speaker_role"], ep["certainty"])
             if kind in ("hypothesis", "reported_preference", "inference"):

@@ -18,7 +18,7 @@ from agents.memory.integrity import Principal  # noqa: E402
 from agents.memory.store import MemoryStore  # noqa: E402
 from test_memory_support import CONV, K090_T2, K090_T11, KENJI, REBECCA, make, plan  # noqa: E402
 from test_p0_security import bearer, first_episode, world  # noqa: E402,F401
-from test_p14_memory_integrity import EDET, KEV, KEV2, KI, KP, RI, RP, RDET, REV, RTS, at, erec, put, rig, row  # noqa: E402
+from test_p14_memory_integrity import EDET, KEV, KEV2, KI, KP, RI, RP, RDET, REV, RTS, at, confirmed, erec, put, rig, row  # noqa: E402
 from test_p141_memory_remediation import CP, LATER_65, SDET, _corrected_world, active_semantic, counts, srec  # noqa: E402
 
 D11 = dict(EDET, turn_index=11, speaker_role="Advisor")                  # detail row for the INT-090 turn 11 evidence (KEV2)
@@ -31,7 +31,7 @@ TTL_ALL = Principal.service("ttl_expiry", any_client=True)
 
 def llm(store, mid, content, value, ev=KEV2, det=D11, origin="conversation_llm", **kw):
     """Create an episodic memory with the given STATEMENT and VALUE against the given real turn; returns the stored row."""
-    store.insert_memory(erec(mid, h=mid, origin=origin, content=content, value_text=value, source_role="Advisor", **kw), dict(det), [ev], principal=KI)
+    store.insert_memory(erec(mid, h=mid, origin=origin, content=content, value_text=value, source_role=ev["speaker"], **kw), dict(det), confirmed([ev]), principal=KI)   # M1: source role = cited speaker; an advisor recap cites the client's confirming reply
     return row(store, mid)
 
 
@@ -57,8 +57,10 @@ def test_h1_unsupported_claims_are_stored_unverified_and_cannot_override_a_verif
         iid, turn, speaker, ex, ts, _v = __import__("test_p14_memory_integrity").TURNS["JAN"]
         ev = dict(source_type="conversation", interaction_id=iid, turn_index=turn, speaker=speaker, excerpt=ex)
         det = dict(interaction_id=iid, turn_index=turn, event_ts=ts, speaker_role=speaker, event_type="decision")
-        r = store.insert_memory(erec("BAD", h="bad", content=content, value_text=value, event_date=ts[:10], source_role=speaker), dict(det), [ev], principal=KI)
-        bad = row(store, "BAD")
+        with pytest.raises(MemoryWriteRejected) as refused:        # M1: a 'confirmed' claim that cites a hedged, explicitly non-final source never reaches the store (it used to be stored unverified)
+            store.insert_memory(erec("BAD", h="bad", content=content, value_text=value, event_date=ts[:10], source_role=speaker), dict(det), [ev], principal=KI)
+        assert refused.value.code == "attribution_ceiling" and store.get("BAD") is None
+        return
     else:
         bad = llm(store, "BAD", content, value, ev, det, origin)
     assert bad["verification"] == "unverified", (label, bad["verification_basis"])                          # the PERSISTED state, not just a return code
@@ -106,7 +108,7 @@ def test_h1_an_unsupported_derived_semantic_stays_unverified_even_with_a_verifie
     store, _, _ = rig()
     llm(store, "E63", "You've decided to retire at 63", "63")                                               # verified, INT-090.11: states 63 (and, as the replaced plan, 65; and 62)
     for mid, val, want in (("S63", "63", "verified"), ("S65", "65", "unverified"), ("S62", "62", "unverified"), ("S999", "999", "unverified")):
-        store.insert_memory(srec(mid, val, content_hash=mid + "h", version_no=None, subject=mid.lower()), dict(SDET, slot_key="retirement_age|" + mid.lower()), [KEV2], principal=CP)
+        store.insert_memory(srec(mid, val, content_hash=mid + "h", version_no=None, subject=mid.lower(), source_role="Advisor"), dict(SDET, slot_key="retirement_age|" + mid.lower()), confirmed([KEV2]), principal=CP)
         assert row(store, mid)["verification"] == want, (mid, row(store, mid)["verification_basis"])
 
 
@@ -208,7 +210,7 @@ def test_h3_an_automatic_create_cannot_supersede_a_human_correction_or_compete_w
     n = counts(store)
     for kwargs in (dict(supersedes_id=cor), dict()):                                                          # explicit supersession / a competing version without any reference
         with pytest.raises(MemoryWriteRejected) as e:
-            store.insert_memory(srec("SX", "63", content_hash="sxh", version_no=99, event_date="2026-05-01", valid_from="2026-05-01", **kwargs), dict(SDET), [KEV2], principal=CP)
+            store.insert_memory(srec("SX", "63", content_hash="sxh", version_no=99, event_date="2026-05-01", valid_from="2026-05-01", **dict(dict(source_role="Advisor"), **kwargs)), dict(SDET), confirmed([KEV2]), principal=CP)
         assert e.value.code == "human_correction_protected"
     assert [r["memory_id"] for r in active_semantic(store)] == [cor] and store.get("SX") is None
     assert {k: v for k, v in counts(store).items() if k != "memory_conflicts"} == {k: v for k, v in n.items() if k != "memory_conflicts"}      # nothing partially written
@@ -231,9 +233,9 @@ def test_h3_a_second_active_version_in_a_slot_is_refused_and_a_declared_superses
 
 def test_h3_a_declared_supersession_replaces_the_previous_live_version_in_one_transaction():
     store, _, _ = rig()
-    jan = TURN_JAN = __import__("test_p14_memory_integrity").TURNS["JAN"]
-    at(store, "JAN", "EJ")                                                                                    # verified exploration of 60 (Jan 16)
-    store.insert_memory(srec("V1", "60", content_hash="v1h", version_no=1, event_date="2026-01-16", valid_from="2026-01-16"), dict(SDET),
+    jan = TURN_JAN = __import__("test_p14_memory_integrity").TURNS["P65"]
+    at(store, "P65", "EJ")                                                                                    # verified client statement of 65 (Jan 2)
+    store.insert_memory(srec("V1", "65", content_hash="v1h", version_no=1, event_date="2026-01-02", valid_from="2026-01-02"), dict(SDET),
                         [dict(source_type="conversation", interaction_id=jan[0], turn_index=jan[1], speaker=jan[2], excerpt=jan[3])], principal=CP)
     llm(store, "E63", K090_T2, "63", ev=KEV, det=EDET)
     store.insert_memory(srec("V2", "63", content_hash="v2h", version_no=2, supersedes_id="V1"), dict(SDET), [KEV], principal=CP)
@@ -284,9 +286,9 @@ def test_h4_forged_valid_from_and_valid_to_are_refused_and_a_true_chronology_is_
 
 def test_h4_a_callers_valid_to_cannot_terminate_or_extend_a_fact_through_a_transition():
     store, _, _ = rig()
-    at(store, "JAN", "EJ")
-    jan = __import__("test_p14_memory_integrity").TURNS["JAN"]
-    store.insert_memory(srec("V1", "60", content_hash="v1h", version_no=1, event_date="2026-01-16", valid_from="2026-01-16"), dict(SDET),
+    at(store, "P65", "EJ")
+    jan = __import__("test_p14_memory_integrity").TURNS["P65"]
+    store.insert_memory(srec("V1", "65", content_hash="v1h", version_no=1, event_date="2026-01-02", valid_from="2026-01-02"), dict(SDET),
                         [dict(source_type="conversation", interaction_id=jan[0], turn_index=jan[1], speaker=jan[2], excerpt=jan[3])], principal=CP)
     llm(store, "E63", K090_T2, "63", ev=KEV, det=EDET)
     store.insert_memory(srec("V2", "63", content_hash="v2h", version_no=2, supersedes_id=None, status="unconfirmed"), dict(SDET), [KEV], principal=CP)
@@ -349,10 +351,10 @@ def test_h5_a_semantic_create_that_is_older_than_the_live_version_it_names_is_re
     store, _, _ = rig()
     llm(store, "E63", K090_T2, "63", ev=KEV, det=EDET)
     store.insert_memory(srec("V2", "63", content_hash="v2h", version_no=2), dict(SDET), [KEV], principal=CP)
-    at(store, "JAN", "EJ")
-    jan = __import__("test_p14_memory_integrity").TURNS["JAN"]
+    at(store, "P65", "EJ")
+    jan = __import__("test_p14_memory_integrity").TURNS["P65"]
     with pytest.raises(MemoryWriteRejected) as e:
-        store.insert_memory(srec("V1", "60", content_hash="v1h", version_no=1, supersedes_id="V2", event_date="2026-01-16", valid_from="2026-01-16"), dict(SDET),
+        store.insert_memory(srec("V1", "65", content_hash="v1h", version_no=1, supersedes_id="V2", event_date="2026-01-02", valid_from="2026-01-02"), dict(SDET),
                             [dict(source_type="conversation", interaction_id=jan[0], turn_index=jan[1], speaker=jan[2], excerpt=jan[3])], principal=CP)
     assert e.value.code == "supersession_chronology" and store.get("V1") is None and row(store, "V2")["status"] == "active"
 
@@ -361,11 +363,11 @@ def test_h5_a_semantic_create_that_is_older_than_the_live_version_it_names_is_re
 def test_h6_foreign_same_client_and_unused_ids_never_reveal_a_foreign_memory_through_the_store():
     store, _ = (lambda s: (s, 0))(rig()[0])
     put(store, "K1")
-    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RTS[:10]), dict(RDET), [REV], principal=RI)
+    store.insert_memory(erec("R1", client=REBECCA, h="r1", content="decline", event_date=RTS[:10], source_role="Advisor"), dict(RDET), confirmed([REV]), principal=RI)
     outcomes = []
     for taken in ("R1", "K1"):                                                                                  # Rebecca's writer re-uses an id of ANOTHER client / of her own... K1 is Kenji's, R1 hers
         with pytest.raises(MemoryWriteRejected) as e:
-            store.insert_memory(erec(taken, client=REBECCA, h="zz" + taken, content="decline", event_date=RTS[:10]), dict(RDET), [REV], principal=RI)
+            store.insert_memory(erec(taken, client=REBECCA, h="zz" + taken, content="decline", event_date=RTS[:10], source_role="Advisor"), dict(RDET), confirmed([REV]), principal=RI)
         outcomes.append((type(e.value).__name__, e.value.code, e.value.message))
     assert outcomes[0] == outcomes[1] and "UNIQUE" not in str(outcomes) and "sqlite" not in str(outcomes).lower()
 
@@ -396,7 +398,7 @@ def test_h6_the_api_answers_alike_for_a_foreign_and_a_missing_memory_or_client_a
 # ===================================================================================================== H7: conflicts are visible, and resolved by a person only
 def _conflict_world():
     orch, store, old, cor = _corrected_world()
-    store.insert_memory(erec("LATER", h="later", content=LATER_65, value_text="65", event_date="2026-06-30", source_role="Advisor"), dict(LATER_DET), [LATER_EV], principal=KI)
+    store.insert_memory(erec("LATER", h="later", content=LATER_65, value_text="65", event_date="2026-06-30", source_role="Advisor"), dict(LATER_DET), confirmed([LATER_EV]), principal=KI)
     orch.consolidator.consolidate_client(KENJI)
     cf = [c for c in store.conflicts(KENJI, "open") if c["kind"] == "human_correction_vs_evidence"]
     assert len(cf) == 1
@@ -531,7 +533,7 @@ def test_migration_122_fresh_v121_and_repeated_initialisation(tmp_path):
     url = f"sqlite:///{p.as_posix()}"
     s, _, _ = rig(url)
     put(s, "M1")
-    assert s.query("PRAGMA user_version")[0]["user_version"] == 123 and s.integrity_ready()
+    assert s.query("PRAGMA user_version")[0]["user_version"] == 130 and s.integrity_ready()
     assert s.query("select 1 as x from sqlite_master where name='uq_active_semantic_slot_canonical'") and s.query("select 1 as x from sqlite_master where name='memory_conflict_resolutions'")
     s.close()
     _downgrade_to_121(p)
@@ -539,7 +541,7 @@ def test_migration_122_fresh_v121_and_repeated_initialisation(tmp_path):
     assert not s2.integrity_ready()                                                                              # a v121 database refuses writes until it is migrated ...
     s2.init()
     s2.init()
-    assert s2.integrity_ready() and s2.query("PRAGMA user_version")[0]["user_version"] == 123 and row(s2, "M1")["status"] == "active"       # ... and migrates additively, keeping its data
+    assert s2.integrity_ready() and s2.query("PRAGMA user_version")[0]["user_version"] == 130 and row(s2, "M1")["status"] == "active"       # ... and migrates additively, keeping its data
     assert s2.query("select 1 as x from sqlite_master where name='resolution_no_delete'") and s2.query("select 1 as x from sqlite_master where name='guard_memory_conflict_resolutions_insert'")
     s2.close()
 

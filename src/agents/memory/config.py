@@ -48,6 +48,7 @@ class FilterConfig:
 @dataclass
 class RetrievalConfig:
     episode_cap: int = EPISODE_CAP
+    chronology_episode_cap: int = 40      # a HISTORY question about a topic wants the whole timeline of that topic, in order (still bounded, and the omission is reported)
     unresolved_cap: int = 6
     history_cap: int = 6
     working_ttl_hours: float = WORKING_TTL_HOURS
@@ -59,8 +60,16 @@ def ingest_mode() -> str:
     return m if m in ("rules", "llm_first") else "rules"
 
 
+def formation_mode() -> str:
+    """direct (default, unchanged): extraction writes memories through the integrity boundary.  staged (M2): extraction only PROPOSES; a person approves and a separate identity promotes
+    (agents/memory/staging.py).  CMF_MEMORY_FORMATION_MODE=staged also latches the store: once staged, direct creation by the ingestion identity is refused by the database."""
+    m = os.environ.get("CMF_MEMORY_FORMATION_MODE", "direct").strip().lower()
+    return m if m in ("direct", "staged") else "direct"
+
+
 @dataclass
 class OrchestratorConfig:
     filter: FilterConfig = field(default_factory=FilterConfig)
     ingest_mode: str = field(default_factory=ingest_mode)
+    formation_mode: str = field(default_factory=formation_mode)
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)

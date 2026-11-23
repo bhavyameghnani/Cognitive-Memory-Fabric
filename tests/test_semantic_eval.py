@@ -3,6 +3,7 @@ rules: there is no human ground truth yet.  They also check that building the pa
 import csv
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -17,11 +18,17 @@ sys.path.insert(0, str(ROOT / "datasets"))
 import semantic_eval as SE  # noqa: E402
 import inspect_evidence as IE  # noqa: E402
 
-DB = ROOT / "build" / "cmf_evidence.db"
+DB = Path(os.environ["CMF_EVIDENCE_DATABASE_URL"][len("sqlite:///"):])      # the DISPOSABLE evidence database built by tests/conftest.py (never build/cmf_evidence.db)
 PKG = ROOT / "evaluation" / "semantic_annotation"
 GENERATED = ["items.jsonl", "segmentation_items.jsonl", "annotation_template.csv", "segmentation_template.csv", "review_sheet_blind.md", "labels.json",
              "label_definitions.md", "known_defects.json", "known_defects.md", "diagnostics.json", "sample_manifest.json"]
-pytestmark = pytest.mark.skipif(not DB.exists(), reason="build/cmf_evidence.db not present")
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _evidence_database(evidence_db):
+    """Build the disposable evidence database once (repository ingestion into the session directory) before any test of this module."""
+    assert evidence_db == DB and DB.exists()
+    return evidence_db
 
 
 def sha(p):
@@ -34,7 +41,7 @@ def protected():
         files += sorted((ROOT / "datasets" / sub).glob("*.csv"))
     files += sorted((ROOT / "src" / "evidence").rglob("*.py")) + [ROOT / "sql" / "200_cmf_evidence_schema.sql"]
     files += [ROOT / "data" / "seed" / "cmf_memory_demo.db", ROOT / "build" / "cmf_memory.db", ROOT / "build" / "cmf_approvals.db"]
-    return {str(p.relative_to(ROOT)): sha(p) for p in files if p.exists()}
+    return {(str(p.relative_to(ROOT)) if ROOT in p.parents else "<disposable evidence database>/cmf_evidence.db"): sha(p) for p in files if p.exists()}      # the disposable evidence database lives outside the repository
 
 
 @pytest.fixture(scope="module")

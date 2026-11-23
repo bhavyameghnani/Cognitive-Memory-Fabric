@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-from agents.memory import rules, support
+from agents.memory import attribution, rules, support
 from agents.memory.config import GLOBAL_CLIENT
 from agents.planner.topics import TOPICS
 from agents.memory.errors import DatabaseIntegrityError, EvidenceError, EvidenceRejected, InvalidRecord, MemoryWriteRejected, ScopeDenied
@@ -82,13 +82,14 @@ class ServiceSpec:
 
 
 SERVICES = {
-    "ingestion": ServiceSpec(frozenset({"create"}), frozenset({"conversation_llm", "conversation_rule"}), frozenset({"episodic", "procedural"})),
+    "ingestion": ServiceSpec(frozenset({"create", "propose", "validate", "submit"}), frozenset({"conversation_llm", "conversation_rule"}), frozenset({"episodic", "procedural"})),
+    "promotion": ServiceSpec(frozenset({"create", "promote"}), frozenset({"conversation_llm", "conversation_rule"}), frozenset({"episodic", "procedural"})),     # M2: the ONLY identity that may create a staged memory
     "consolidation": ServiceSpec(frozenset({"create", "transition", "link", "support"}), frozenset({"consolidation"}), frozenset({"semantic"})),
     "orchestrator": ServiceSpec(frozenset({"create"}), frozenset({"orchestrator", "tool_summary"}), frozenset({"working"})),
     "curated_loader": ServiceSpec(frozenset({"create"}), frozenset({"curated_file"}), frozenset({"procedural"}), global_only=True),
     "ttl_expiry": ServiceSpec(frozenset({"transition"}), any_client=True),
 }
-USER_OPS = frozenset({"transition", "approval", "correct", "supersede", "resolve"})        # people can change status, approve procedures, correct and supersede - never create arbitrary rows
+USER_OPS = frozenset({"transition", "approval", "correct", "supersede", "resolve", "proposal_decision", "proposal_read"})        # people can change status, approve procedures, correct and supersede - never create arbitrary rows
 RESERVED_ACTORS = frozenset(SERVICES) | {"", "llm", "model", "system", "admin", "root", "assistant", "dev-anonymous", "anonymous", "unknown", "none", "null"}
 _SEAL_KEY = os.urandom(32)
 
@@ -486,6 +487,8 @@ class MemoryIntegrityBoundary:
             raise MemoryWriteRejected("forged_identity", "memory text names a different client", operation_id=oid)
         origin, mtype = rec["origin"], rec["memory_type"]
         sclass = self._source_class(p, origin, mtype, client, human_old, ctx)
+        if p.kind == "service" and p.actor_id == "ingestion" and self._formation_mode() == "staged":       # M2: extraction proposes, it never writes a memory
+            raise MemoryWriteRejected("direct_formation_disabled", "this store is in staged formation mode: the ingestion identity may only PROPOSE memories", operation_id=oid)
         # references to other memories: inside THIS client or refused - the same code whether the id is foreign or does not exist
         if st.get(rec["memory_id"]) is not None:
             raise MemoryWriteRejected("memory_id_unavailable", "that memory id cannot be used", operation_id=oid)
@@ -522,6 +525,7 @@ class MemoryIntegrityBoundary:
             raise MemoryWriteRejected("provenance_missing", "a conversation-derived memory needs at least one resolvable source", operation_id=oid)
         if rec.get("certainty") in ("confirmed", "correction") and mtype in ("episodic", "semantic") and not conv:
             raise MemoryWriteRejected("certainty_requires_evidence", "a confirmed memory needs resolvable source evidence", operation_id=oid)
+        self._attribution_gate(rec, conv, sclass, mtype, oid)
         observed = self._bind_time(rec, det, conv, mtype, oid)
         if observed and mtype in ("semantic", "procedural"):      # valid_from is DERIVED from the validated source (or, for a correction, from the trusted correction context)
             expected = max(observed[:10], human_old.get("valid_from") or "") if human_old is not None else observed[:10]
@@ -601,6 +605,40 @@ class MemoryIntegrityBoundary:
             bad("valid_to before valid_from")
         if rec.get("supersedes_id") and rec["supersedes_id"] == rec["memory_id"]:
             bad("a memory cannot supersede itself")
+
+    def _formation_mode(self) -> str:
+        """`direct` or `staged` (the one-way latch of migration 130).  A store that has not been migrated has no latch and forms directly, as before."""
+        try:
+            rows = self.store.query("SELECT mode FROM {S}memory_formation_mode")
+        except Exception:
+            return "direct"
+        return rows[0]["mode"] if rows else "direct"
+
+    def authenticate(self, principal: Any, op: str, client_id: Optional[str] = None) -> Principal:
+        """Public identity check for the staged-formation service: the Principal must be one issued by Principal.user / Principal.service, authenticated, not a reserved name, allowed this
+        operation, and (when a client is named) in scope.  Raises ScopeDenied otherwise.  Reads nothing about any record."""
+        ctx = self._ctx(op, principal, client_id or "", None)
+        p = self._principal(principal, op, ctx)
+        if client_id is not None:
+            self._scope(p, client_id, ctx)
+        return p
+
+    def _attribution_gate(self, rec: dict, conv: list, sclass: str, mtype: str, oid: str) -> None:
+        """M1 evidence ceiling, enforced where EVERY durable write passes (extraction, consolidation and any direct caller), from the DATA: the speaker of the cited turn, never a label the
+        caller supplied.  (1) The stored `source_role` must be the cited turn's real speaker (a semantic memory may not become a `System`-sourced client fact).  (2) A `confirmed` /
+        `correction` memory needs client-attributable evidence that is not stated as non-final (agents.memory.attribution).  Human corrections are a separate, authorised path."""
+        if sclass not in ("llm_extraction", "observed_transcript", "derived") or mtype not in ("episodic", "semantic") or not conv:
+            return
+        turns = [(ev, self.store.conv.turn(ev["interaction_id"], int(ev["turn_index"])) or {}) for ev in conv]
+        pev, pturn = next(((ev, t) for ev, t in turns if (ev.get("role") or "primary") == "primary"), turns[0])
+        speaker = pturn.get("speaker")
+        if rec.get("source_role") not in ((None, speaker) if mtype == "episodic" else (speaker,)):
+            raise MemoryWriteRejected("source_attribution_mismatch", "the recorded source role is not the speaker of the cited turn", operation_id=oid)
+        if rec.get("certainty") in attribution.STRONG:
+            others = [dict(speaker=t.get("speaker"), excerpt=ev.get("excerpt") or "") for ev, t in turns if ev is not pev]
+            v = attribution.assess(rec["certainty"], speaker, pev.get("excerpt") or "", pturn.get("utterance") or "", others, "conversation_llm", rec.get("value_text"))
+            if v.certainty != rec["certainty"]:
+                raise MemoryWriteRejected("attribution_ceiling", "the cited evidence does not support this certainty: " + "; ".join(v.notes), operation_id=oid)
 
     def _bind_time(self, rec: dict, det: dict, conv: list, mtype: str, oid: str) -> Optional[str]:
         """Observation time comes from the CSV turn the memory cites, never from the caller.  A caller-supplied event_ts / event_date that disagrees with that turn is refused

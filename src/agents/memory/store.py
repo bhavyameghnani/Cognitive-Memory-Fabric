@@ -31,7 +31,7 @@ from services.conversations import Conversations, shared
 ROOT = Path(__file__).resolve().parents[3]
 SQL_DIR = ROOT / "sql"
 SCHEMA_FILE, DROP_FILE, SCHEMA_VERSION = "100_cmf_memory_schema.sql", "199_drop_cmf_memory.sql", "100"
-TABLES = ["memory_conflict_resolutions", "memory_conflicts", "memory_write_log", "memory_candidates", "memory_lifecycle_events", "memory_relationships", "memory_evidence", "working_context", "procedural_details",
+TABLES = ["memory_proposal_decisions", "memory_proposal_events", "memory_proposals", "memory_formation_mode", "memory_conflict_resolutions", "memory_conflicts", "memory_write_log", "memory_candidates", "memory_lifecycle_events", "memory_relationships", "memory_evidence", "working_context", "procedural_details",
           "semantic_details", "episodic_details", "memory_records", "ingestion_log", "schema_migrations"]
 
 
@@ -264,7 +264,7 @@ class MemoryStore:
             self._migrate()
 
     # ------------------------------------------------------------------ migrations 120 (P1.4) and 121 (P1.4.1): additive, one transaction, idempotent
-    MIGRATION = "123"
+    MIGRATION = "130"
     NEW_COLUMNS = {
         "memory_records": [
             ("verification", "TEXT NOT NULL DEFAULT 'unverified' CHECK (verification IN ('verified', 'unverified'))"),
@@ -294,7 +294,11 @@ class MemoryStore:
                 if version < 122:
                     for s in self._script("122_cmf_memory_conflict_resolutions.sql"):
                         self.execute(s)
+                if version < 130:                                  # M2: staged formation (proposals, decisions, audit events, the formation-mode latch)
+                    for s in self._script("130_cmf_memory_proposals.sql"):
+                        self.execute(s)
                 self._install_guards()
+                self._install_proposal_guards()
                 self._ensure_slot_index()
                 if version < int(self.MIGRATION):
                     self.execute(f"PRAGMA user_version = {int(self.MIGRATION)}")
@@ -371,6 +375,75 @@ class MemoryStore:
             add(f"lifecycle_no_{lo}", f"CREATE TRIGGER lifecycle_no_{lo} BEFORE {op} ON memory_lifecycle_events BEGIN SELECT RAISE(ABORT, 'memory_lifecycle_events is append-only'); END")
         return defs
 
+    # ------------------------------------------------------------------ proposal triggers (M2): the staged-formation lifecycle, enforced by the database
+    def _proposal_trigger_definitions(self) -> dict:
+        """name -> canonical CREATE TRIGGER text for the staged-formation lifecycle (kept apart from `_trigger_definitions`, which covers the memory content tables).  They make these
+        facts true even for a caller that skips the Python service: only legal state transitions, each with its audit event first; `approved` only after a recorded human
+        decision on the exact content; `promoted` only with an existing memory of the same client; audit and decision rows append-only; proposal content immutable; the formation
+        mode a one-way latch; and - in staged mode - NO conversation-derived memory row without an APPROVED proposal for exactly that memory."""
+        from agents.memory.proposal_states import IMMUTABLE_COLUMNS, TRANSITIONS
+        d: dict[str, str] = {}
+        legal = " OR ".join(f"(OLD.state = '{a}' AND NEW.state IN ({', '.join(repr(b) for b in bs)}))" for a, bs in TRANSITIONS.items() if bs)
+        cur = "(SELECT state FROM memory_proposals WHERE proposal_id = NEW.proposal_id)"
+        d["proposal_no_delete"] = "CREATE TRIGGER proposal_no_delete BEFORE DELETE ON memory_proposals BEGIN SELECT RAISE(ABORT, 'proposals are never deleted: a state change keeps the history'); END"
+        d["proposal_initial_state"] = ("CREATE TRIGGER proposal_initial_state BEFORE INSERT ON memory_proposals WHEN NEW.state <> 'extracted' "
+                                       "BEGIN SELECT RAISE(ABORT, 'a proposal is created as extracted; every later state needs its own audited transition'); END")
+        d["proposal_immutable"] = (f"CREATE TRIGGER proposal_immutable BEFORE UPDATE OF {', '.join(IMMUTABLE_COLUMNS)} ON memory_proposals "
+                                   "BEGIN SELECT RAISE(ABORT, 'proposal content is immutable: a changed claim is a new proposal'); END")
+        d["proposal_state_machine"] = (f"CREATE TRIGGER proposal_state_machine BEFORE UPDATE OF state ON memory_proposals WHEN NEW.state <> OLD.state AND NOT ({legal}) "
+                                       "BEGIN SELECT RAISE(ABORT, 'illegal proposal state transition'); END")
+        d["proposal_state_needs_event"] = ("CREATE TRIGGER proposal_state_needs_event BEFORE UPDATE OF state ON memory_proposals WHEN NEW.state <> OLD.state AND NOT EXISTS ("
+                                           "SELECT 1 FROM memory_proposal_events e WHERE e.event_id = (SELECT MAX(event_id) FROM memory_proposal_events WHERE proposal_id = OLD.proposal_id) "
+                                           "AND e.from_state = OLD.state AND e.to_state = NEW.state) BEGIN SELECT RAISE(ABORT, 'a state change needs its audit event first'); END")
+        d["proposal_approved_needs_decision"] = ("CREATE TRIGGER proposal_approved_needs_decision BEFORE UPDATE OF state ON memory_proposals WHEN NEW.state = 'approved' AND NOT EXISTS ("
+                                                 "SELECT 1 FROM memory_proposal_decisions x WHERE x.proposal_id = OLD.proposal_id AND x.decision = 'approve' AND x.reviewer_kind = 'human' "
+                                                 "AND x.proposal_hash = OLD.content_hash AND x.decision_id = (SELECT MAX(decision_id) FROM memory_proposal_decisions WHERE proposal_id = OLD.proposal_id)) "
+                                                 "BEGIN SELECT RAISE(ABORT, 'approval requires a recorded human approve decision on this exact content'); END")
+        d["proposal_promoted_needs_memory"] = ("CREATE TRIGGER proposal_promoted_needs_memory BEFORE UPDATE OF state ON memory_proposals WHEN NEW.state = 'promoted' AND (NEW.promoted_memory_id IS NULL "
+                                               "OR NOT EXISTS (SELECT 1 FROM memory_records m WHERE m.memory_id = NEW.promoted_memory_id AND m.client_id = OLD.client_id)) "
+                                               "BEGIN SELECT RAISE(ABORT, 'promotion needs the production memory it created, in the same client'); END")
+        d["proposal_event_insert"] = (f"CREATE TRIGGER proposal_event_insert BEFORE INSERT ON memory_proposal_events WHEN (NEW.from_state IS NULL AND (NEW.to_state <> 'extracted' "
+                                      f"OR EXISTS (SELECT 1 FROM memory_proposal_events WHERE proposal_id = NEW.proposal_id))) OR (NEW.from_state IS NOT NULL AND NEW.from_state IS NOT {cur}) "
+                                      "BEGIN SELECT RAISE(ABORT, 'the event does not start from the proposal''s current state'); END")
+        d["proposal_decision_insert"] = (f"CREATE TRIGGER proposal_decision_insert BEFORE INSERT ON memory_proposal_decisions WHEN (NEW.decision = 'approve' AND {cur} IS NOT 'pending_approval') "
+                                         "OR NEW.proposal_hash IS NOT (SELECT content_hash FROM memory_proposals WHERE proposal_id = NEW.proposal_id) "
+                                         "OR lower(trim(NEW.reviewer_id)) = lower(trim((SELECT created_by FROM memory_proposals WHERE proposal_id = NEW.proposal_id))) "
+                                         "BEGIN SELECT RAISE(ABORT, 'a decision needs a pending proposal, its exact content hash and a reviewer other than the creator'); END")
+        for t, what in (("memory_proposal_events", "proposal events"), ("memory_proposal_decisions", "proposal decisions")):
+            for op in ("UPDATE", "DELETE"):
+                nm = f"{'proposal_event' if 'events' in t else 'proposal_decision'}_no_{op.lower()}"
+                d[nm] = f"CREATE TRIGGER {nm} BEFORE {op} ON {t} BEGIN SELECT RAISE(ABORT, '{what} are append-only'); END"
+        d["formation_mode_latch"] = ("CREATE TRIGGER formation_mode_latch BEFORE UPDATE ON memory_formation_mode WHEN OLD.mode = 'staged' AND NEW.mode <> 'staged' "
+                                     "BEGIN SELECT RAISE(ABORT, 'staged formation is a one-way latch: leaving it is an offline maintenance decision'); END")
+        d["formation_mode_no_delete"] = "CREATE TRIGGER formation_mode_no_delete BEFORE DELETE ON memory_formation_mode BEGIN SELECT RAISE(ABORT, 'the formation mode is never deleted'); END"
+        d["proposal_gate_memory_insert"] = ("CREATE TRIGGER proposal_gate_memory_insert BEFORE INSERT ON memory_records WHEN (SELECT mode FROM memory_formation_mode) = 'staged' "
+                                            "AND NEW.memory_type IN ('episodic', 'procedural') AND NEW.origin IN ('conversation_llm', 'conversation_rule') AND NOT EXISTS ("
+                                            "SELECT 1 FROM memory_proposals p WHERE p.target_memory_id = NEW.memory_id AND p.client_id = NEW.client_id AND p.content_hash = NEW.content_hash AND p.state = 'approved') "
+                                            "BEGIN SELECT RAISE(ABORT, 'staged formation: a conversation-derived memory exists only through an APPROVED proposal'); END")
+        return d
+
+    def proposal_trigger_mismatches(self) -> dict:
+        """{trigger name: 'missing' | 'modified'} for the proposal triggers, exactly like trigger_mismatches() (a store not yet migrated to 130 reports them all missing)."""
+        have = {r["name"]: r["sql"] for r in self.query("SELECT name, sql FROM sqlite_master WHERE type='trigger'")}
+        bad: dict[str, str] = {}
+        for name, sql in self._proposal_trigger_definitions().items():
+            if name not in have:
+                bad[name] = "missing"
+            elif self._norm_sql(have[name]) != self._norm_sql(sql):
+                bad[name] = "modified"
+        return bad
+
+    def _install_proposal_guards(self) -> None:
+        bad = self.proposal_trigger_mismatches()
+        for name, sql in self._proposal_trigger_definitions().items():
+            if name in bad:
+                if bad[name] == "modified":
+                    self.execute(f"DROP TRIGGER {name}")
+                self.execute(sql)
+        left = self.proposal_trigger_mismatches()
+        if left:
+            raise MemoryIntegrityUnavailable(f"proposal trigger(s) could not be restored to the canonical definition: {sorted(left)}")
+
     def _expected_triggers(self) -> set:
         return set(self._trigger_definitions())
 
@@ -410,7 +483,7 @@ class MemoryStore:
         try:
             if int(self.query("PRAGMA user_version")[0]["user_version"]) < int(self.MIGRATION):
                 return False
-            return not self.trigger_mismatches()
+            return not self.trigger_mismatches() and not self.proposal_trigger_mismatches()
         except sqlite3.Error:
             return False
 
