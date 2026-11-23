@@ -124,6 +124,23 @@ class RunTests(unittest.TestCase):
         self.assertTrue(CONV.verify_excerpt("CLIENT-001", "INT-010", 3, d.final.excerpt))
         self.assertEqual([(x["turn_index"], x["role"]) for x in d.extra_evidence], [(6, "supporting")])
 
+    def test_client_figure_is_never_reattributed_to_the_advisor_question(self):
+        """Remediation plan D3: an advisor-voiced statement scored better against the advisor's QUESTION than against the client's answer, and the memory was re-anchored to the
+        question and stored as said by the Advisor.  INT-017: turn 3 'Do you have a target price?' (Advisor), turn 4 'Around six hundred thousand. ...' (Client)."""
+        excerpt = "Around six hundred thousand."
+        self.assertTrue(CONV.verify_excerpt("CLIENT-003", "INT-017", 4, excerpt))
+        decs, _, _ = run("INT-017", [cand(4, excerpt, "housing_property", "exploratory", statement="We should plan around a target price for the home.")], Verify("exploratory"))
+        d = decs[0]
+        self.assertTrue(d.kept)
+        self.assertEqual((d.final.turn_index, d.final.speaker_role, d.final.excerpt), (4, "Client", excerpt))
+        self.assertTrue(any("not re-anchored" in n for n in d.notes), d.notes)
+
+    def test_a_question_is_never_the_reanchor_target(self):
+        ctx = ing.MeetingContext.load(CONV, "INT-017")
+        c = MemoryCandidate(**cand(4, "Around six hundred thousand.", "housing_property", "exploratory", statement="Do you have a target price?"))
+        found = llm_first.reanchor(c, ctx)
+        self.assertTrue(found is None or not found[1].rstrip().endswith("?"), found)
+
     def test_duplicates_merged(self):
         c = cand(2, K090_T2_SENT, "retirement_age", "confirmed", value="63")
         self.assertEqual([d.decision for d in run("INT-090", [c, c], Verify())[0]], ["accepted", "merged"])

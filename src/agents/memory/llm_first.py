@@ -22,7 +22,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from agents.memory import rules
+from agents.memory import attribution, rules
 from agents.memory.config import CERTAINTY_RANK, EXTRACTION_AGENT, FIXED_SUBJECT_TOPICS
 from agents.memory.ingest import Decision, MeetingContext, _repair_excerpt, enforce_policy
 from agents.planner.topics import TOPICS
@@ -198,6 +198,8 @@ def reanchor(cand: MemoryCandidate, ctx: MeetingContext) -> Optional[tuple[dict,
         if r["speaker"] not in ("Client", "Advisor"):          # never re-anchor onto a third party's message
             continue
         for sent in rules.split_sentences(r["utterance"]):
+            if sent.rstrip().endswith("?"):                     # a question states nothing: never the content a reply confirms
+                continue
             sc = supports(cand.statement, cand.value, sent)
             if best is None or sc > best[2]:
                 best = (r, sent[:500], sc)
@@ -228,6 +230,11 @@ def fact_check(cand: MemoryCandidate, ctx: MeetingContext, conv: Conversations) 
     # Re-anchoring never rejects: the harness MemoryWriteValidator stays the one authority on whether evidence supports a memory.
     here = supports(cand.statement, cand.value, excerpt)
     found = reanchor(cand.model_copy(update=dict(excerpt=excerpt)), ctx) if here < REANCHOR_BELOW else None
+    if (found is not None and role == "Client" and found[0]["speaker"] != "Client" and rules.FIGURE.search(excerpt) and not attribution.is_bare_affirmation(excerpt)):
+        # a client sentence that states a figure of its own ("My investment budget is 65 lakh.") is the client's statement: it is never re-attributed to the advisor
+        # (remediation plan D3).  A reply without content ("I'll make it a priority this week.") still takes its content from the earlier turn.
+        notes.append(f"kept the client's own sentence as evidence (not re-anchored to {found[0]['speaker']} turn {found[0]['turn_index']})")
+        found = None
     if found is not None and found[2] >= REANCHOR_MIN and found[2] >= here + REANCHOR_MARGIN:
         prev, sent, _ = found
         extra.append(dict(turn_index=row["turn_index"], speaker=role, excerpt=excerpt, role="supporting"))

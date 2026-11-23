@@ -71,6 +71,13 @@ _AFFIRM = re.compile(r"^(?:yes|yeah|yep|yup|correct|right|exactly|agreed|absolut
                      r"(?:that )?sounds (?:good|right|fine)|let(?:'s| us) do (?:that|it)|go ahead|please (?:go ahead|proceed)|i agree|that works)\b")
 
 
+def is_bare_affirmation(text: str) -> bool:
+    """A short reply that only agrees ("Yes, let's do that.", "That's right.") and carries no content of its own: the only kind of client sentence whose content may be taken from
+    an earlier turn."""
+    n = _norm(text or "")
+    return bool(n) and len(n.split()) <= 20 and bool(_AFFIRM.match(n)) and not _hit(n) and not _CONFIRM_BLOCK.search(n)
+
+
 def classify_attribution(speaker_role: Optional[str], excerpt: str = "", *, origin: str = "conversation_llm") -> str:
     """The source class of a statement.  `speaker_role` must come from the DATA (the cited turn), never from a model."""
     if origin in ("consolidation", "orchestrator", "tool_summary", "curated_file") or speaker_role == "System":
