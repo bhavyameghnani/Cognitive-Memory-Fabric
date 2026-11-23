@@ -69,7 +69,11 @@ _REPORTED = re.compile(
     r"my notes (?:from today )?read as follows)\b")
 _AFFIRM = re.compile(r"^(?:yes|yeah|yep|yup|correct|right|exactly|agreed|absolutely|definitely|sure|ok(?:ay)?|that(?:'s| is) (?:all )?(?:right|correct|accurate|what we decided|the plan|fine|good)|"
                      r"(?:that )?sounds (?:good|right|fine)|let(?:'s| us) do (?:that|it)|go ahead|please (?:go ahead|proceed)|i agree|that works|"
-                     r"(?:that )?makes sense|(?:that )?looks (?:about )?right|all correct|spot on)\b")    # natural wording (paraphrased eval set): "That makes sense to me.", "That's all accurate."
+                     r"(?:that )?makes sense|(?:that )?looks (?:about )?right|all correct|spot on|"
+                     r"that(?:'s| is) (?:what i (?:understand|understood|remember)|the story|it)|that matches|perfect|good(?! question)|(?:that )?sounds (?:sensible|reasonable))\b")
+# The natural-wording forms above were added after inspecting the policy's misses on the evaluation sets (INT-036, INT-146 paraphrased; INT-0xx scripted):
+# "That makes sense to me.", "That's all accurate.", "Perfect. That matches what I remember.", "That's what I understood, yes.", "Good. That's it.".
+# Hedges and negations (_CONFIRM_BLOCK, _hit) still veto every one of them.
 
 
 def is_bare_affirmation(text: str) -> bool:

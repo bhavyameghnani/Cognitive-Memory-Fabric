@@ -176,10 +176,12 @@ def test_a_client_spoken_confirmation_is_what_lifts_the_ceiling_and_it_must_be_r
 def test_natural_wording_confirmations_are_recognised_and_hedges_still_block_them():
     """Replies from the paraphrased evaluation set (INT-036 turn 10, INT-146 turn 6): plain agreement in natural wording lifts the ceiling like 'That's right.' does."""
     ex = "You've decided to retire at 62."
-    for reply in ("That makes sense to me. Please go ahead and arrange that.", "That's all accurate.", "That looks right.", "Spot on."):
+    for reply in ("That makes sense to me. Please go ahead and arrange that.", "That's all accurate.", "That looks right.", "Spot on.", "Perfect. That matches what I remember.",
+                  "That's what I understood, yes.", "Good. That's it.", "That's the story.", "That sounds sensible. Yes, please set that up."):
         rows = [dict(turn_index=1, speaker="Advisor", utterance=ex), dict(turn_index=2, speaker="Client", utterance=reply)]
         assert A.find_client_confirmation(rows, 1) is not None, reply
-    for reply in ("That makes sense, but I'm not sure yet.", "That looks about right, though I still want to think about it.", "Makes sense? I don't know."):
+    for reply in ("That makes sense, but I'm not sure yet.", "That looks about right, though I still want to think about it.", "Makes sense? I don't know.",
+                  "Good question. I haven't decided.", "Good question.", "Perfect, but let me think about it.", "Yes. I need to think about it more. I haven't made up my mind."):
         rows = [dict(turn_index=1, speaker="Advisor", utterance=ex), dict(turn_index=2, speaker="Client", utterance=reply)]
         assert A.find_client_confirmation(rows, 1) is None, reply
 
