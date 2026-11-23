@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Database } from 'lucide-react';
+import { Brain, Database, Workflow } from 'lucide-react';
 import type { BrainData, ClientSummary } from '../types';
 
 interface Props { clients: ClientSummary[]; clientId: string; onClient: (id: string) => void; data: BrainData | null; online: boolean }
@@ -26,7 +26,10 @@ export const Header: React.FC<Props> = ({ clients, clientId, onClient, data, onl
           <span><b className="text-rose-400">{s.disputed ?? 0}</b> disputed</span>
           <span><b className="text-orange-400">{data?.conflicts?.length ?? 0}</b> open conflicts</span>
         </div>
-        <a href="#/data" className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-blue-500 hover:text-white"><Database className="w-3.5 h-3.5 text-blue-400" />Learn about the data source</a>
+        <div className="flex items-center gap-2">
+          <a href="#/data" className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-blue-500 hover:text-white"><Database className="w-3.5 h-3.5 text-blue-400" />Learn about the data source</a>
+          <a href="#/architecture" className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-violet-500 hover:text-white"><Workflow className="w-3.5 h-3.5 text-violet-400" />Learn the design & architecture</a>
+        </div>
         <label className="flex items-center gap-2 text-xs text-slate-400">
           Client
           <select value={clientId} onChange={(e) => onClient(e.target.value)} className="rounded-lg bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 cursor-pointer">
