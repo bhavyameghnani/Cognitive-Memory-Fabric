@@ -47,6 +47,7 @@ from harness.auth_tokens import AuthError, verify_token  # noqa: E402
 from harness.config import ConfigError, check_bind, is_loopback_host, load_auth_secret  # noqa: E402
 from harness.permission_gate import identity_from_claims  # noqa: E402
 from harness.runtime import data_version, released_view, withheld_view  # noqa: E402
+from services import simulation  # noqa: E402
 from services.conversations import shared  # noqa: E402
 
 log = logging.getLogger("cmf.api")
@@ -171,6 +172,8 @@ def store() -> MemoryStore:
     if _store is None:
         _store = MemoryStore()
         _store.init()  # idempotent; creates an empty schema if the DB is new
+        if simulation.enabled(harness().config.profile):
+            simulation.restore(_store, shared())    # simulated interactions this database already ingested are part of its source again
     return _store
 
 
@@ -558,6 +561,48 @@ def lifecycle(memory_id: str, body: LifecycleBody, request: Request) -> dict:
         raise HTTPException(409 if e.code == "stale_version" else 403 if isinstance(e, ScopeDenied) else 400, e.code)
     except (PermissionError, ValueError) as e:
         raise HTTPException(400, str(e))
+
+
+# ---- demo simulation (services/simulation.py): pre-generated interactions replayed through the real ingestion path; never in production ----------------
+def _simulation_on() -> None:
+    if not simulation.enabled(harness().config.profile):
+        raise HTTPException(404, "not found")
+
+
+@app.get("/api/simulation")
+def simulation_queue(request: Request, client_id: Optional[str] = None) -> dict:
+    auth = authorize(request, "read_memory")                  # identity first, like every other route
+    _simulation_on()
+    if client_id is not None and (client_id not in shared().directory() or not _owns(auth, client_id)):
+        raise HTTPException(404, "unknown client")
+    items = [q for q in simulation.queue(shared(), store(), client_id) if _owns(auth, q["client_id"])]
+    return dict(items=items, next={c: next((q["interaction_id"] for q in items if q["client_id"] == c and not q["ingested"]), None) for c in sorted({q["client_id"] for q in items})})
+
+
+@app.post("/api/simulation/{interaction_id}/ingest")
+def simulation_ingest(interaction_id: str, request: Request) -> dict:
+    """Make the client's next simulated interaction part of the source and ingest it with the production pipeline.  Calls the LLM (about 10-30 s)."""
+    from llm.client import make_llm
+    auth = authorize(request, "ingest")                       # identity first, like every other route
+    _simulation_on()
+    item = next((q for q in simulation.queue(shared(), store()) if q["interaction_id"] == interaction_id), None)
+    if item is None or not _owns(auth, item["client_id"]):
+        raise HTTPException(404, "unknown interaction")
+    cid = item["client_id"]
+    before = {r["memory_id"] for r in store().records(cid)}
+    try:
+        simulation.activate(shared(), store(), interaction_id)
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    h = harness()
+    try:
+        mem = MemoryOrchestrator(make_llm(), store=store(), write_validator=h.write_validator(store=store()))
+        out = mem.ingest_meeting(interaction_id)
+    except Exception as e:                                    # LLM down, timeout: the ingestion log says "failed", and the same request can be retried
+        raise HTTPException(503, f"{type(e).__name__}: {str(e)[:200]}")
+    rows = [r for r in store().records(cid) if r["memory_id"] not in before]
+    return dict(interaction_id=interaction_id, client_id=cid, stored=out.get("stored"), candidates=out.get("candidates"), consolidation=out.get("consolidation"),
+                llm_error=out.get("llm_error"), new_memories=_items(rows))
 
 
 class ResolveBody(BaseModel):

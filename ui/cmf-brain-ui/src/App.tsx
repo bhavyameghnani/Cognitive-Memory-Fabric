@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Brain, FolderTree, Sparkles, Shield } from 'lucide-react';
+import { Brain, FolderTree, PlayCircle, Sparkles, Shield } from 'lucide-react';
 import { api, ApiError } from './api';
 import type { AskResult, BrainData, ClientSummary, MemoryType } from './types';
 import { Header } from './components/Header';
@@ -8,8 +8,9 @@ import { MemoryDossier } from './components/MemoryDossier';
 import { AdvisorQuery } from './components/AdvisorQuery';
 import { SourcesPanel } from './components/SourcesPanel';
 import { FlowStrip } from './components/FlowStrip';
+import { SimulationPanel } from './components/SimulationPanel';
 
-type Tab = 'dossier' | 'ask' | 'sources';
+type Tab = 'dossier' | 'ask' | 'sources' | 'simulate';
 
 export default function App() {
   const [clients, setClients] = useState<ClientSummary[]>([]);
@@ -24,6 +25,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('dossier');
   const [result, setResult] = useState<AskResult | null>(null);
   const [asking, setAsking] = useState(false);
+  const [simHighlight, setSimHighlight] = useState<Set<string> | null>(null);   // memories formed by the last simulated ingestion
   const session = 1;                              // single session: the UI connects automatically on load, there is no token entry
   const [ready, setReady] = useState(0);              // set once the client list has been received; brain data is requested only after that
   const sessionRef = useRef(session);
@@ -54,7 +56,7 @@ export default function App() {
   }, [fail]);
   useEffect(() => {
     if (!session || ready !== session || clients.length === 0) return;   // no brain request before the authorised client list is known (or when it is empty)
-    setData(null); setSelectedId(null); setResult(null); setInteractionId(null); setTypeFilter('all');
+    setData(null); setSelectedId(null); setResult(null); setSimHighlight(null); setInteractionId(null); setTypeFilter('all');
     load(clientId);
   }, [clientId, load, session, ready, clients]);
 
@@ -65,7 +67,8 @@ export default function App() {
 
   const client = clients.find((c) => c.client_id === clientId);
   const selected = data?.memories.find((m) => m.memory_id === selectedId) ?? null;
-  const highlighted = useMemo(() => (result && result.client_ids.includes(clientId) ? new Set(result.retrieved_memory_ids) : null), [result, clientId]);
+  const highlighted = useMemo(() => simHighlight ?? (result && result.client_ids.includes(clientId) ? new Set(result.retrieved_memory_ids) : null), [simHighlight, result, clientId]);
+  const onSimIngested = useCallback((ids: string[]) => { setResult(null); setSimHighlight(ids.length ? new Set(ids) : null); load(clientId); }, [clientId, load]);
   const select = (id: string) => { setSelectedId(id); setTab('dossier'); };
   const name = client?.first_name ?? clientId;
   const suggestions = [`How should I prepare for ${name}'s next portfolio review?`, `What is ${name}'s current retirement age and how has it changed?`, `Summarise ${name}'s asset allocation history`];
@@ -94,7 +97,7 @@ export default function App() {
           <div className="lg:col-span-7 min-w-0">
             {data ? (
               <BrainVisualizer memories={data.memories} relationships={data.relationships} interactions={data.interactions} selectedId={selectedId} onSelect={select}
-                typeFilter={typeFilter} onFilter={setTypeFilter} highlighted={highlighted} onClearHighlight={() => setResult(null)}
+                typeFilter={typeFilter} onFilter={setTypeFilter} highlighted={highlighted} onClearHighlight={() => { setResult(null); setSimHighlight(null); }}
                 showHistory={showHistory} onToggleHistory={() => setShowHistory((v) => !v)} interactionId={interactionId} onSelectInteraction={setInteractionId} />
             ) : (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/60 h-[560px] flex items-center justify-center text-sm text-slate-500">{session && ready === session && clients.length === 0 ? 'No clients are available.' : 'Loading memory brain…'}</div>
@@ -102,7 +105,7 @@ export default function App() {
           </div>
           <div className="lg:col-span-5 flex flex-col gap-3 min-w-0">
             <div className="flex items-center gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-xl text-xs">
-              {([['dossier', Brain, 'Memory Dossier'], ['ask', Sparkles, 'Ask CMF'], ['sources', FolderTree, 'Sources & Lifecycle']] as const).map(([k, Icon, label]) => (
+              {([['dossier', Brain, 'Memory Dossier'], ['ask', Sparkles, 'Ask CMF'], ['sources', FolderTree, 'Sources & Lifecycle'], ['simulate', PlayCircle, 'Simulate']] as const).map(([k, Icon, label]) => (
                 <button key={k} onClick={() => setTab(k)} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg font-medium transition-all cursor-pointer ${tab === k ? 'bg-slate-800 text-slate-100 border border-slate-700/60' : 'text-slate-400 hover:text-slate-200'}`}>
                   <Icon className="w-3.5 h-3.5 text-blue-400" /><span>{label}</span>
                 </button>
@@ -111,6 +114,7 @@ export default function App() {
             {tab === 'dossier' && <MemoryDossier memory={selected} advisorId={client?.advisor_id ?? 'advisor'} onSelect={select} onChanged={() => load(clientId)} />}
             {tab === 'ask' && <AdvisorQuery key={session} suggestions={suggestions} result={result} onResult={onAskResult} onBusy={onAskBusy} onSelectMemory={select} />}
             {tab === 'sources' && data && <SourcesPanel data={data} />}
+            {tab === 'simulate' && <SimulationPanel clientId={clientId} name={name} onIngested={onSimIngested} onSelectMemory={select} />}
           </div>
         </div>
         <FlowStrip busy={asking} result={result} />

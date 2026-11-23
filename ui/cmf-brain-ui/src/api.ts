@@ -1,4 +1,4 @@
-import type { AskResult, BrainData, ClientSummary, DsOverview, DsScenarioDetail, DsTablePage, MemoryDetail } from './types';
+import type { AskResult, BrainData, ClientSummary, DsOverview, DsScenarioDetail, DsTablePage, MemoryDetail, SimIngestResult, SimQueue } from './types';
 
 // Empty by default: requests go to /api on the same origin and the Vite dev proxy forwards them (VITE_API_PROXY_TARGET).
 const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').replace(/\/$/, '');
@@ -25,6 +25,8 @@ export const api = {
   clients: () => call<ClientSummary[]>('/api/clients'),
   brain: (clientId: string) => call<BrainData>(`/api/clients/${clientId}/brain`),
   memory: (id: string) => call<MemoryDetail>(`/api/memories/${id}`),
+  simulation: (clientId: string) => call<SimQueue>(`/api/simulation?client_id=${clientId}`),
+  simulateIngest: (interactionId: string) => call<SimIngestResult>(`/api/simulation/${interactionId}/ingest`, { method: 'POST' }),
   ask: (question: string) =>
     call<AskResult>('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) }),
   resolveConflict: (id: string, body: { decision: 'keep' | 'dismiss'; reason: string }) =>

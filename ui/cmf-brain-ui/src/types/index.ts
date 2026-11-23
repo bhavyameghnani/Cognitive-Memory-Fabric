@@ -200,3 +200,16 @@ export interface DsStep {
 }
 export interface DsScenarioDetail { scenario: DsScenario; steps: DsStep[]; memories: MemoryItem[] }
 export interface DsTablePage { key: string; file: string; label: string; columns: string[]; total: number; offset: number; rows: string[][] }
+
+// ---- demo simulation (/api/simulation): pre-generated interactions replayed through the real ingestion path
+export interface SimTurn { turn_index: number; speaker: 'Advisor' | 'Client'; utterance: string }
+export interface SimItem {
+  interaction_id: string; client_id: string; interaction_datetime: string; channel: string; meeting_context: string;
+  turns: number; status: string | null; ingested: boolean; transcript: SimTurn[];
+}
+export interface SimQueue { items: SimItem[]; next: Record<string, string | null> }
+export interface SimIngestResult {
+  interaction_id: string; client_id: string; stored: number; candidates: number; llm_error: string | null;
+  consolidation: { versions_created: number; relationships: number; superseded_episodes: number } | null;
+  new_memories: MemoryItem[];
+}

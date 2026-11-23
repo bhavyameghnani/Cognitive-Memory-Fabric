@@ -225,6 +225,7 @@ def main():
     ap.add_argument("--conversations", help="alternative transcript CSV (e.g. build/eval/paraphrased_conversations.csv); default data/conversations.csv")
     ap.add_argument("--subset-of", help="only the conversations present in this CSV (to compare original wording with a paraphrased set)")
     ap.add_argument("--out", help="report path stem (default reports/llm_first_eval)")
+    ap.add_argument("--manifest", help="answer key in the generation_manifest.json format (default reports/generation_manifest.json); e.g. data/simulation/sim_manifest.json")
     ap.add_argument("--judge", default="gpt-4.1", help="model that matches memories to the answer key; 'none' = lexical matching")
     a = ap.parse_args()
 
@@ -232,7 +233,7 @@ def main():
     global OUT_JSON, OUT_MD
     if a.out:
         OUT_JSON, OUT_MD = Path(a.out + ".json"), Path(a.out + ".md")
-    man = json.loads(MANIFEST.read_text())
+    man = json.loads((Path(a.manifest) if a.manifest else MANIFEST).read_text())
     gold = {i["interaction_id"]: [tuple(x) for x in i["authored_outcomes"]] for i in man["interactions"]}
     iids = [i for i in sorted(conv.meetings) if not a.client or conv.meetings[i][0]["client_id"] == a.client][: a.limit]
     if a.subset_of:

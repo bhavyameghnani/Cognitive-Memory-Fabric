@@ -1,0 +1,1189 @@
+{
+ "generator": {
+  "script": "scripts/generate_synthetic_conversations.py",
+  "model": "gpt-4.1",
+  "temperature": 0.8,
+  "note": "fully synthetic; outcomes are what the generator was asked to plant and listed itself, checked only structurally"
+ },
+ "interactions": [
+  {
+   "interaction_id": "SIM-001",
+   "client_id": "CLIENT-001",
+   "step": 1,
+   "scenario_tags": [
+    "social_security",
+    "estate_planning",
+    "family_education_funding",
+    "beneficiary_forms"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "Client will send Mariko's Social Security statement and the beneficiary forms for review as soon as possible, aiming for end of the week."
+    ],
+    [
+     "tentative",
+     "Thirty-thousand-dollar cap for Yuki's grad program is a plan, but the client is not pushing her either way; support is flexible."
+    ],
+    [
+     "c_action",
+     "Client will send Mariko's Social Security PDF and scanned beneficiary forms to advisor after reviewing them."
+    ],
+    [
+     "deferred",
+     "Scheduling the next review meeting is deferred until after Yuki makes her decision on July 20."
+    ],
+    [
+     "correction",
+     "Client clarifies that while the thirty-thousand cap is available for Yuki, he is not encouraging her to choose grad school solely for the money."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     6
+    ],
+    "1": [
+     3,
+     4,
+     5
+    ],
+    "2": [
+     2,
+     6
+    ],
+    "3": [
+     5,
+     6
+    ],
+    "4": [
+     4
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-002",
+   "client_id": "CLIENT-001",
+   "step": 2,
+   "scenario_tags": [
+    "family-support",
+    "estate-planning",
+    "education-funding",
+    "beneficiaries",
+    "mid-year-review"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Yuki has chosen to take the nonprofit job, so Kenji's thirty-thousand-dollar cap for graduate school support is no longer applicable."
+    ],
+    [
+     "a_action",
+     "Advisor will review Mariko’s Social Security statement and the beneficiary forms, and update the survivor analysis and estate review."
+    ],
+    [
+     "plan",
+     "Next review meeting is deferred until September unless document issues arise."
+    ],
+    [
+     "correction",
+     "Client clarifies that the grad school support cap is not needed after all, reversing the prior working plan."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     3
+    ],
+    "1": [
+     4,
+     5
+    ],
+    "2": [
+     6,
+     7
+    ],
+    "3": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-003",
+   "client_id": "CLIENT-001",
+   "step": 3,
+   "scenario_tags": [
+    "beneficiary_review",
+    "social_security",
+    "family_spending",
+    "plan_update"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Tuition support for Yuki’s grad program is no longer part of the plan, now that she chose the nonprofit job."
+    ],
+    [
+     "plan",
+     "Mariko’s Social Security benefit of $2,050/month at age 67 is now built into the survivor analysis."
+    ],
+    [
+     "correction",
+     "Ren’s possible future grad school support remains hypothetical and is not included in the main plan."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     3
+    ],
+    "1": [
+     1,
+     2
+    ],
+    "2": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-004",
+   "client_id": "CLIENT-001",
+   "step": 4,
+   "scenario_tags": [
+    "family_education_support",
+    "beneficiary_planning",
+    "cash_flow",
+    "social_security",
+    "routine_review"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "Ren’s potential grad support remains hypothetical and is not included in the main plan."
+    ],
+    [
+     "deferred",
+     "Discussion of Mariko’s Social Security claiming strategies is deferred until at least the new year."
+    ],
+    [
+     "plan",
+     "Advisor will send pre-review documents a week before the September review unless something urgent arises."
+    ],
+    [
+     "tentative",
+     "No immediate need for a portfolio performance report; client prefers to wait for the upcoming review unless there is a significant issue."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     3,
+     4
+    ],
+    "1": [
+     5,
+     6
+    ],
+    "2": [
+     8
+    ],
+    "3": [
+     7
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-005",
+   "client_id": "CLIENT-001",
+   "step": 5,
+   "scenario_tags": [
+    "pre-review",
+    "no-changes",
+    "family-support",
+    "scheduling"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "September review is scheduled for Thursday the 10th, second week of the month."
+    ],
+    [
+     "plan",
+     "All working plan assumptions remain unchanged for Mariko, Ren, and Yuki; no new family support or allocation adjustments."
+    ],
+    [
+     "deferred",
+     "Portfolio allocation and family support adjustments deferred until after September review or if client flags an issue."
+    ],
+    [
+     "c_action",
+     "Client will review the pre-review packet and notify Advisor if any questions or corrections arise before the meeting."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     3
+    ],
+    "1": [
+     4,
+     5,
+     6
+    ],
+    "2": [
+     5,
+     6
+    ],
+    "3": [
+     2,
+     6
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-006",
+   "client_id": "CLIENT-002",
+   "step": 1,
+   "scenario_tags": [
+    "estate_planning",
+    "liquidity_event",
+    "portfolio_allocation",
+    "follow_up"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "Rebecca's target equity allocation post-sale will be 55% for now, to be revisited in six months."
+    ],
+    [
+     "deferred",
+     "Rebecca is deferring action on the charitable gift and Maine relocation until after the sale numbers and closing are final."
+    ],
+    [
+     "c_action",
+     "Rebecca will continue to follow up with her lawyer regarding the estate documents."
+    ],
+    [
+     "a_action",
+     "Advisor will set a calendar reminder to revisit the equity allocation in six months."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     5,
+     6
+    ],
+    "1": [
+     8
+    ],
+    "2": [
+     2
+    ],
+    "3": [
+     7
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-007",
+   "client_id": "CLIENT-002",
+   "step": 2,
+   "scenario_tags": [
+    "business_sale",
+    "estate_planning",
+    "investment_policy",
+    "open_items",
+    "fixed_income"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "Client is inclined to proceed with 55% equity allocation post-sale, but wants to review fixed income fund details before signing the investment policy."
+    ],
+    [
+     "a_action",
+     "Advisor to send client the specific details and fact sheets for the fixed income funds, including the proposed municipal bond fund."
+    ],
+    [
+     "plan",
+     "Plan to finalize and sign the investment policy after the closing, targeting early August if closing occurs as now expected."
+    ],
+    [
+     "deferred",
+     "Client is deferring any commitment to a charitable gift until after the sale numbers are final."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     4
+    ],
+    "1": [
+     3,
+     5
+    ],
+    "2": [
+     5
+    ],
+    "3": [
+     2
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-008",
+   "client_id": "CLIENT-002",
+   "step": 3,
+   "scenario_tags": [
+    "business_sale",
+    "investment_policy",
+    "fixed_income_allocation",
+    "estate_planning"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Rebecca decides not to include the municipal bond fund and to allocate 30% to Treasuries and 10% to corporate bonds in the fixed income portion."
+    ],
+    [
+     "a_action",
+     "Advisor will prepare and send the updated investment policy for signature after closing, with the revised fixed income allocation."
+    ],
+    [
+     "plan",
+     "Client expects closing first week of August but will notify advisor if the date changes."
+    ],
+    [
+     "correction",
+     "Advisor’s earlier recap including a 5% muni fund is corrected—client rejects the muni allocation and clarifies fixed income split."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4,
+     6
+    ],
+    "1": [
+     7,
+     8
+    ],
+    "2": [
+     7,
+     8,
+     10
+    ],
+    "3": [
+     3,
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-009",
+   "client_id": "CLIENT-002",
+   "step": 4,
+   "scenario_tags": [
+    "business_sale",
+    "investment_policy",
+    "charitable_gift",
+    "estate_planning",
+    "closing"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Rebecca agrees to proceed with the investment policy as discussed: 55% equities, 30% Treasuries, 10% corporates, no muni fund."
+    ],
+    [
+     "deferred",
+     "Rebecca postpones a decision on a charitable gift until September, after she’s seen tax and investment account details."
+    ],
+    [
+     "plan",
+     "Advisor will remind Rebecca about the charitable gift decision in September."
+    ],
+    [
+     "c_action",
+     "Rebecca will follow up with her lawyer about the estate documents, which are still not ready."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     3
+    ],
+    "1": [
+     4
+    ],
+    "2": [
+     4,
+     7
+    ],
+    "3": [
+     6
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-010",
+   "client_id": "CLIENT-003",
+   "step": 1,
+   "scenario_tags": [
+    "estate_planning",
+    "home_purchase",
+    "childcare",
+    "family",
+    "flexible_timeline",
+    "task_followup"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "Sofia has booked an appointment with an attorney for will and guardianship paperwork for next Friday."
+    ],
+    [
+     "tentative",
+     "Mateo is browsing listings and they are open to moving sooner if the right property appears, but are not actively changing the house search timeline yet."
+    ],
+    [
+     "plan",
+     "The working plan is to start the house search in autumn unless something compelling arises."
+    ],
+    [
+     "a_action",
+     "Advisor will send Sofia a checklist of questions to prepare for the attorney meeting about the will and guardianship."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2
+    ],
+    "1": [
+     2,
+     4,
+     6
+    ],
+    "2": [
+     6,
+     7
+    ],
+    "3": [
+     7
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-011",
+   "client_id": "CLIENT-003",
+   "step": 2,
+   "scenario_tags": [
+    "estate_planning",
+    "house_purchase",
+    "childcare_budget",
+    "family_discussion"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "Sofia and Mateo are still aiming to start the house search in autumn, with no active viewings yet despite browsing listings."
+    ],
+    [
+     "plan",
+     "Brokerage contributions remain trimmed by about $800/month to cover childcare, with the setup unchanged for now."
+    ],
+    [
+     "tentative",
+     "Sofia and Mateo are discussing backup guardians and trustees for Lucia, with decisions expected after their upcoming family call."
+    ],
+    [
+     "c_action",
+     "Sofia will notify Elena when guardianship and trustee choices are finalized to update estate records."
+    ],
+    [
+     "tentative",
+     "If childcare costs change or a surprising listing appears, Sofia may revisit the budget and house-buying timeline."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4,
+     5
+    ],
+    "1": [
+     5,
+     6
+    ],
+    "2": [
+     2,
+     4
+    ],
+    "3": [
+     3,
+     7
+    ],
+    "4": [
+     6
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-012",
+   "client_id": "CLIENT-003",
+   "step": 3,
+   "scenario_tags": [
+    "guardianship",
+    "estate",
+    "house_search",
+    "liquidity",
+    "college_savings",
+    "family_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Sofia and Mateo are naming Mateo's sister as the backup guardian and trustee for Lucia in their will."
+    ],
+    [
+     "tentative",
+     "Mateo's cousin is a 'definite maybe' as a second backup guardian/trustee, but not being listed yet."
+    ],
+    [
+     "plan",
+     "House search remains unofficial; if Sofia and Mateo get serious about a listing, they'll ask Elena to run mortgage and expense numbers before making a move."
+    ],
+    [
+     "a_action",
+     "Elena will send Sofia an email outlining the liquidity timeline for moving funds from the high-yield savings and brokerage accounts for a potential house offer."
+    ],
+    [
+     "deferred",
+     "The decision about opening a 529 college savings account for Lucia remains on pause until after the house situation is clarified."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     4
+    ],
+    "1": [
+     2,
+     13
+    ],
+    "2": [
+     6,
+     8,
+     12
+    ],
+    "3": [
+     9,
+     11
+    ],
+    "4": [
+     11,
+     12
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-013",
+   "client_id": "CLIENT-003",
+   "step": 4,
+   "scenario_tags": [
+    "guardianship",
+    "housing",
+    "529",
+    "liquidity",
+    "family_decision"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Mateo’s sister is confirmed as the backup guardian and trustee in the will/guardianship paperwork."
+    ],
+    [
+     "deferred",
+     "Decision on naming Mateo’s cousin as a second backup guardian/trustee is postponed due to ongoing family discussion."
+    ],
+    [
+     "tentative",
+     "Potential house purchase remains a possibility, but no viewing scheduled yet; client will contact advisor to run numbers if the process moves forward."
+    ],
+    [
+     "plan",
+     "529 college savings account remains on hold until house or childcare situation is clearer."
+    ],
+    [
+     "a_action",
+     "Advisor has sent a detailed outline of expected liquidity timelines from the house fund and brokerage, with a reference table."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4
+    ],
+    "1": [
+     4
+    ],
+    "2": [
+     2,
+     7
+    ],
+    "3": [
+     6,
+     7
+    ],
+    "4": [
+     1
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-014",
+   "client_id": "CLIENT-004",
+   "step": 1,
+   "scenario_tags": [
+    "family_gifting",
+    "estate_planning",
+    "investment_schedule",
+    "communication_with_children"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "Gift to Tobi of up to $15,000 is still not approved; client requires more information before deciding."
+    ],
+    [
+     "deferred",
+     "Decision about approaching estate attorneys for Folake's share is postponed until after the client's birthday in August."
+    ],
+    [
+     "plan",
+     "Next investing step is penciled in for July 12 but will only proceed after a check-in on July 11 if markets remain stable."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     3,
+     4
+    ],
+    "1": [
+     5,
+     6,
+     8
+    ],
+    "2": [
+     9,
+     10,
+     11
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-015",
+   "client_id": "CLIENT-004",
+   "step": 2,
+   "scenario_tags": [
+    "investment-phasing",
+    "family-gift",
+    "estate-planning",
+    "pause-decision"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Grace decides to pause the next investment tranche and reassess after her birthday in August."
+    ],
+    [
+     "tentative",
+     "The $15,000 gift for Tobi remains open; Grace is considering a smaller amount but has not decided."
+    ],
+    [
+     "plan",
+     "No approach to Folake about a trust will be made until Grace requests it."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4,
+     5,
+     6
+    ],
+    "1": [
+     8,
+     9,
+     10,
+     13
+    ],
+    "2": [
+     11,
+     12,
+     13
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-016",
+   "client_id": "CLIENT-004",
+   "step": 3,
+   "scenario_tags": [
+    "pause-investing",
+    "family-gift-tentative",
+    "estate-planning",
+    "birthday",
+    "market-volatility"
+   ],
+   "authored_outcomes": [
+    [
+     "plan",
+     "No additional investing until after the client's birthday in August; the pause continues."
+    ],
+    [
+     "tentative",
+     "The $15,000 gift to Tobi remains on hold with no set figure or commitment; client does not want to specify a lower amount yet."
+    ],
+    [
+     "plan",
+     "Client will not bring up the trust conversation with Folake until after her birthday; still on hold."
+    ],
+    [
+     "correction",
+     "Client clarifies she does not want to specify a smaller gift to Tobi at this time, despite mentioning it earlier."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     1,
+     2,
+     3
+    ],
+    "1": [
+     5,
+     6,
+     7
+    ],
+    "2": [
+     8,
+     9
+    ],
+    "3": [
+     5,
+     7
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-017",
+   "client_id": "CLIENT-004",
+   "step": 4,
+   "scenario_tags": [
+    "investing",
+    "family_gift",
+    "trusts",
+    "hesitation",
+    "gradual_investing",
+    "adult_children"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Grace opts to invest half the usual monthly amount into stocks this month, rather than the full tranche."
+    ],
+    [
+     "tentative",
+     "Grace is considering a $5,000 gift for Tobi, but is not committing and wants to see how he manages his first client."
+    ],
+    [
+     "plan",
+     "No action on Folake's trust until at least next month; topic remains on the back burner."
+    ],
+    [
+     "correction",
+     "Grace partially accepts the advisor's summary about the $5,000 gift for Tobi, clarifying she isn't ready to promise it yet."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4,
+     5,
+     6
+    ],
+    "1": [
+     9,
+     10,
+     11
+    ],
+    "2": [
+     12,
+     13
+    ],
+    "3": [
+     10,
+     11
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-018",
+   "client_id": "CLIENT-005",
+   "step": 1,
+   "scenario_tags": [
+    "disability_insurance",
+    "cash_reserve",
+    "family_planning",
+    "open_item",
+    "followup"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "Advisor will review the three disability insurance quotes and flag any oddities or expensive features, aiming for $5,000/month payout and as long a benefit term as is reasonable."
+    ],
+    [
+     "plan",
+     "Client and partner are considering a $5,000/month disability insurance benefit, with a benefit term up to age 65 or possibly 5 years, depending on premium costs."
+    ],
+    [
+     "correction",
+     "Client reiterates that the Lisbon move is not a concrete plan and that college fund discussions are postponed until fall."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     3,
+     6,
+     7
+    ],
+    "1": [
+     5,
+     6
+    ],
+    "2": [
+     9,
+     10
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-019",
+   "client_id": "CLIENT-005",
+   "step": 2,
+   "scenario_tags": [
+    "disability-insurance",
+    "decision-support",
+    "family-input",
+    "cost-comparison",
+    "hedge"
+   ],
+   "authored_outcomes": [
+    [
+     "a_action",
+     "Advisor will model and compare ten-year premium costs for the five-year and age-65 disability insurance options, and estimate hypothetical claim scenarios."
+    ],
+    [
+     "tentative",
+     "Client and partner are interested in either the five-year or age-65 disability coverage, but are not ready to decide until they review the advisor's cost comparison."
+    ],
+    [
+     "correction",
+     "Client does not want partial disability benefits modeled at this stage, despite advisor earlier asking about it."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     3,
+     5
+    ],
+    "1": [
+     2,
+     4,
+     6
+    ],
+    "2": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-020",
+   "client_id": "CLIENT-005",
+   "step": 3,
+   "scenario_tags": [
+    "disability_insurance",
+    "decision_analysis",
+    "family_involvement",
+    "risk_tolerance"
+   ],
+   "authored_outcomes": [
+    [
+     "tentative",
+     "Lucas is leaning toward Option B ($5,000/month to age 65, $245/month premium, no partial disability), but wants to review exclusions and claims process before deciding."
+    ],
+    [
+     "c_action",
+     "Lucas will review the exclusions and claims info for Option B with Camille before making a final decision."
+    ],
+    [
+     "a_action",
+     "Daniel will send a summary of Option B’s exclusions and claims process, flagging any gotchas, to Lucas and Camille by Friday."
+    ],
+    [
+     "correction",
+     "Lucas clarifies that he is not fully ruling out Option C yet, but sees it as probably too risky."
+    ],
+    [
+     "deferred",
+     "The final disability insurance choice is explicitly deferred until after Lucas and Camille review the summary."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     6,
+     8,
+     11
+    ],
+    "1": [
+     8,
+     11
+    ],
+    "2": [
+     9,
+     10
+    ],
+    "3": [
+     7
+    ],
+    "4": [
+     11,
+     12
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-021",
+   "client_id": "CLIENT-005",
+   "step": 4,
+   "scenario_tags": [
+    "insurance-decision",
+    "family-influence",
+    "fine-print-review"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Lucas chooses to apply for Option B disability insurance: $5,000/month to age 65, $245/month premium, no partial disability."
+    ],
+    [
+     "plan",
+     "Advisor will send application forms and a checklist for Option B to Lucas and Camille."
+    ],
+    [
+     "c_action",
+     "Lucas will review and sign the application paperwork for Option B and provide required info to the advisor and broker."
+    ],
+    [
+     "correction",
+     "Lucas softens his earlier indecision, now stating he is comfortable proceeding with Option B, noting Camille is not thrilled but accepts it."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4,
+     6
+    ],
+    "1": [
+     5
+    ],
+    "2": [
+     6
+    ],
+    "3": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-022",
+   "client_id": "CLIENT-006",
+   "step": 1,
+   "scenario_tags": [
+    "bond_ladder",
+    "power_of_attorney",
+    "document_update",
+    "routine_followup"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Peg confirms she wants to reinvest the $50,000 from the maturing bond at the far end of the ladder, as previously discussed."
+    ],
+    [
+     "c_action",
+     "Peg will request the updated power of attorney document from her accountant Dennis Hall and upload it once received."
+    ],
+    [
+     "correction",
+     "Peg found an outdated 2017 power of attorney, not the updated version Dennis drafted."
+    ],
+    [
+     "plan",
+     "Advisor will proceed with the bond reinvestment and notify Peg when the trade is complete."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2,
+     4
+    ],
+    "1": [
+     2,
+     4
+    ],
+    "2": [
+     2
+    ],
+    "3": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-023",
+   "client_id": "CLIENT-006",
+   "step": 2,
+   "scenario_tags": [
+    "bond-ladder",
+    "power-of-attorney",
+    "document-transfer",
+    "third-party-accountant",
+    "routine-update"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Client confirms reinvestment of $50,000 at the far end of the bond ladder is complete and has no changes to the plan."
+    ],
+    [
+     "plan",
+     "Client will upload the updated power of attorney from Dennis as soon as it is received; no need to send the old version."
+    ],
+    [
+     "tentative",
+     "If Dennis has not sent the POA by Monday, client may ask Advisor to follow up with Dennis."
+    ],
+    [
+     "correction",
+     "Advisor checks if there are any other items to discuss, but client clarifies nothing is needed until the paperwork is settled, correcting any assumption of new agenda items."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     1,
+     2,
+     8
+    ],
+    "1": [
+     4,
+     6
+    ],
+    "2": [
+     6
+    ],
+    "3": [
+     7,
+     8
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-024",
+   "client_id": "CLIENT-006",
+   "step": 3,
+   "scenario_tags": [
+    "power_of_attorney",
+    "elder_care",
+    "portfolio_liquidity",
+    "retirement_community",
+    "bond_ladder"
+   ],
+   "authored_outcomes": [
+    [
+     "c_action",
+     "Peg has uploaded the updated, signed power of attorney document from Dennis to the portal."
+    ],
+    [
+     "plan",
+     "No immediate changes to portfolio allocation or cash reserves; Peg will notify Elena if care expenses rise or a move to Maplewood is actively considered."
+    ],
+    [
+     "a_action",
+     "Elena will review the uploaded power of attorney document and confirm to Peg that it is in order or flag any issues."
+    ],
+    [
+     "tentative",
+     "Peg raises the possibility of raising more cash in the future if Frank’s care needs increase, but defers action until a real need arises."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     2
+    ],
+    "1": [
+     6,
+     7,
+     8
+    ],
+    "2": [
+     3,
+     9
+    ],
+    "3": [
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "interaction_id": "SIM-025",
+   "client_id": "CLIENT-006",
+   "step": 4,
+   "scenario_tags": [
+    "POA",
+    "portfolio_allocation",
+    "elder_care",
+    "client_questions"
+   ],
+   "authored_outcomes": [
+    [
+     "decision",
+     "Client will not change the equity allocation at this time, keeping it at 30%."
+    ],
+    [
+     "tentative",
+     "Revisiting the equity allocation is an option for the year-end review, but not before unless the client raises it or urgent market conditions arise."
+    ],
+    [
+     "a_action",
+     "Advisor will monitor the portfolio and proactively alert if market or portfolio conditions warrant a change before year-end."
+    ]
+   ],
+   "outcome_turns": {
+    "0": [
+     4
+    ],
+    "1": [
+     3,
+     5
+    ],
+    "2": [
+     5
+    ]
+   }
+  }
+ ]
+}

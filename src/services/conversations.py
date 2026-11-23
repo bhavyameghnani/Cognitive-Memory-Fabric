@@ -34,6 +34,16 @@ class Conversations:
             v.sort(key=lambda r: r["turn_index"])
         self._directory: Optional[dict] = None
 
+    def add_rows(self, rows: list[dict]) -> None:
+        """Append the rows of interactions that are NEW to this source (the demo simulation, services/simulation.py).  An interaction that already exists is refused:
+        a source row, once read, never changes (the transcript hash of an ingested interaction must stay valid)."""
+        iids = {r["interaction_id"] for r in rows}
+        clash = sorted(iids & set(self.meetings))
+        if clash:
+            raise ValueError(f"interactions already present: {clash}")
+        self.rows += [dict(r, turn_index=int(r["turn_index"])) for r in rows]
+        self._index()
+
     # ---- lookups
     def interactions_for(self, client_id: str) -> list[str]:
         ids = {r["interaction_id"] for r in self.rows if r["client_id"] == client_id}
