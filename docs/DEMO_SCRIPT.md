@@ -109,16 +109,16 @@ Rebecca's care costs show slot separation: a monthly care cost (6,000 USD per mo
 
 The tab lists the selected client's queued interactions from `data/simulation/`, in date order. It shows the next one with its full transcript. **Ingest into memory** adds that interaction to the conversation source and runs steps 1–7 on it. The graph then reloads with the new memories highlighted. Ingestion takes 10–30 seconds and two model calls. The tab is not available in the production profile, and the server refuses to ingest an interaction out of date order.
 
-Example, SIM-001 (email, 12 July 2026). The advisor asks about open items and restates a plan: "On Yuki, I'll leave the thirty-thousand cap as a plan unless you tell me otherwise… is that right?" Kenji answers: "Mostly right, but I did tell her she probably shouldn't make a decision just for the money." In one live run, the system stored four episodic memories:
+Example, SIM-001 (email, 12 July 2026). The advisor asks about open items and restates a plan: "On Yuki, I'll leave the thirty-thousand cap as a plan unless you tell me otherwise… is that right?" Kenji answers: "Mostly right, but I did tell her she probably shouldn't make a decision just for the money." In the run shown in the screenshots of the accompanying Word document, the system stored four episodic memories:
 
 | Memory | Certainty | Source |
 |---|---|---|
-| Kenji told Yuki not to decide for the money alone | confirmed, 0.82 | Kenji's sentence |
-| Yuki is undecided between the graduate programme and the job | exploratory, 0.86 | Kenji's sentence |
-| Kenji retrieved the beneficiary forms and will review them | confirmed, 0.82 | Kenji's sentence |
+| Yuki is undecided between the graduate programme and the job | exploratory, 0.96 | Kenji's sentence |
+| Mariko downloaded her Social Security statement; Kenji will send it | unconfirmed, 0.86 | Kenji's sentence |
+| Kenji retrieved the beneficiary forms and will review them | unconfirmed, 0.86 | Kenji's sentence |
 | A 30,000 USD cap for Yuki's graduate programme | **unconfirmed**, 0.40 | the advisor's sentence; the client only partly accepted it |
 
-The last row illustrates step 4: a figure stated by the advisor and only partly accepted by the client is kept, with its source, but is not promoted to a current value. Model outputs vary between runs, so a repeated ingestion can differ in detail.
+The last row illustrates step 4: a figure stated by the advisor and only partly accepted by the client is kept, with its source, but is not promoted to a current value. Model outputs vary between runs. Across four ingestions of SIM-001, the system stored four or five memories, and the 30,000 USD cap was stored as unconfirmed, sourced to the advisor, every time.
 
 ### 5.4 Asking questions (tab *Ask CMF*)
 
@@ -193,4 +193,4 @@ for c in CLIENT-001 CLIENT-002 CLIENT-003 CLIENT-004 CLIENT-005 CLIENT-006; do .
 
 Further design notes: `docs/llm_first_ingestion.md` (pipeline and measurements), `docs/m1_attribution_safety_report.md` (evidence policy), `docs/harness.md` (permissions and verification), `docs/dataset_design.md` (data generation).
 
-*The older presenter version of this walkthrough (`CMF_Demo_Script.docx`) predates the evidence policy, and several of its figures no longer apply.*
+*A Word version of this document with screenshots of every step is `docs/CMF_Demo_Script.docx`.*

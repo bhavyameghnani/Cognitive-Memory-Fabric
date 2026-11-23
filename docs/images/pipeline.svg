@@ -89,8 +89,8 @@
 
   <rect x="428" y="232" width="176" height="108" rx="10" class="store"/>
   <text x="442" y="254" class="t">Episodic memory</text>
-  <text x="442" y="276" class="s">what was said, when, by whom;</text>
-  <text x="442" y="292" class="s">certainty and confidence;</text>
+  <text x="442" y="276" class="s">each statement, its speaker</text>
+  <text x="442" y="292" class="s">and date; certainty, confidence;</text>
   <text x="442" y="308" class="s">verbatim excerpt and turn</text>
   <text x="442" y="324" class="s">as evidence; append-only</text>
 

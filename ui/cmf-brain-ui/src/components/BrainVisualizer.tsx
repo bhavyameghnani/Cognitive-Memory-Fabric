@@ -13,6 +13,7 @@ interface Props {
   onFilter: (t: MemoryType | 'all') => void;
   /** memory ids retrieved by the last advisor query; when set, everything else dims */
   highlighted: Set<string> | null;
+  highlightLabel?: string;            // what the highlighted memories are (default: the last Ask CMF question's retrieval)
   onClearHighlight: () => void;
   showHistory: boolean;
   onToggleHistory: () => void;
@@ -107,7 +108,7 @@ export const BrainVisualizer: React.FC<Props> = (p) => {
 
       {p.highlighted && (
         <div className="mt-3 flex items-center justify-between text-xs rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-blue-200">
-          <span>Showing the {p.highlighted.size} memories CMF retrieved for your last question</span>
+          <span>{p.highlightLabel ?? `Showing the ${p.highlighted.size} memories CMF retrieved for your last question`}</span>
           <button onClick={p.onClearHighlight} className="underline underline-offset-2 hover:text-white cursor-pointer">clear</button>
         </div>
       )}

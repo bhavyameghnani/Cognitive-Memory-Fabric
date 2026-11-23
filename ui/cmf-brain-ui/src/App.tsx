@@ -97,7 +97,7 @@ export default function App() {
           <div className="lg:col-span-7 min-w-0">
             {data ? (
               <BrainVisualizer memories={data.memories} relationships={data.relationships} interactions={data.interactions} selectedId={selectedId} onSelect={select}
-                typeFilter={typeFilter} onFilter={setTypeFilter} highlighted={highlighted} onClearHighlight={() => { setResult(null); setSimHighlight(null); }}
+                typeFilter={typeFilter} onFilter={setTypeFilter} highlighted={highlighted} highlightLabel={simHighlight ? `Showing the ${simHighlight.size} memories formed by the last simulated ingestion` : undefined} onClearHighlight={() => { setResult(null); setSimHighlight(null); }}
                 showHistory={showHistory} onToggleHistory={() => setShowHistory((v) => !v)} interactionId={interactionId} onSelectInteraction={setInteractionId} />
             ) : (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/60 h-[560px] flex items-center justify-center text-sm text-slate-500">{session && ready === session && clients.length === 0 ? 'No clients are available.' : 'Loading memory brain…'}</div>

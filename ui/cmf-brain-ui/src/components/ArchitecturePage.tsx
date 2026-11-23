@@ -84,7 +84,7 @@ const N: Record<string, Node> = {
   /* ---------------------------------------------------------------- 3b. llm-first ingestion */
   l1: { title: '① Extract', sub: 'whole conversation', icon: Sparkles, kind: 'llm', paths: ['write'],
     what: 'The extractor (gpt-4o-mini) reads every turn, with no regex pre-selection, and proposes MemoryCandidates in the same schema as the rules path.',
-    points: ['Can reason across turns ("Any scholarships?" / "A small one.")', 'Robust to natural wording: 74% recall vs 66% for rules on rewritten meetings'],
+    points: ['Can reason across turns ("Any scholarships?" / "A small one.")', 'Robust to natural wording: 73% recall vs 66% for rules on rewritten meetings, 56% vs 23% on new simulated interactions'],
     code: ['src/agents/memory/llm_first.py · extract'] },
   l2: { title: '② Fact-check', sub: 'code · re-anchor', icon: Search, kind: 'code', paths: ['write'],
     what: 'Code checks facts; it never judges certainty.',
@@ -336,7 +336,7 @@ export function ArchitecturePage() {
                   <code className="text-[10px] text-slate-500">CMF_INGEST_MODE=llm_first</code>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">{['l1', 'l2', 'l3', 'l4', 'l5', 'l6'].map((x) => B(x, true))}</div>
-                <p className="mt-2 text-[11px] text-slate-400">The LLM reads the whole conversation and proposes every memory; a second, blind model votes on certainty; code checks the facts. Natural wording: 74% recall, 79% certainty accuracy. ~2 LLM calls per conversation.</p>
+                <p className="mt-2 text-[11px] text-slate-400">The LLM reads the whole conversation and proposes every memory; a second, blind model votes on certainty; code checks the facts. Natural wording: 73% recall, 75% certainty accuracy; new simulated interactions: 56% / 57%. ~2 LLM calls per conversation.</p>
                 <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-2 items-center rounded-lg border border-emerald-500/25 bg-emerald-500/[0.04] p-2">
                   {B('rx', true)}
                   <p className="text-[11px] text-slate-400"><b className="text-emerald-300">Regex is a safety net, not the extractor:</b> an advisory third certainty vote (sets confidence), a hedge-word veto, and number/value normalisation inside fact-check.</p>
