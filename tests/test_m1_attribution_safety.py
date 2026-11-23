@@ -173,6 +173,17 @@ def test_a_client_spoken_confirmation_is_what_lifts_the_ceiling_and_it_must_be_r
     assert A.find_client_confirmation(far, 1) is None                           # only the IMMEDIATE next turn counts: a later 'yes' may answer something else
 
 
+def test_natural_wording_confirmations_are_recognised_and_hedges_still_block_them():
+    """Replies from the paraphrased evaluation set (INT-036 turn 10, INT-146 turn 6): plain agreement in natural wording lifts the ceiling like 'That's right.' does."""
+    ex = "You've decided to retire at 62."
+    for reply in ("That makes sense to me. Please go ahead and arrange that.", "That's all accurate.", "That looks right.", "Spot on."):
+        rows = [dict(turn_index=1, speaker="Advisor", utterance=ex), dict(turn_index=2, speaker="Client", utterance=reply)]
+        assert A.find_client_confirmation(rows, 1) is not None, reply
+    for reply in ("That makes sense, but I'm not sure yet.", "That looks about right, though I still want to think about it.", "Makes sense? I don't know."):
+        rows = [dict(turn_index=1, speaker="Advisor", utterance=ex), dict(turn_index=2, speaker="Client", utterance=reply)]
+        assert A.find_client_confirmation(rows, 1) is None, reply
+
+
 def test_the_rank_table_matches_the_pipeline_configuration():
     assert A.RANK == CERTAINTY_RANK
 

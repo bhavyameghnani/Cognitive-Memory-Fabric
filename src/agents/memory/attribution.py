@@ -67,8 +67,9 @@ _REPORTED = re.compile(
     r"(?:he|she|they|the client)\s+(?:has |have )?(?:decided|chosen|agreed)|\w+ has decided|"
     r"the working (?:plan|assumption) (?:i'm|i am) recording|i'?ll record that as your|for the record,? (?:here is|here's) what we|here's where we landed|here's what i'm taking away|"
     r"my notes (?:from today )?read as follows)\b")
-_AFFIRM = re.compile(r"^(?:yes|yeah|yep|yup|correct|right|exactly|agreed|absolutely|definitely|sure|ok(?:ay)?|that(?:'s| is) (?:right|correct|accurate|what we decided|the plan|fine|good)|"
-                     r"(?:that )?sounds (?:good|right|fine)|let(?:'s| us) do (?:that|it)|go ahead|please (?:go ahead|proceed)|i agree|that works)\b")
+_AFFIRM = re.compile(r"^(?:yes|yeah|yep|yup|correct|right|exactly|agreed|absolutely|definitely|sure|ok(?:ay)?|that(?:'s| is) (?:all )?(?:right|correct|accurate|what we decided|the plan|fine|good)|"
+                     r"(?:that )?sounds (?:good|right|fine)|let(?:'s| us) do (?:that|it)|go ahead|please (?:go ahead|proceed)|i agree|that works|"
+                     r"(?:that )?makes sense|(?:that )?looks (?:about )?right|all correct|spot on)\b")    # natural wording (paraphrased eval set): "That makes sense to me.", "That's all accurate."
 
 
 def is_bare_affirmation(text: str) -> bool:
