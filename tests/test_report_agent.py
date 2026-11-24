@@ -85,14 +85,22 @@ class Evidence(unittest.TestCase):
         self.assertFalse(any(e.synthetic for e in r.evidence if e.source_class in ("memory", "conversation_evidence")))
         self.assertEqual(r.evidence[1].tool_execution_id, "EX-REQ-R-01")
 
-    def test_prompt_limited_to_16_and_300_chars(self):
+    def test_prompt_is_bounded_by_the_evidence_budget_and_300_chars_per_line(self):
+        """B2A: the model is shown a bounded, prioritised part of the evidence: at most PROMPT_ITEMS lines and PROMPT_EVIDENCE_CHARS characters (it was a fixed 16 lines), each line
+        still at most about 300 characters, and what it was NOT shown is said in the report's uncertainties."""
+        from agents.report.evidence import PROMPT_EVIDENCE_CHARS, PROMPT_ITEMS
         eps = [mem(f"EP-{i}", "semantic", str(i), "superseded", "confirmed", content="x" * 800, topic=f"t{i}") for i in range(30)]
         a, llm = agent_for(llm_out())
-        a.write("q", plan(), {K: MemoryContext(client_id=K, history=eps, current=[mem("S", "semantic", "63", "active", "confirmed")])}, tstate())
+        r = a.write("q", plan(), {K: MemoryContext(client_id=K, history=eps, current=[mem("S", "semantic", "63", "active", "confirmed")])}, tstate())
         user = llm.calls[0]["user"]
         lines = [ln for ln in user.splitlines() if re.match(r"\[E\d+ ", ln)]
-        self.assertEqual(len(lines), 16)
+        self.assertLessEqual(len(lines), PROMPT_ITEMS)
+        self.assertLessEqual(sum(len(ln) + 1 for ln in lines), PROMPT_EVIDENCE_CHARS)
+        self.assertGreater(len(lines), 16)                                                         # more than the old fixed window, because they fit the budget
         self.assertTrue(all(len(ln) < 330 for ln in lines))
+        self.assertEqual(r.validation["evidence_in_prompt"], len(lines))
+        self.assertEqual(len(r.validation["evidence_in_prompt_refs"]) + len(r.validation["evidence_not_in_prompt_refs"]), len(r.evidence))
+        self.assertTrue(any("evidence items were not shown to the model" in u for u in r.uncertainties), r.uncertainties)
 
     def test_client_ownership(self):
         ctx = kenji_ctx()

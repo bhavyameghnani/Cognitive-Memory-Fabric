@@ -41,11 +41,13 @@ def prune_traces(directory: Optional[Path] = None, retention_days: int = 30, max
 def influence_record(plan, retrieved: dict, selection, report, verification=None, tools=None) -> dict:
     """Answers: which memories influenced the response, which were retrieved but excluded, which evidence supports which claim."""
     retrieved_ids = [m.memory_id for ctx in retrieved.values() for g in ("current", "history", "episodes", "procedures", "working", "unresolved") for m in getattr(ctx, g)]
-    from agents.report.evidence import PROMPT_ITEMS
+    from agents.report.evidence import select_for_prompt
     retrieved_ids = list(dict.fromkeys(retrieved_ids))
     excluded = list(selection.excluded) if selection is not None else []
-    # what the model could see: only the first PROMPT_ITEMS evidence items are put in the Report Agent's prompt
-    shown = list(dict.fromkeys(e.memory_id for e in report.evidence[:PROMPT_ITEMS] if e.memory_id))
+    # what the model could see: the evidence items the Report Agent put in its prompt (a bounded, prioritised selection: agents.report.evidence.select_for_prompt)
+    in_prompt = (report.validation or {}).get("evidence_in_prompt_refs")
+    items = [e for e in report.evidence if e.ref in set(in_prompt)] if in_prompt is not None else select_for_prompt(report.evidence)[0]
+    shown = list(dict.fromkeys(e.memory_id for e in items if e.memory_id))
     cited = list(dict.fromkeys(m for c in (verification.claim_evidence() if verification is not None else []) for m in c["memory_ids"]))
     return dict(
         request_id=plan.request_id, client_ids=list(plan.client_ids), memories_retrieved=retrieved_ids,

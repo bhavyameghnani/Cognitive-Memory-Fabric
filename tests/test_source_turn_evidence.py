@@ -224,7 +224,11 @@ class EndToEnd(unittest.TestCase):
                "historical_context": [{"text": "In INT-058 turn 5 the recorded speaker Advisor says the earlier note overstated it.", "refs": ["E2"]}]}
         new, res, llm = self.run_report(out)
         text = " ".join(f.text for f in new.historical_context)
-        self.assertEqual(len(new.historical_context), 3)                       # the 3 code-rendered source records (the model's paraphrase is left to the strict clause check)
+        recs = [f for f in new.historical_context if f.text.startswith(("Source record", "Synthetic source record"))]
+        from agents.report.narrative import is_narrative
+        story = [f for f in new.historical_context if is_narrative(f)]                             # B2B/B3: the chronology, code-rendered from the same turns
+        self.assertEqual(len(recs), 3)                                         # the 3 code-rendered source records (the model's paraphrase is left to the strict clause check)
+        self.assertTrue(story and all(f.origin == "rendered" for f in story))
         for iid, idx in TURNS:
             self.assertIn(f"{iid} turn {idx}", text)
         self.assertEqual(text.count("recorded speaker Advisor"), 3)
@@ -234,7 +238,7 @@ class EndToEnd(unittest.TestCase):
         asserted = re.sub("“[^”]*”", "", asserted)                                           # and the quoted source words are the record itself
         self.assertNotRegex(asserted, r"(?i)\b(the client|rebecca) (has |had )?(signed|accepted|agreed|decided)")
         self.assertNotRegex(text, r"(?i)original recording|verified client conversation")
-        self.assertEqual([v.verdict for v in res.verdicts], ["verified"] * 3 + ["unsupported"])      # the code-rendered records verify; the model paraphrase fails the unchanged clause check
+        self.assertEqual([v.verdict for v in res.verdicts], ["verified"] * (3 + len(story)) + ["unsupported"])      # the code-rendered records AND chronology verify; the model paraphrase fails the unchanged clause check
         self.assertNotIn("SOURCE_NOT_PERMITTED", res.verdicts[-1].reason_codes)
         self.assertIn(SYNTHETIC_STATEMENT, new.assumptions)
         self.assertIn("get_source_evidence: " + LIMIT, new.limitations)       # the tool's exact limitation, unaltered, behind the tool-name prefix every limitation carries

@@ -8,6 +8,7 @@ Everything is synthetic and in memory: a tiny controlled conversations file, scr
 """
 import asyncio
 import csv
+import re
 import sys
 import tempfile
 import unittest
@@ -54,6 +55,11 @@ ROWS = [  # (interaction, client, datetime, turn, speaker, utterance)
     ("INT-9003", R, "2026-04-01T10:00:00", 2, "Client", "Counsel is reviewing the Lakeshore letter of intent."),
     ("INT-9100", K, "2026-02-02T10:00:00", 1, "Client", "A different client also mentions Lakeshore here."),
 ] + [(f"INT-8{n:03d}", K, "2026-02-03T10:00:00", 1, "Advisor", "Thanks, see you next week.") for n in range(300)]      # ordinary turns, so that a word's rarity means something
+
+
+def records(findings):
+    """The code-rendered SOURCE RECORDS of a report (one per retrieved turn).  B2B adds chronology paragraphs (agents/report/timeline.py) to historical_context; those are asserted separately."""
+    return [f for f in findings if f.text.startswith(("Source record", "Synthetic source record"))]
 
 
 def _phrases(text):
@@ -309,7 +315,7 @@ class Issue3SourceTurns(unittest.TestCase):
         reads = [e for e in st.executions if "interaction_id" in e.arguments]
         self.assertEqual({e.arguments["search_text"] for e in searches}, {"letter of intent"})
         self.assertTrue(all(e.status == "success" for e in st.executions))
-        self.assertEqual([(e.arguments["interaction_id"], e.arguments["turn_indices"]) for e in reads], [("INT-9001", [1, 2]), ("INT-9002", [1, 2]), ("INT-9003", [1, 2])])   # earliest to latest, every matching turn
+        self.assertEqual([(e.arguments["interaction_id"], e.arguments["turn_indices"]) for e in reads], [("INT-9001", [1, 2, 3]), ("INT-9002", [1, 2]), ("INT-9003", [1, 2])])   # earliest to latest, ever.  B1: INT-9001 turn 3 (the advisor's reply to the client's matching turn 2) is read as contexty matching turn
         self.assertFalse([e for e in st.executions if "entity_id" in e.arguments])                                      # no guessed entity ids
         self.assertEqual(st.missing_information, [])
         self.assertEqual(len(llm.calls), 1)                                                                             # the model is only asked whether anything is missing
@@ -318,13 +324,17 @@ class Issue3SourceTurns(unittest.TestCase):
                 row = self.conv.turn(t["interaction_id"], t["turn_index"])
                 self.assertEqual((t["text"], t["speaker"], e.result.as_of), (row["utterance"], row["speaker"], row["interaction_datetime"][:10]))
         ev = [x["payload"] for x in tr.events if x["event"] == "source_discovery"][0]
-        self.assertEqual((ev["meetings_found"], ev["meetings_retrieved"], ev["turns_retrieved"], ev["omitted"]), (3, 3, 6, []))
+        self.assertEqual((ev["meetings_found"], ev["meetings_retrieved"], ev["turns_retrieved"], ev["omitted"]), (3, 3, 7, []))    # B1: 6 matching turns + 1 context turn
 
     def test_every_retrieved_id_came_from_a_search_result(self):
         st, _, _ = self.run_sel()
         listed = {(m["interaction_id"], m["turn_index"]) for e in st.executions if "search_text" in e.arguments for m in e.result.data["search"]["matches"]}
         asked = {(e.arguments["interaction_id"], i) for e in st.executions if "interaction_id" in e.arguments for i in e.arguments["turn_indices"]}
-        self.assertEqual(asked, listed)
+        self.assertTrue(listed <= asked)                                                              # every listed turn is read ...
+        extra = asked - listed                                                                         # ... B1: plus the turns right around a listed one, in the SAME meeting, and nothing else
+        self.assertEqual(extra, {("INT-9001", 3)})
+        self.assertTrue(all(any(m == i and abs(t - u) == 1 for (m, u) in listed) for (i, t) in extra))
+        self.assertEqual({i for i, _ in asked}, {i for i, _ in listed})                               # no meeting that the search did not find
 
     def test_when_the_budget_is_too_small_exactly_what_was_left_out_is_disclosed(self):
         cap = len(self.terms(QUERY)) + 1
@@ -390,7 +400,7 @@ class Issue3SourceTurns(unittest.TestCase):
 
     def test_retrieved_turns_are_conversation_evidence_with_speaker_and_provenance_and_the_search_is_not_evidence(self):
         st, ev = self.evidence()
-        self.assertEqual([e.source_class for e in ev], ["conversation_evidence"] * 6)                  # the two search envelopes are not evidence; each turn of a multi-turn call is its own item
+        self.assertEqual([e.source_class for e in ev], ["conversation_evidence"] * 7)                  # the two search envelopes are not evidence; each turn of a multi-turn call is its own item
         by = {(e.interaction_id, e.turn_index): e for e in ev}
         self.assertEqual(by[("INT-9002", 1)].speaker, "Advisor")                                      # an advisor-authored note
         self.assertEqual(by[("INT-9002", 2)].speaker, "Client")                                       # the client's own words
@@ -408,7 +418,7 @@ class Issue3SourceTurns(unittest.TestCase):
 
     def test_report_writes_every_retrieved_turn_and_says_when_more_exist_than_it_writes(self):
         st, _ = self.evidence()
-        self.assertEqual(len(ReportAgent(MockLLM(handlers={"report": [LLMError("down")] * 3})).write(QUERY, report_plan((R,)), {}, st).historical_context), 6)
+        self.assertEqual(len(records(ReportAgent(MockLLM(handlers={"report": [LLMError("down")] * 3})).write(QUERY, report_plan((R,)), {}, st).historical_context)), 7)
         env = Envelope(tool="get_source_evidence", client_id=R, as_of="2026-02-01", provenance=Provenance(source="conversations.csv"),
                        data={"turns": [{"interaction_id": "INT-9001", "turn_index": i, "speaker": "Client", "text": f"Lakeshore item number {i}."} for i in range(1, 26)]})
         from schemas.tools import ToolSelectorState
@@ -422,14 +432,22 @@ class Issue3SourceTurns(unittest.TestCase):
     def test_report_fallback_is_chronological_attributed_and_never_says_signed(self):
         st, _ = self.evidence()
         rep = ReportAgent(MockLLM(handlers={"report": [LLMError("down")] * 3})).write(QUERY, report_plan((R,)), {}, st)
-        text = [f.text for f in rep.historical_context]
-        self.assertEqual(len(text), 6)
+        text = [f.text for f in records(rep.historical_context)]
+        self.assertEqual(len(text), 7)
         self.assertEqual([t.split(",")[0] for t in text], sorted(t.split(",")[0] for t in text))      # oldest first
         self.assertTrue(any("recorded speaker Advisor" in t and "Correction to my earlier note" in t for t in text))   # corrections and advisor notes are kept and attributed
         self.assertTrue(any("recorded speaker Client" in t and "have not signed" in t for t in text))
         self.assertIn("not that any statement is true", rep.summary)
         self.assertNotIn("signed", rep.summary)
         self.assertEqual([t for t in text if "signed" in t], [t for t in text if "have not signed" in t])           # 'signed' appears only inside the client's own recorded denial
+        from agents.report.narrative import is_narrative
+        story = [f for f in rep.historical_context if is_narrative(f)]                                               # B2B/B3: the chronology, in prose, from the same turns
+        self.assertTrue(story and all(f.origin == "rendered" for f in story))
+        self.assertTrue(any("the client said" in f.text and "I have not signed the Lakeshore letter of intent yet." in f.text and "the client's own words" in f.text for f in story))
+        sents = [s for s in re.split(r"(?<=\]\.) ", " ".join(f.text for f in story)) if s]                            # one sentence of the chronology per claim (each ends with its evidence handle)
+        corr = [s for s in sents if "Correction to my earlier note" in s]
+        self.assertTrue(corr and all("the advisor" in s and "the client's own words" not in s for s in corr))          # the advisor's note is never presented as the client's own words
+
 
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -464,7 +482,7 @@ class Issue4Report(unittest.TestCase):
             st, _, _ = TS.run([TS.finish()], p=TS.plan(clients=(R,), tools=("get_source_evidence",), task_type="history"), text=QUERY)
         rep = ReportAgent(MockLLM(handlers={"report": [self.DRAFT]})).write(QUERY, report_plan((R,)), {}, st)
         self.assertEqual(rep.validation["findings_dropped"][0]["reason"], "no valid evidence reference")
-        self.assertEqual(len(rep.historical_context), 6)                                              # the draft's invalid finding is dropped; the code-rendered records stay
+        self.assertEqual(len(records(rep.historical_context)), 7)                                     # the draft's invalid finding is dropped; the code-rendered records stay
         self.assertNotIn("Rebecca signed", " ".join(f.text for f in rep.historical_context))
         with mock.patch("services.conversations.shared", lambda: conv):                                   # the harness then verifies the report: the unsupported summary is replaced
             final, _ = EvidenceVerifier(conv).verify_report(rep, [R], st)
@@ -512,7 +530,12 @@ class UiMemoryCount(unittest.TestCase):
         v = withheld_view({"status": "pending", "approval_id": "APR-x", "category": "suitability_conclusion"}, "REQ-t")
         self.assertEqual((v["retrieved_memory_ids"], v["released"], v["status"]), ([], False, "pending_approval"))
         src = (HERE.parent / "ui" / "cmf-brain-ui" / "src" / "components" / "AdvisorQuery.tsx").read_text(encoding="utf-8")
-        self.assertIn("result!.released === false ? 'Memory details are withheld until the answer is approved'", src)
+        # B6 moved this branch into a released/withheld split: the withheld branch says the details are withheld, and only the released branch counts retrieved memories
+        self.assertIn("result!.released === false ? (", src)
+        withheld_branch, released_branch = src.split("result!.released === false ? (", 1)[1].split(") : (", 1)
+        self.assertIn("Memory details are withheld until the answer is approved", withheld_branch)
+        self.assertNotIn("memories retrieved", withheld_branch)
+        self.assertIn("memories retrieved", released_branch)
         api = (HERE.parent / "api" / "main.py").read_text(encoding="utf-8")
         self.assertIn("ctx.current, ctx.history, ctx.episodes, ctx.procedures, ctx.working, ctx.unresolved", api)
 

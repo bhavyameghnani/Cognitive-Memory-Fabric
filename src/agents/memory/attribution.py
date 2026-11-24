@@ -71,6 +71,13 @@ _AFFIRM = re.compile(r"^(?:yes|yeah|yep|yup|correct|right|exactly|agreed|absolut
                      r"(?:that )?sounds (?:good|right|fine)|let(?:'s| us) do (?:that|it)|go ahead|please (?:go ahead|proceed)|i agree|that works)\b")
 
 
+def is_bare_affirmation(text: str) -> bool:
+    """A short reply that only agrees ("Yes, let's do that.", "That's right.") and carries no content of its own: the only kind of client sentence whose content may be taken from an earlier turn.
+    (Ported from Bhavya's D3 fix, commit 20432e5, on OUR narrower `_AFFIRM`: "Good morning.", "Perfect." and "That makes sense." are not affirmations here.)"""
+    n = _norm(text or "")
+    return bool(n) and len(n.split()) <= 20 and bool(_AFFIRM.match(n)) and not _hit(n) and not _CONFIRM_BLOCK.search(n)
+
+
 def classify_attribution(speaker_role: Optional[str], excerpt: str = "", *, origin: str = "conversation_llm") -> str:
     """The source class of a statement.  `speaker_role` must come from the DATA (the cited turn), never from a model."""
     if origin in ("consolidation", "orchestrator", "tool_summary", "curated_file") or speaker_role == "System":
@@ -83,20 +90,27 @@ def classify_attribution(speaker_role: Optional[str], excerpt: str = "", *, orig
 
 
 def client_confirms(evidence: Iterable[dict], value: Optional[str] = None) -> bool:
-    """True when a CLIENT-spoken evidence row affirms the cited content (a short agreement such as 'Yes, that's right') or states the same value, and is not itself hedged or negated."""
+    """True when a CLIENT-spoken evidence row affirms the cited content (a short agreement such as 'Yes, that's right') or states the same value, and is not itself hedged, negated, conditional
+    or a question.  Same veto as `find_client_confirmation`: a hedge anywhere in the reply ("Yes, but ...", "Maybe 62?", "Probably ...") means the client has not confirmed.  A QUESTION or a
+    conditional that merely names the value ("Should I retire at 62?", "What if I retire at 62?") is not a statement of it."""
     for e in evidence or ():
         if (e.get("speaker") or "") != "Client":
             continue
         t = _norm(e.get("excerpt") or "")
-        if _hit(t) or re.search(r"\b(?:no|not|don't|won't|rather|instead)\b", t) and not _AFFIRM.match(t):
+        if _hit(t) or _CONFIRM_BLOCK.search(t) or re.search(r"\b(?:no|not|don't|won't|rather|instead)\b", t) and not _AFFIRM.match(t):
             continue
-        if _AFFIRM.match(t) or (value and re.search(rf"(?<![\w.]){re.escape(_norm(value))}(?![\w.])", t)):
+        if _AFFIRM.match(t):
+            return True
+        if value and any(re.search(rf"(?<![\w.]){re.escape(_norm(value))}(?![\w.])", s) and not s.rstrip().endswith("?") and not _CONDITIONAL.search(s) for s in _sentences(t)):
             return True
     return False
 
 
 _CONFIRM_BLOCK = re.compile(r"\b(?:but|however|rather|instead|maybe|probably|perhaps|still|unless|though|actually|depends|i guess|i suppose|not (?:sure|certain|convinced|yet|ready)|"
                             r"don't (?:know|think)|do not (?:know|think)|won't|wouldn't)\b")
+
+
+_CONDITIONAL = re.compile(r"\b(?:what if|if i|if we|suppose|supposing|assuming|would it|should i|should we|could i|could we|can i|can we|how about|what about)\b")
 
 
 def find_client_confirmation(rows: list[dict], turn_index: int) -> Optional[dict]:

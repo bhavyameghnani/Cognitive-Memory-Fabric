@@ -29,7 +29,7 @@ def names_source_turns(text: str) -> bool:
 
 # A request for the HISTORY OF A SUBJECT as the conversations record it (a chronology / timeline, source meetings, conversation turns, verbatim text).  Memory holds persisted summaries, not the
 # turns, so such a request is a history task whose evidence comes from get_source_evidence; it is not a portfolio review.
-_CHRONOLOGY_RX = re.compile(r"\b(?:chronolog\w*|timeline|sequence of events|source meetings?|source conversations?|conversation[- ]turns?|conversation evidence|source evidence|turn[- ]level|verbatim)\b", re.I)
+_CHRONOLOGY_RX = re.compile(r"\b(?:chronolog\w*|timeline|sequence of events|source meetings?|source conversations?|conversation[- ]turns?|conversation evidence|source evidence|turn[- ]level|verbatim|history of|(?:planning|decision|discussion|conversation|meeting)s? history|across (?:the |her |his |their |all )?(?:meetings|conversations)|evolv\w+|over time|how (?:has|have|did)\b[^?.]{0,60}\b(?:chang\w+|evolv\w+)|what (?:has|have)\s+\w+\s+said|what (?:did|has|have|had)\s+\w+\s+actually\s+(?:said|say|told))\b", re.I)
 # tools that are relevant to a chronology request ONLY when the request itself asks for what they return
 _TOOL_NEED_RX = {"get_client_profile": r"\bprofile\b|\bincome\b|\bexpenses\b|\bdependants?\b", "get_client_portfolio": r"\bportfolio\b|\bholdings?\b|\bpositions?\b|\bwhat (?:she|he|they) owns?\b",
                  "get_portfolio_history": r"portfolio history|\bsnapshots?\b", "get_client_goals": r"\bgoals?\b|\bobjectives?\b", "get_client_liabilities": r"\bliabilit\w*|\bdebts?\b|\bmortgages?\b|\bloans?\b",

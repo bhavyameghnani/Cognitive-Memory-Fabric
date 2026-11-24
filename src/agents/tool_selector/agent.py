@@ -13,7 +13,8 @@ from typing import Optional
 
 from agents.planner.agent import is_source_chronology, names_source_turns
 from agents.tool_selector.digest import digest
-from agents.tool_selector.source_discovery import SOURCE_TOOL, meeting_calls, meetings_from, omission_note, plan_meetings, search_calls, source_search_plan
+from agents.tool_selector.source_discovery import (MAX_REFERENCE_CALLS, MIN_BUDGET_FOR_RESERVE, SOURCE_TOOL, add_referenced_meeting, enrich_meetings, find_references, meeting_calls, meetings_from,
+                                                   omission_note, plan_meetings, reference_is_relevant, search_calls, source_search_plan, subject_stems)
 from agents.tool_selector.prompts import SELECTOR, render_catalogue
 from agents.tool_selector.toolbox import ToolCallError, Toolbox
 from agents.tool_selector.validator import CallValidator, call_key
@@ -206,10 +207,51 @@ class ToolSelector:
         self.tracer.event(COMPONENT, "tool_result", id=ex.id, tool=ex.tool, arguments=ex.arguments, status=ex.status, duration_ms=ex.duration_ms,
                           digest=digest(ex.result.model_dump(mode="json"), 300) if ex.result else ex.error)
 
+    def _used(self, state: ToolSelectorState) -> int:
+        return sum(1 for e in state.executions if e.status in ("success", "error", "timeout"))
+
+    @staticmethod
+    def _turn_texts(executions: list) -> list[dict]:
+        """The turns that SUCCESSFUL conversation-mode calls returned, as {interaction_id, turn_index, speaker, text} (what find_references reads)."""
+        out = []
+        for e in executions:
+            data = (e.result.data or {}) if e.status == "success" and e.result is not None else {}
+            for t in ([data["turn"]] if isinstance(data.get("turn"), dict) else list(data.get("turns") or [])):
+                if isinstance(t, dict) and t.get("interaction_id") and isinstance(t.get("turn_index"), int) and t.get("text"):
+                    out.append(dict(interaction_id=t["interaction_id"], turn_index=t["turn_index"], speaker=t.get("speaker"), text=t["text"]))
+        return out
+
+    async def _retrieve_meetings(self, client: str, meetings: dict, chosen: list[str], validator: CallValidator, state: ToolSelectorState, counter: "_Counter",
+                                 catalog: list[dict], retrieved: dict, failed: list, cut: list) -> int:
+        """One get_source_evidence call per chosen meeting (conversation mode, through the normal validator and budget).  Records what came back in `retrieved`
+        ({interaction_id: sorted turn indices}) and what failed in `failed`.  Returns the number of calls issued."""
+        calls, cut_now = meeting_calls(client, meetings, chosen)
+        cut.extend(cut_now)
+        n = len(state.executions)
+        if calls:
+            await self._process(calls, 0, validator, state, counter, catalog, limit=len(calls))
+        for e in state.executions[n:]:
+            iid = e.arguments.get("interaction_id")
+            if e.status == "success":
+                retrieved[iid] = sorted(set(retrieved.get(iid, [])) | set(e.arguments.get("turn_indices") or []))
+            else:
+                failed.append({"interaction_id": iid, "date": meetings.get(iid, {}).get("date", ""), "turns": e.arguments.get("turn_indices") or [],
+                               "reason": f"the retrieval call failed ({e.status}: {str(e.error)[:120]})"})
+        return len(calls)
+
     async def _discover_sources(self, request_text: str, plan: ExecutionPlan, catalog: list[dict], validator: CallValidator, state: ToolSelectorState, counter: "_Counter") -> None:
-        """A request about what the conversations record needs real interaction ids and turn indices, which the model cannot know.  Find them with the search mode of get_source_evidence, then retrieve
-        every matching turn, one call per MEETING, inside the tool-call budget.  Whatever does not fit is named in missing_information with the reason.  Runs only when the Planner chose
-        get_source_evidence, the request asks for a chronology / source turns (the Planner's own test) and it does not already name interaction turns."""
+        """A request about what the conversations record needs real interaction ids and turn indices, which the model cannot know.  Find them with the search mode of get_source_evidence, then
+        retrieve the relevant meetings, one call per MEETING, inside the tool-call budget.  Runs only when the Planner chose get_source_evidence, the request asks for a chronology / source
+        turns (the Planner's own test) and it does not already name interaction turns.
+
+        B1 (chronology-aware):
+          1. search for the subject (generic request words are never searched);
+          2. enrich the hits with what a phrase search cannot see: meetings whose TITLE is about the subject (a correction of the subject's record ranks first), and the turns AROUND each hit;
+          3. retrieve the best meetings with all but MAX_REFERENCE_CALLS of the remaining budget;
+          4. read the retrieved turns for references to other meetings (an interaction id, or a date like "March 4" that matches exactly one meeting of THIS client) and retrieve the relevant
+             ones first with the calls held back (plus whatever is left);
+          5. say, in `missing_information` and `retrieval_report`, what was retrieved, what was resolved, what could not be resolved and what the budget left out.
+        Every call goes through the same validator and budget as a model-chosen call."""
         if SOURCE_TOOL not in plan.required_tools or len(plan.client_ids) != 1 or names_source_turns(request_text) or not is_source_chronology(request_text):
             return
         by = {t["name"]: t for t in catalog}
@@ -221,6 +263,9 @@ class ToolSelector:
         client = plan.client_ids[0]
         plan_terms = source_search_plan(request_text, client, conv, {v["first_name"] for v in conv.directory().values()})
         terms = [t for t, _ in plan_terms]
+        report: dict = {"terms": terms, "meetings_identified": [], "retrieved": [], "not_retrieved": [], "references_resolved": [], "references_unresolved": [],
+                        "budget": {"max": self.cfg.max_executions, "searches": 0, "reserved_for_references": 0, "used": 0}}
+        state.retrieval_report = report
         if not terms:
             state.missing_information.append("no searchable subject was found in the request (nothing in it matches this client's conversations), so no source turns were located")
             self.tracer.event(COMPONENT, "source_discovery", terms=[], searched=0, retrieved=0)
@@ -228,28 +273,79 @@ class ToolSelector:
         n0 = len(state.executions)
         await self._process(search_calls(client, terms), 0, validator, state, counter, catalog)
         found = state.executions[n0:]
+        report["budget"]["searches"] = sum(1 for e in found if e.status in ("success", "error", "timeout"))
         for e in found:
             if e.status != "success":
                 state.missing_information.append(f"the source search for {e.arguments.get('search_text')!r} did not run ({e.status}: {str(e.error)[:120]}), so turns that mention it may be missing")
         meetings, notes = meetings_from(found, dict(plan_terms))
         state.missing_information.extend(n[0].upper() + n[1:] for n in notes)
-        used = sum(1 for e in state.executions if e.status in ("success", "error", "timeout"))
-        budget = max(self.cfg.max_executions - used, 0)
-        chosen, omitted = plan_meetings(meetings, budget)
-        calls, cut = meeting_calls(client, meetings, chosen)
+        enrich_meetings(meetings, conv, client, terms, request_text)
+        stems = subject_stems(terms)
+        report["meetings_identified"] = [{"interaction_id": i, "date": meetings[i]["date"], "found_by": meetings[i].get("found_by", "search"), "tier": meetings[i].get("tier", 0)}
+                                         for i in sorted(meetings, key=lambda i: (meetings[i]["date"], i))]
+
+        budget = max(self.cfg.max_executions - self._used(state), 0)
+        reserve = MAX_REFERENCE_CALLS if (stems and budget >= MIN_BUDGET_FOR_RESERVE) else 0
+        report["budget"]["reserved_for_references"] = reserve
+        chosen, _ = plan_meetings(meetings, max(budget - reserve, 0))
+        retrieved: dict[str, list[int]] = {}
+        failed: list[dict] = []
+        cut: list[dict] = []
         n1 = len(state.executions)
-        if calls:
-            await self._process(calls, 0, validator, state, counter, catalog, limit=len(calls))
-        for e in state.executions[n1:]:
-            if e.status != "success":
-                omitted.append({"interaction_id": e.arguments.get("interaction_id"), "date": meetings.get(e.arguments.get("interaction_id"), {}).get("date", ""),
-                                "turns": e.arguments.get("turn_indices") or [], "reason": f"the retrieval call failed ({e.status}: {str(e.error)[:120]})"})
+        issued = await self._retrieve_meetings(client, meetings, chosen, validator, state, counter, catalog, retrieved, failed, cut)
+        attempted = set(chosen)
+
+        # ---- references inside what was retrieved
+        refs, unresolved = find_references(self._turn_texts(state.executions[n1:]), conv, client)
+        for r in refs:
+            r["relevant"], r["already_retrieved"] = reference_is_relevant(r, conv, client, stems), r["interaction_id"] in retrieved
+            if r["relevant"] and not r["already_retrieved"] and r["interaction_id"] not in attempted:
+                add_referenced_meeting(meetings, r, conv, client, stems)
+        # ---- second round: the referenced meetings first (tier 3), then whatever the budget still allows of the rest
+        candidates = {i: m for i, m in meetings.items() if i not in attempted}
+        budget2 = max(self.cfg.max_executions - self._used(state), 0)
+        chosen2, omitted = plan_meetings(candidates, budget2) if candidates else ([], [])
+        n2 = len(state.executions)
+        issued += await self._retrieve_meetings(client, meetings, chosen2, validator, state, counter, catalog, retrieved, failed, cut)
+        # references found only inside the second round are recorded, not followed (no chains)
+        refs2, unresolved2 = find_references(self._turn_texts(state.executions[n2:]), conv, client)
+        seen_refs = {(r["interaction_id"], r["from"]) for r in refs}
+        for r in refs2:
+            if (r["interaction_id"], r["from"]) not in seen_refs:
+                r["relevant"], r["already_retrieved"] = reference_is_relevant(r, conv, client, stems), r["interaction_id"] in retrieved
+                r["not_followed"] = "found inside a referenced meeting: references are followed one level only"
+                refs.append(r)
+        seen_unres = {(u["from"], u["quote"]) for u in unresolved}
+        unresolved += [u for u in unresolved2 if (u["from"], u["quote"]) not in seen_unres]
+
+        # ---- what is reported
+        for r in refs:
+            r["retrieved"] = r["interaction_id"] in retrieved
+        omitted = [o for o in omitted if o["interaction_id"] not in retrieved] + failed
+        for o in omitted:
+            o["found_by"] = meetings.get(o["interaction_id"], {}).get("found_by", "search")
         state.missing_information.extend(omission_note(o, self.cfg.max_executions) for o in omitted + cut)
+        for r in refs:
+            if r.get("relevant") and not r["retrieved"] and not r.get("not_followed"):
+                state.missing_information.append(f"Referenced but not retrieved: {r['interaction_id']} ({r['date']}) is named in {r['from']} ({r['quote']!r}); the tool-call budget of {self.cfg.max_executions} was used")
+        for u in unresolved:
+            state.missing_information.append(f"Reference not resolved: {u['from']} mentions {u['quote']!r} ({u['why']}); no meeting was assumed")
+        relevant_left = [o for o in omitted if meetings.get(o["interaction_id"], {}).get("tier", 0) >= 2 or o["found_by"] == "reference"]
+        if relevant_left or cut:
+            state.missing_information.append(f"The chronology may be incomplete: {len(relevant_left) + len(cut)} relevant meeting(s) or turn(s) were identified but not retrieved")
         if not meetings and not any(e.status != "success" for e in found):
             state.missing_information.append(f"no turn of this client's conversations mentions {', '.join(repr(t) for t in terms)}")
-        got = sum(len(e.arguments.get("turn_indices") or []) for e in state.executions[n1:] if e.status == "success")
-        self.tracer.event(COMPONENT, "source_discovery", terms=terms, searched=len(found), meetings_found=len(meetings), meetings_retrieved=len(calls), turns_retrieved=got,
-                          budget=budget, omitted=[{"interaction_id": o["interaction_id"], "turns": o["turns"], "reason": o["reason"][:60]} for o in omitted + cut])
+
+        report["retrieved"] = [{"interaction_id": i, "date": meetings[i]["date"], "turns": retrieved[i], "found_by": meetings[i].get("found_by", "search"), "tier": meetings[i].get("tier", 0)}
+                               for i in sorted(retrieved, key=lambda i: (meetings[i]["date"], i))]
+        report["not_retrieved"] = [{"interaction_id": o["interaction_id"], "date": o["date"], "reason": o["reason"], "found_by": o["found_by"], "tier": meetings.get(o["interaction_id"], {}).get("tier", 0)} for o in omitted]
+        report["references_resolved"] = [{k: r.get(k) for k in ("from", "quote", "kind", "interaction_id", "date", "relevant", "retrieved", "not_followed")} for r in refs]
+        report["references_unresolved"] = unresolved
+        report["budget"]["used"] = self._used(state)
+        got = sum(len(v) for v in retrieved.values())
+        self.tracer.event(COMPONENT, "source_discovery", terms=terms, searched=len(found), meetings_found=len(meetings), meetings_retrieved=issued, turns_retrieved=got, budget=budget,
+                          references_resolved=len(refs), references_unresolved=len(unresolved),
+                          omitted=[{"interaction_id": o["interaction_id"], "turns": o["turns"], "reason": o["reason"][:60]} for o in omitted + cut])
 
     async def _fallback(self, plan: ExecutionPlan, catalog: list[dict], validator: CallValidator, state: ToolSelectorState, counter: "_Counter") -> None:
         """Model unavailable on iteration 1: run only the Planner's suggested tools that need nothing but client_id."""

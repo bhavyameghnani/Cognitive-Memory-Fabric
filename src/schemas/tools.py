@@ -67,6 +67,8 @@ class ToolSelectorState(BaseModel):
     iterations: int = 0
     tools_discovered: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
+    # B1: what code-driven source discovery found, retrieved, resolved and could not retrieve (empty when discovery did not run).  Additive: nothing that reads the state before B1 uses it.
+    retrieval_report: dict = Field(default_factory=dict)
 
     def successes(self) -> list[ToolExecution]:
         return [e for e in self.executions if e.status == "success"]

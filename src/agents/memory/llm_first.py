@@ -22,7 +22,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from agents.memory import rules
+from agents.memory import attribution, rules
 from agents.memory.config import CERTAINTY_RANK, EXTRACTION_AGENT, FIXED_SUBJECT_TOPICS
 from agents.memory.ingest import Decision, MeetingContext, _repair_excerpt, enforce_policy
 from agents.planner.topics import TOPICS
@@ -228,6 +228,12 @@ def fact_check(cand: MemoryCandidate, ctx: MeetingContext, conv: Conversations) 
     # Re-anchoring never rejects: the harness MemoryWriteValidator stays the one authority on whether evidence supports a memory.
     here = supports(cand.statement, cand.value, excerpt)
     found = reanchor(cand.model_copy(update=dict(excerpt=excerpt)), ctx) if here < REANCHOR_BELOW else None
+    if (found is not None and role == "Client" and found[0]["speaker"] != "Client" and rules.FIGURE.search(excerpt) and not attribution.is_bare_affirmation(excerpt)):
+        # D3: a client sentence that states a figure of its own ("Around six hundred thousand.", "Two years earlier than 65 ...") is the CLIENT's statement.  It is never re-attributed to the
+        # advisor sentence that merely scored better against the extractor's wording (typically the advisor's question).  A reply with no content of its own ("Yes, let's do that.") still
+        # takes its content from the earlier turn, questions included: "Does Friday work? / Yes." needs the question.
+        notes.append(f"kept the client's own sentence as evidence (not re-anchored to {found[0]['speaker']} turn {found[0]['turn_index']})")
+        found = None
     if found is not None and found[2] >= REANCHOR_MIN and found[2] >= here + REANCHOR_MARGIN:
         prev, sent, _ = found
         extra.append(dict(turn_index=row["turn_index"], speaker=role, excerpt=excerpt, role="supporting"))

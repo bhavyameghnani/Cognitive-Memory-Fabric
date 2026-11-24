@@ -262,11 +262,50 @@ class EvidenceVerifier:
             v.verdict, v.outcome = "unsupported", (Outcome.CONTRADICTED.value if Reason.POLARITY_MISMATCH.value in codes else Outcome.UNVERIFIED.value)
             v.reason_codes = list(dict.fromkeys(codes))
             return v
+        if f.origin == "narrative_checked":                     # model prose checked by code against cited timeline claims: re-checked here against a timeline THIS verifier rebuilds
+            return self._narrative(v, f, items, evidence, plan_clients)
         return self._structured(v, f, items, plan_clients, tools, soft) if self.structured else self._lexical(v, f, items, tools, soft)
 
     @staticmethod
     def _fail(v: FindingVerdict, why: str, code: Reason) -> FindingVerdict:
         v.verdict, v.outcome, v.reasons, v.reason_codes = "unsupported", Outcome.UNVERIFIED.value, [why], [code.value]
+        return v
+
+    # ------------------------------------------------------------------ checked narrative (follow-up to B4)
+    _NARRATIVE_REASON = (("unknown_source", Reason.EVIDENCE_NOT_FOUND), ("unverified_source", Reason.EVIDENCE_NOT_VERIFIED), ("attribution_mismatch", Reason.ACTOR_MISMATCH),
+                         ("unsupported_date", Reason.TEMPORAL_MISMATCH), ("temporal_unsupported", Reason.TEMPORAL_MISMATCH), ("present_state_unsupported", Reason.TEMPORAL_MISMATCH),
+                         ("chronology_reversed", Reason.TEMPORAL_MISMATCH), ("cross_meeting", Reason.TEMPORAL_MISMATCH), ("unsupported_figure", Reason.VALUE_MISMATCH), ("decision_language", Reason.MODALITY_MISMATCH),
+                         ("certainty_adverb", Reason.MODALITY_MISMATCH), ("quote_not_verbatim", Reason.QUOTE_NOT_IN_SOURCE), ("no_quotation", Reason.QUOTE_UNAVAILABLE))
+
+    def _narrative(self, v: FindingVerdict, f: Finding, items: list, evidence: dict, plan_clients: set) -> FindingVerdict:
+        """MODEL-written prose that the Report Agent validated sentence by sentence.  The Report Agent's own timeline is NOT trusted: the claims are rebuilt here, by the same deterministic builder, from the
+        report's evidence items that are in scope for this caller and whose quotation really is text of the source turn (the check every evidence item already faces).  Each sentence is then judged against
+        the rebuilt claims at the source turns it names - attribution, figures, dates, correction/supersession/dispute relations, modality, causal and decision wording, quotations, and a closed vocabulary -
+        and the finding's text and references must compose exactly from its sentences and those claims.  The source-turn restriction and the unverified-memory withholding have already run (above)."""
+        from agents.report.semantic import check_narrative_finding
+        from agents.report.timeline import build_timeline
+        names = self.names()
+        own = [n.capitalize() for n, cid in names.items() if cid in plan_clients]
+        usable = []
+        for e in evidence.values():
+            if e.source_class in TOOL_CLASSES or not e.client_id or e.client_id not in plan_clients or not self.owns(e.client_id):
+                continue
+            if e.interaction_id is not None and e.turn_index is not None and e.excerpt:
+                if not (self.conv.verify_excerpt(e.client_id, e.interaction_id, e.turn_index, e.excerpt.rstrip(".").rstrip()) or
+                        self.conv.verify_excerpt(e.client_id, e.interaction_id, e.turn_index, e.excerpt.replace("...", "").strip())):
+                    continue
+            usable.append(e)
+        claims = build_timeline(usable, sorted({e.topic for e in usable if e.topic}))
+        problems = check_narrative_finding(f, claims, own)
+        for cid, nm in ((c, n) for n, c in names.items() if c not in plan_clients):      # a sentence that names a client outside the plan is never presented
+            if re.search(r"\b" + re.escape(nm.capitalize()) + r"\b", f.text):
+                problems.append("unknown_source: the statement names a client outside the plan")
+        if problems:
+            v.verdict, v.outcome = "unsupported", Outcome.UNVERIFIED.value
+            v.reason_codes = list(dict.fromkeys(next((r.value for k, r in self._NARRATIVE_REASON if p.startswith(k)), Reason.UNSUPPORTED_CLAUSE.value) for p in problems))
+            v.reasons = [p.split(":")[0] for p in problems][:6]
+            return v
+        v.outcome, v.reason_codes, v.reasons = Outcome.VERIFIED.value, [], []
         return v
 
     # ------------------------------------------------------------------ structured path
