@@ -68,7 +68,11 @@ export default function App() {
   const highlighted = useMemo(() => (result && result.client_ids.includes(clientId) ? new Set(result.retrieved_memory_ids) : null), [result, clientId]);
   const select = (id: string) => { setSelectedId(id); setTab('dossier'); };
   const name = client?.first_name ?? clientId;
-  const suggestions = [`How should I prepare for ${name}'s next portfolio review?`, `What is ${name}'s current retirement age and how has it changed?`, `Summarise ${name}'s asset allocation history`];
+  const suggestions = [
+    `Prepare a comprehensive report on ${name}'s planning history. Explain how plans and preferences evolved across meetings, identify important decisions and corrections, distinguish ${name}'s own statements from advisor interpretations, and highlight unresolved questions.`,
+    `Give me the chronology of ${name}'s most important decisions, with the source conversation turns and any corrections.`,
+    `How should I prepare for ${name}'s next portfolio review?`,
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -91,7 +95,7 @@ export default function App() {
           </div>
         )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          <div className="lg:col-span-7 min-w-0">
+          <div className={`${tab === 'ask' ? 'lg:col-span-5' : 'lg:col-span-7'} min-w-0`}>
             {data ? (
               <BrainVisualizer memories={data.memories} relationships={data.relationships} interactions={data.interactions} selectedId={selectedId} onSelect={select}
                 typeFilter={typeFilter} onFilter={setTypeFilter} highlighted={highlighted} onClearHighlight={() => setResult(null)}
@@ -100,7 +104,7 @@ export default function App() {
               <div className="rounded-2xl border border-slate-800 bg-slate-900/60 h-[560px] flex items-center justify-center text-sm text-slate-500">{session && ready === session && clients.length === 0 ? 'No clients are available.' : 'Loading memory brain…'}</div>
             )}
           </div>
-          <div className="lg:col-span-5 flex flex-col gap-3 min-w-0">
+          <div className={`${tab === 'ask' ? 'lg:col-span-7' : 'lg:col-span-5'} flex flex-col gap-3 min-w-0`}>
             <div className="flex items-center gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-xl text-xs">
               {([['dossier', Brain, 'Memory Dossier'], ['ask', Sparkles, 'Ask CMF'], ['sources', FolderTree, 'Sources & Lifecycle']] as const).map(([k, Icon, label]) => (
                 <button key={k} onClick={() => setTab(k)} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg font-medium transition-all cursor-pointer ${tab === k ? 'bg-slate-800 text-slate-100 border border-slate-700/60' : 'text-slate-400 hover:text-slate-200'}`}>

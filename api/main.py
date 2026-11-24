@@ -18,6 +18,9 @@ import logging
 import os
 import re
 import sys
+import threading
+import time
+import uuid
 from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -28,6 +31,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.middleware.gzip import GZipMiddleware  # noqa: E402
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
@@ -81,6 +85,7 @@ app = FastAPI(title="CMF brain API", version="1.0", lifespan=lifespan, docs_url=
 # Browser origins allowed to call the API directly. Not needed when the UI uses the Vite proxy (same origin); needed if VITE_API_BASE_URL points here.
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CMF_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(GZipMiddleware, minimum_size=2000)   # a report with its evidence is several hundred KB of JSON: compress it (clients that do not accept gzip get it uncompressed)
 
 _store: Optional[MemoryStore] = None
 _harness: Optional[Harness] = None
@@ -382,14 +387,20 @@ class AskBody(BaseModel):
 
 @app.post("/api/ask")
 def ask(body: AskBody, request: Request) -> dict:
+    auth = authorize(request, "ask")
+    return _ask_body(body.question, auth)
+
+
+def _ask_body(question: str, auth: Optional[AuthContext]) -> dict:
+    """The whole of an ask, for an identity that is ALREADY verified: identical for the direct route and for the background jobs below (one code path, so the harness, the permission gate and the verifier
+    cannot be bypassed by either)."""
     from llm.client import make_llm
     from orchestration.pipeline import run_pipeline
-    auth = authorize(request, "ask")
     h = harness()
     try:
         llm = make_llm()
         mem = MemoryOrchestrator(llm, store=store(), write_validator=h.write_validator(store=store()))
-        res = run_pipeline(body.question, llm, mem, harness=h if h.config.enabled else None, auth=auth)
+        res = run_pipeline(question, llm, mem, harness=h if h.config.enabled else None, auth=auth)
     except PermissionDenied as e:   # raised by the harness once the plan names the clients; no data was retrieved
         if e.code in ("missing_identity", "unauthenticated"):
             raise _unauthorized(str(e))
@@ -412,6 +423,61 @@ def ask(body: AskBody, request: Request) -> dict:
         run = None
     return dict(request_id=res.plan.request_id, client_ids=res.plan.client_ids, report=res.report.model_dump(), retrieved_memory_ids=list(dict.fromkeys(used)), agent_run=run,
                 released=getattr(res, "released", True), harness=getattr(res, "harness", {}) or None)
+
+
+# ---- ask as a background job.  A report from a small local model can take many minutes, longer than a browser or proxy will hold ONE request open (about five minutes), so the UI starts a job and
+# polls for it with short requests.  Identity is verified on EVERY call (authorize runs first, as everywhere), the job runs the same _ask_body, and a job can be read only by the identity that
+# started it: any other caller gets the same 404 as for an unknown id.  Jobs live in this process only (a restart loses them) and are dropped an hour after they finish.
+JOB_TTL_S = 3600
+MAX_JOBS = 100
+_JOBS: dict[str, dict] = {}
+_JOBS_LOCK = threading.Lock()
+
+
+def _job_owner(auth: Optional[AuthContext]) -> str:
+    return norm_subject(auth.actor_id) if auth is not None else "dev-anonymous"
+
+
+def _job_main(job_id: str, question: str, auth: Optional[AuthContext]) -> None:
+    try:
+        out: dict = {"status": "done", "result": _ask_body(question, auth)}
+    except HTTPException as e:
+        out = {"status": "error", "http_status": e.status_code, "detail": str(e.detail)}
+    except BaseException as e:                                # never leave a job "running" forever
+        out = {"status": "error", "http_status": 500, "detail": f"{type(e).__name__}: {e}"[:300]}
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+        if job is not None:
+            job.update(out, finished=time.time())
+
+
+@app.post("/api/ask/jobs")
+def ask_start(body: AskBody, request: Request) -> dict:
+    auth = authorize(request, "ask")
+    now = time.time()
+    with _JOBS_LOCK:
+        for k in [k for k, j in _JOBS.items() if j.get("finished") and now - j["finished"] > JOB_TTL_S]:
+            del _JOBS[k]
+        if sum(1 for j in _JOBS.values() if j["status"] == "running") >= 4:
+            raise HTTPException(429, "too many requests are already running; wait for one to finish")
+        while len(_JOBS) >= MAX_JOBS:
+            del _JOBS[min(_JOBS, key=lambda k: _JOBS[k]["started"])]
+        job_id = "JOB-" + uuid.uuid4().hex[:12]
+        _JOBS[job_id] = {"status": "running", "owner": _job_owner(auth), "started": now}
+    threading.Thread(target=_job_main, args=(job_id, body.question, auth), name=job_id, daemon=True).start()
+    return {"job_id": job_id, "status": "running"}
+
+
+@app.get("/api/ask/jobs/{job_id}")
+def ask_status(job_id: str, request: Request) -> dict:
+    auth = authorize(request, "ask")
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+        if job is None or job["owner"] != _job_owner(auth):
+            raise HTTPException(404, "unknown job")
+        view = {k: v for k, v in job.items() if k not in ("owner",)}
+    view["elapsed_s"] = round((view.get("finished") or time.time()) - view["started"], 1)
+    return view
 
 
 # ---- human approval workflow (persistent, one-time release; see docs/harness.md "Human approval").  Every route needs a VERIFIED token first (authorize() runs before any

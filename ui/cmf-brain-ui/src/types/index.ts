@@ -120,7 +120,9 @@ export interface MemoryDetail {
   reasoning: Reasoning;
 }
 
-export interface Finding { text: string; refs: string[] }
+/** `origin` is set only by backend code: "rendered" = assembled by code from one evidence item, "narrative_checked" = MODEL-written prose that code and the independent verifier checked sentence by sentence,
+ *  absent = a finding the model wrote that the verifier accepted.  The UI never sets or changes it. */
+export interface Finding { text: string; refs: string[]; origin?: 'rendered' | 'tool_code' | 'narrative_checked' | null; narrative?: { text: string; sources: string[] }[] | null }
 export interface EvidenceItem {
   ref: string;
   source_class: string;
@@ -133,6 +135,47 @@ export interface EvidenceItem {
   topic: string | null;
   value: string | null;
   status: string | null;
+  speaker?: string | null;
+  event_date?: string | null;
+  evidence_class?: string | null;
+}
+
+/** One dated, classified statement of the chronology (built by backend code from retrieved source turns). */
+export interface TimelineClaim {
+  claim_id: string;
+  source: 'source_turn' | 'memory';
+  wording: string;
+  speaker: string | null;
+  statement_kind: 'client_statement' | 'advisor_reported' | 'advisor_interpretation' | 'unattributed' | string;
+  modality: string;
+  confirmed_client_decision: boolean;
+  verification: string;
+  interaction_id: string | null;
+  turn_index: number | null;
+  event_date: string | null;
+  evidence_refs: string[];
+  temporal_status: 'current' | 'historical' | 'corrected' | 'superseded' | 'disputed' | 'unresolved' | string;
+  relevant: boolean;
+  mentions_topic?: boolean | null;
+  memory_refs?: string[];
+  relations: { type: 'corrects' | 'corrected_by' | 'contradicts' | string; claim_id: string }[];
+}
+
+export interface NarrativeStatus {
+  attempted?: boolean;
+  paragraphs_returned?: number;
+  sentences_returned?: number;
+  paragraphs_accepted?: number;
+  sentences_rejected?: { paragraph: number; sentence: number | null; problems: string[] }[];
+  error?: string;
+}
+
+export interface HarnessSummary {
+  outcome?: string | null;
+  degraded_reasons?: string[];
+  profile?: string | null;
+  budget?: { llm_calls?: number; elapsed_ms?: number; llm_calls_by_agent?: Record<string, number> } & Record<string, unknown>;
+  conflicts?: unknown[];
 }
 
 export interface AdvisorReport {
@@ -148,7 +191,10 @@ export interface AdvisorReport {
   uncertainties: string[];
   limitations: string[];
   suggested_followups: string[];
-  validation: Record<string, unknown>;
+  timeline?: TimelineClaim[];
+  /** Model-written readable account: NOT verified (the backend never puts it through the evidence verifier and gives it no provenance label). Each sentence ends with the evidence handles it rests on. */
+  story?: Finding[];
+  validation: Record<string, unknown> & { mode?: string; model_error?: string; narrative?: NarrativeStatus; story?: NarrativeStatus; summary_replaced?: string | null };
 }
 
 export interface AskResult {
@@ -162,8 +208,12 @@ export interface AskResult {
   /** present only while withheld: content-free run status (which agents ran, timings, permission checks, approval category) */
   execution?: ExecutionStatus | null;
   approval?: { approval_id?: string; status?: string; category?: string } | null;
+  harness?: HarnessSummary | null;
   message?: string;
 }
+
+/** State of a background ask: `result` is exactly what POST /api/ask would have returned; `http_status`/`detail` are what it would have failed with. */
+export interface AskJob { status: 'running' | 'done' | 'error'; elapsed_s: number; result?: AskResult; http_status?: number; detail?: string }
 
 export interface ExecutionStatus {
   agents: { agent: string; ran: boolean; duration_ms: number | null; llm_calls: number; status?: string | null; stop_reason?: string | null }[];
