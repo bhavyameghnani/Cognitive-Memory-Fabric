@@ -7,11 +7,13 @@ counterpart (real qwen2.5:3b through the same endpoint) is run separately and re
 
 Databases are temporary copies (see tests/test_e2e_api.py `world`); the repository's own databases are asserted byte-identical afterwards."""
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
 import pytest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -113,7 +115,8 @@ def test_b5_01_the_four_agents_hand_over_through_the_real_orchestrator(world):
     body, llm = ask_history(world, narrative=honest_narrative)
     rep = body["report"]
     agents = [c["agent"] for c in llm.calls]
-    assert agents[0] == "planner" and "tool_selector" in agents and agents[-3:] == ["report", "report", "report"], agents      # Planner -> (Memory: no model) -> Tool Selector -> Report (main + narrative + story)
+    # Phase 1 (C): a single-client chronology request is planned deterministically by the Planner agent (no model call); Memory uses no model; then Tool Selector -> Report (main + narrative + story)
+    assert set(agents) == {"report"} and len(agents) >= 2, agents                  # no model planner (deterministic plan), no model selector loop; the Report agent: main call + one call per narrative window (the story is off by default)
     assert body["client_ids"] == [KENJI] and body["released"] is True
     assert body["agent_run"] is not None
     # the Memory Orchestrator's result reached the Report Agent: memory evidence is in the report, and its prompt carried evidence lines
@@ -135,7 +138,7 @@ def test_b5_02_the_harness_is_active_for_every_stage_of_the_real_request(world):
     assert h["profile"] == "production" and h["actor"]
     # request budget and telemetry: every model call of every agent is counted, the narrative call included
     by_agent = h["budget"]["llm_calls_by_agent"]
-    assert by_agent.get("planner") == 1 and by_agent.get("report") == 3 and h["budget"]["llm_calls"] == sum(by_agent.values()) == len(llm.calls)
+    assert by_agent.get("planner", 0) == 0 and by_agent.get("report", 0) >= 2 and h["budget"]["llm_calls"] == sum(by_agent.values()) == len(llm.calls)
     assert h["budget"]["tool_calls"] >= 1 and h["telemetry"]
     # permission decisions were taken and recorded
     ops = {d["operation"] for d in h["permission_decisions"]}
@@ -197,7 +200,7 @@ def test_b5_05_unsupported_interpretation_never_reaches_the_response(world):
     body, _ = ask_history(world, narrative=bad)
     rep = body["report"]
     rec = rep["validation"]["narrative"]
-    assert len(rec["sentences_rejected"]) == 3 and rec["paragraphs_accepted"] == 1
+    assert len(rec["sentences_rejected"]) >= 3 and len(rec["sentences_rejected"]) % 3 == 0 and rec["paragraphs_accepted"] >= 1      # the same three bad sentences come back in every window; none of them is ever accepted
     everything = json.dumps({k: rep[k] for k in ("summary", "key_findings", "historical_context", "uncertainties", "limitations")})
     for phrase in ("superseding all previous", "clarified to 63", "market had fallen", "after reflecting", "Rebecca confirmed"):
         assert phrase not in everything, phrase
@@ -205,12 +208,12 @@ def test_b5_05_unsupported_interpretation_never_reaches_the_response(world):
 
 def test_b5_06_a_request_budget_that_runs_out_degrades_to_b3_and_says_so(world):
     import api.main as m
-    world._mp.setenv("HARNESS_MAX_LLM_CALLS", "3")                  # planner + tool selector + main report; the narrative call is the fourth
+    world._mp.setenv("HARNESS_MAX_LLM_CALLS", "1")                  # the main report call; the narrative call is the second (the planner and the selector make no model call for this request)
     world._mp.setattr(m, "_harness", None)
     body, llm = ask_history(world, narrative=honest_narrative)
     h, rep = body["harness"], body["report"]
     assert [c["agent"] for c in llm.calls].count("report") == 1     # the narrative call never reached the model
-    assert h["budget"]["llm_calls"] == 3 and any(e["reason"] == "max_llm_calls" for e in h["budget"]["exhausted"])
+    assert h["budget"]["llm_calls"] == 1 and any(e["reason"] == "max_llm_calls" for e in h["budget"]["exhausted"])
     assert h["outcome"] == "degraded" and "max_llm_calls" in h["degraded_reasons"] and h["released"] is True
     assert any("Resource budget exhausted" in x for x in rep["limitations"])
     assert not narrative_findings(rep) and len(chronology_findings(rep)) >= 3
@@ -285,7 +288,7 @@ def test_b5_10_a_job_returns_at_once_and_delivers_the_same_verified_report(world
     assert res["client_ids"] == [KENJI] and res["released"] is True
     assert narrative_findings(rep) and chronology_findings(rep)                 # B3 chronology and the verified B4 narrative, exactly as /api/ask returns them
     assert rep["validation"]["harness_evidence"]["counts"]["unsupported"] == 0
-    assert [c["agent"] for c in llm.calls][0] == "planner" and [c["agent"] for c in llm.calls][-2:] == ["report", "report"]
+    assert set(c["agent"] for c in llm.calls) == {"report"}
     # still the real harness: one trace, budget counted, same request id in the result and the trace
     assert world.trace(res["request_id"]) and res["harness"]["budget"]["llm_calls"] == len(llm.calls)
 
@@ -313,8 +316,9 @@ def test_b5_12_a_job_for_a_client_outside_the_callers_scope_fails_with_403_befor
 
 def test_b5_13_a_failing_model_ends_the_job_with_an_error_and_never_leaves_it_running(world):
     world.script(planner=[RuntimeError("model crashed")], report=lambda s, u, sc: report_json("x", []))
-    job = world.client.post("/api/ask/jobs", headers=world.headers(), json={"question": CHRONOLOGY}).json()["job_id"]
-    done = _poll(world, job)
+    with mock.patch.dict(os.environ, {"CMF_DETERMINISTIC_PLANNING": "0"}):                      # the crash is in the model planner, so the model planner must be the one used
+        job = world.client.post("/api/ask/jobs", headers=world.headers(), json={"question": CHRONOLOGY}).json()["job_id"]
+        done = _poll(world, job)
     assert done["status"] == "error" and done["http_status"] == 503 and "report" not in json.dumps(done)
 
 
@@ -346,6 +350,7 @@ def test_b5_16_a_large_job_result_is_compressed_for_clients_that_accept_gzip(wor
 
 # ============================================================================================================================ the readable story (B6)
 def test_b5_17_the_story_is_a_separate_unverified_field_and_never_enters_the_verified_findings(world):
+    world._mp.setenv("CMF_REPORT_STORY", "1")                      # the story is an optional extra since Phase 2
     body, llm = ask_history(world, narrative=honest_narrative)
     rep = body["report"]
     assert rep["story"] and all(f.get("origin") is None and f.get("narrative") is None for f in rep["story"])      # model prose: no code provenance, no verifier label
@@ -354,12 +359,13 @@ def test_b5_17_the_story_is_a_separate_unverified_field_and_never_enters_the_ver
     assert re.search(r"\[E\d+\]", rep["story"][0]["text"])                                                          # every sentence ends with its evidence handles
     st = rep["validation"]["story"]
     assert st["attempted"] and st["paragraphs_accepted"] == len(rep["story"]) >= 1
-    assert body["harness"]["budget"]["llm_calls_by_agent"]["report"] == 3
+    assert body["harness"]["budget"]["llm_calls_by_agent"]["report"] == 1 + rep["coverage"]["model_calls"] + 1                  # main call + one call per narrative window attempt + the story call
     # the verifier did not touch it: the finding counts are those of the sections it checks
     assert rep["validation"]["harness_evidence"]["counts"]["unsupported"] == 0
 
 
 def test_b5_18_a_failing_story_call_changes_nothing_else(world):
+    world._mp.setenv("CMF_REPORT_STORY", "1")
     def story_down(user):
         raise RuntimeError("story model down")
     prompts = {}
@@ -379,6 +385,7 @@ def test_b5_18_a_failing_story_call_changes_nothing_else(world):
 
 
 def test_b5_19_a_high_risk_answer_held_for_approval_carries_no_story(world):
+    world._mp.setenv("CMF_REPORT_STORY", "1")
     world.script(planner=[history_plan()], tool_selector=tool_script(),
                  report=lambda s, u, sc: (honest_story(u) if "Write the story now" in u else honest_narrative(u) if "Write the paragraphs now" in u else report_json("The record shows the discussion.", [])))
     r = world.ask("Should Kenji retire at 60? Please recommend whether that is suitable and give me the chronology of his retirement age.")

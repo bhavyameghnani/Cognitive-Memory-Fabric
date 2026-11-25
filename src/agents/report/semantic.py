@@ -272,6 +272,95 @@ def normalise_quotes(text: str, cited: list[TimelineClaim]) -> str:
     return "".join(out)
 
 
+_EDGE = re.compile(r"^[^\w$%]+|[^\w$%]+$")
+_NEGATORS = {"not", "no", "never", "none", "nor", "without", "cannot", "can't", "cant", "won't", "wont", "don't", "dont", "didn't", "didnt", "doesn't", "doesnt", "isn't", "wasn't", "wouldn't",
+             "shouldn't", "couldn't", "aren't", "weren't", "haven't", "hasn't", "hadn't", "nothing", "nobody", "neither", "unable"}
+
+
+def _quote_norm(q: str) -> str:
+    return " ".join(q.replace("...", " ").split()).lower().strip(" .,;:")
+
+
+def _is_verbatim(q: str, cited: list[TimelineClaim]) -> bool:
+    qn = _quote_norm(q)
+    return bool(qn) and any(qn in " ".join(c.wording.lower().split()) for c in cited)
+
+
+def _tok(w: str) -> str:
+    return _EDGE.sub("", w.lower().replace("\u2019", "'"))
+
+
+def _verbatim_prefix(inner: str, cited: list[TimelineClaim], min_words: int) -> Optional[str]:
+    """The longest run of WHOLE sentences from the start of a quotation that is verbatim in a cited claim, or None.  Only a cut: no word is added, changed or reordered, and the dropped tail is the
+    model's own wording, which no claim contains.  The kept run must end where the speaker's sentence ends (. ? !) and be at least `min_words` words."""
+    sentences = re.findall(r"[^.?!]*[.?!]+(?:\s+|$)|[^.?!]+$", inner.strip())
+    for k in range(len(sentences), 0, -1):                       # the longest verbatim run of whole sentences from the start
+        piece = "".join(sentences[:k]).strip()
+        if len(piece.split()) >= min_words and piece[-1:] in ".?!" and _is_verbatim(piece, cited):
+            return piece
+    return None
+
+
+def repair_quotes(text: str, cited: list[TimelineClaim], min_words: int = 4, threshold: float = 0.8) -> tuple[str, int]:
+    """(text, number of quotations repaired).  Quote repair, E: a quotation the model wrote that is NOT verbatim is replaced by the exact source wording, and ONLY when that wording can be
+    identified unambiguously:
+      - the quotation has at least `min_words` words and is not already verbatim;
+      - exactly one wording span of the CITED claims starts with the quotation's first word, ends with its last word and matches it word for word at `threshold` or better (ties between
+        different spans are ambiguous and refuse the repair);
+      - the words that differ are not negations, modals of refusal or numbers (a repair must never turn "I do want" into "I do not want", nor move a figure).
+    Only the text between the quotation marks is replaced: the surrounding sentence, its attribution and its claim ids are untouched.  The repaired sentence then goes through every ordinary check
+    (provenance, attribution, closure, temporal, semantic, and later the EvidenceVerifier); a quotation that cannot be repaired stays as written and the sentence fails for it."""
+    if '"' not in text or not cited:
+        return text, 0
+    import difflib
+    spans = [([w for w in c.wording.split()], [_tok(w) for w in c.wording.split()]) for c in cited]
+    out, done = text, 0
+    for m in reversed(list(_QUOTE.finditer(text))):
+        inner = m.group(1)
+        if len(_quote_norm(inner)) < 6 or _is_verbatim(inner, cited):
+            continue
+        q = [x for x in (_tok(w) for w in inner.replace("...", " ").split()) if x]
+        if len(q) < min_words:
+            continue
+        best, texts = 0.0, set()
+        for orig, norm in spans:
+            for i in range(len(norm)):
+                if norm[i] != q[0]:
+                    continue
+                for ln in range(max(min_words, len(q) - 2), len(q) + 3):
+                    j = i + ln
+                    if j > len(norm):
+                        break
+                    if norm[j - 1] != q[-1]:
+                        continue
+                    score = difflib.SequenceMatcher(None, q, norm[i:j]).ratio()
+                    if score < threshold:
+                        continue
+                    cand = _EDGE.sub("", " ".join(orig[i:j]).strip())
+                    cand = cand.rstrip(".,;:!?")
+                    if '"' in cand or not cand or not _is_verbatim(cand, cited):
+                        continue
+                    if score > best + 1e-9:
+                        best, texts = score, {(cand, tuple(norm[i:j]))}
+                    elif abs(score - best) <= 1e-9:
+                        texts.add((cand, tuple(norm[i:j])))
+        if not texts:                                           # no near-miss span: the quotation may start verbatim and then drift (the model's tail is its own); keep only the verbatim sentences
+            cut = _verbatim_prefix(inner, cited, min_words)
+            if cut:
+                out = out[:m.start(1)] + cut + out[m.end(1):]
+                done += 1
+            continue
+        if len({c for c, _ in texts}) != 1:                     # several different spans tie: ambiguous
+            continue
+        cand, ntoks = next(iter(texts))
+        diff = set(q) ^ set(ntoks)
+        if any(w in _NEGATORS or re.search(r"\d", w) for w in diff):
+            continue
+        out = out[:m.start(1)] + cand + out[m.end(1):]
+        done += 1
+    return out, done
+
+
 def strip_claim_ids(text: str, ids) -> str:
     """Formatting repair only: the model sometimes copies a claim id into its sentence ("... said \"...\", C5." or "[C5]").  An id that is one of THIS sentence's own claim ids is metadata, not a word,
     and is removed; any other id stays in the text (and the sentence then fails for want of a recorded word)."""
@@ -343,36 +432,84 @@ def check_narrative_finding(f: Finding, claims: list[TimelineClaim], names=()) -
     return out
 
 
-def build_checked(paragraphs, claims: list[TimelineClaim], names=()) -> tuple[list[Finding], list[dict]]:
+def build_checked(paragraphs, claims: list[TimelineClaim], names=(), repairs: Optional[list] = None, *, window=None, context=(), narrated: Optional[set] = None,
+                  seen_texts: Optional[set] = None, after=None, accepted: Optional[list] = None, risky: Optional[set] = None) -> tuple[list[Finding], list[dict]]:
     """(findings, rejected).  `paragraphs`: the narrative call's paragraphs, each sentence {text, claims: ["C4", ...]}.  Each sentence is judged against the claims it cites; a failing sentence is
-    removed (recorded with its problem codes, never with its text).  The surviving sentences of a paragraph become ONE finding, origin "narrative_checked", whose text and references code composes."""
+    removed (recorded with its problem codes and claim ids, never with its text).  The surviving sentences of a paragraph become ONE finding, origin "narrative_checked", whose text and references
+    code composes.
+
+    Windowed use (Phase 2): `window` = the claim ids this call may narrate, `context` = related claims of other windows it may cite alongside one (to name what a correction corrects), `narrated` =
+    the claims earlier windows already narrated (a sentence that only repeats them is a duplicate), `seen_texts` = the sentences already accepted, `after` = the order key the previous window ended
+    at (this window must not go back before it), `accepted` collects {claims, primary} for every accepted sentence.  Every ordinary check still runs on every sentence.
+
+    `risky` = the evidence refs the report's authority rule withholds (they describe an unverified / contradicted / open-conflict memory).  A paragraph is split into consecutive groups of sentences
+    that are all clean or all risky, one finding per group: the authority rule still withholds every risky finding, but a clean sentence is no longer lost together with a risky neighbour."""
     by_id = {c.claim_id: c for c in claims}
+    win = set(window) if window is not None else None
+    ctx = set(context or ())
     out: list[Finding] = []
     rejected: list[dict] = []
+    last = after
     for pi, para in enumerate(paragraphs or []):
-        kept, sents, last = [], [], None
+        done: list[tuple[str, NarrativeSentence, list[str], list[str], bool, str]] = []        # (composed text, sentence, claim ids, primary ids, risky, plain text key)
         for si, s in enumerate(para.sentences):
             ids = list(dict.fromkeys(i.strip() for i in s.claims))
             cited = [by_id[i] for i in ids if i in by_id]
             if len(cited) != len(ids):
-                rejected.append({"paragraph": pi, "sentence": si, "problems": ["unknown_claim"]})
+                rejected.append({"paragraph": pi, "sentence": si, "problems": ["unknown_claim"], "claims": [i for i in ids if i not in by_id]})
                 continue
-            s_text = strip_claim_ids(normalise_quotes(s.text, cited), ids)
+            primary = [i for i in ids if win is None or i in win]
+            if win is not None:
+                if any(i not in win and i not in ctx for i in ids):
+                    rejected.append({"paragraph": pi, "sentence": si, "problems": ["outside_window"], "claims": ids})
+                    continue
+                if not primary:
+                    rejected.append({"paragraph": pi, "sentence": si, "problems": ["context_only"], "claims": ids})
+                    continue
+            fixed, n_fixed = repair_quotes(normalise_quotes(s.text, cited), cited)
+            s_text = strip_claim_ids(fixed, ids)
             problems = judge_sentence(s_text, cited, names)
-            if not problems and last is not None and min(_order_key(c) for c in cited) < last:
+            if n_fixed and repairs is not None:
+                repairs.append({"paragraph": pi, "sentence": si, "quotes": n_fixed, "kept": not problems})
+            keys = [_order_key(c) for c in cited if c.claim_id in primary]
+            if not problems and narrated is not None and all(i in narrated for i in primary):
+                problems = ["duplicate_claim: every claim this sentence rests on is already narrated"]
+            if not problems and seen_texts is not None and " ".join(s_text.split()).lower() in seen_texts:
+                problems = ["duplicate_sentence: this sentence was already written"]
+            if not problems and last is not None and min(keys) < last:
                 problems = ["chronology_reversed: the sentence rests on an earlier claim than the sentence before it; the narrative must run in date order"]
             if problems:
-                rejected.append({"paragraph": pi, "sentence": si, "problems": [x.split(":")[0] for x in problems]})
+                rejected.append({"paragraph": pi, "sentence": si, "problems": [x.split(":")[0] for x in problems], "claims": ids})
                 continue
-            last = max(_order_key(c) for c in cited)
-            kept.append(compose(s_text, cited))
-            sents.append(NarrativeSentence(text=" ".join(s_text.split()), sources=[source_key(c) for c in cited]))
-        if kept:
+            last = max(keys)
+            if narrated is not None:
+                narrated.update(primary)
+            plain = " ".join(s_text.split())
+            if seen_texts is not None:
+                seen_texts.add(plain.lower())
+            if accepted is not None:
+                accepted.append({"claims": ids, "primary": primary})
+            done.append((compose(s_text, cited), NarrativeSentence(text=plain, sources=[source_key(c) for c in cited]), ids, primary, bool(risky) and any(c.evidence_refs[0] in risky for c in cited), plain.lower()))
+        groups: list[list] = []
+        for d in done:                                                       # consecutive sentences of the same authority class share a finding
+            if groups and groups[-1][0][4] == d[4]:
+                groups[-1].append(d)
+            else:
+                groups.append([d])
+        for g in groups:
+            sents = [d[1] for d in g]
             refs = list(dict.fromkeys(c.evidence_refs[0] for sn in sents for c in claims if source_key(c) in sn.sources))
-            f = Finding(text=" ".join(kept), refs=refs, origin="narrative_checked", narrative=sents)
-            why = check_narrative_finding(f, claims, names)      # the same check the verifier runs, on the agent's own timeline: a paragraph that fails it is never offered
+            f = Finding(text=" ".join(d[0] for d in g), refs=refs, origin="narrative_checked", narrative=sents)
+            why = check_narrative_finding(f, claims, names)      # the same check the verifier runs, on the agent's own timeline: a finding that fails it is never offered
             if why:
-                rejected.append({"paragraph": pi, "sentence": None, "problems": [x.split(":")[0] for x in why[:3]]})
+                rejected.append({"paragraph": pi, "sentence": None, "problems": [x.split(":")[0] for x in why[:3]], "claims": [i for d in g for i in d[2]]})
+                for d in g:                                          # what was counted as accepted is taken back: these claims are NOT narrated
+                    if narrated is not None:
+                        narrated.difference_update(d[3])
+                    if seen_texts is not None:
+                        seen_texts.discard(d[5])
+                    if accepted is not None and {"claims": d[2], "primary": d[3]} in accepted:
+                        accepted.remove({"claims": d[2], "primary": d[3]})
             else:
                 out.append(f)
     return out, rejected
@@ -434,7 +571,7 @@ def story_problems(text: str, cited: list[TimelineClaim], names=()) -> list[str]
     return out
 
 
-def build_story(lines, claims: list[TimelineClaim], names=()) -> tuple[list[Finding], list[dict]]:
+def build_story(lines, claims: list[TimelineClaim], names=(), repairs: Optional[list] = None) -> tuple[list[Finding], list[dict]]:
     """(paragraphs as findings, rejected).  `lines`: the model's story lines, each {claims: [ids], sentence}.  A line that fails story_problems is removed (recorded by code, never with its text);
     consecutive surviving lines of ONE meeting become a paragraph, each sentence followed by the evidence handle(s) of the claims it paraphrases (code-written).  The findings carry NO origin: they
     are model-written and unverified, and nothing downstream may treat them as anything else."""
@@ -456,7 +593,10 @@ def build_story(lines, claims: list[TimelineClaim], names=()) -> tuple[list[Find
         if len(cited) != len(ids):
             rejected.append({"line": li, "problems": ["unknown_claim"]})
             continue
-        text = " ".join(strip_claim_ids(normalise_quotes(ln.sentence, cited), ids).split())
+        fixed, n_fixed = repair_quotes(normalise_quotes(ln.sentence, cited), cited)
+        text = " ".join(strip_claim_ids(fixed, ids).split())
+        if n_fixed and repairs is not None:
+            repairs.append({"line": li, "quotes": n_fixed})
         if len(split_sentences(text)) > 1:                           # one plain sentence per line: a block of sentences cannot be traced to its claims
             rejected.append({"line": li, "problems": ["not_one_sentence"]})
             continue
@@ -553,6 +693,92 @@ def timeline_prompt(claims: list[TimelineClaim], max_claims: int = 14, max_chars
             lines[c.claim_id] = line
     chosen.sort(key=lambda c: (c.event_date or "", c.interaction_id or "", c.turn_index if c.turn_index is not None else -1))
     return "\n".join(lines[c.claim_id] for c in chosen), chosen, len(pool) - len(chosen)
+
+
+def narrated_claim_ids(findings: list[Finding], claims: list[TimelineClaim]) -> set[str]:
+    """The claims a list of verified narrative findings still stands for, read back from their sentences' sources."""
+    keys = {k for f in findings if f.origin in ("narrative_checked", "synthesis_checked") and f.window != -1 for sn in (f.narrative or []) for k in sn.sources}
+    return {c.claim_id for c in claims if source_key(c) in keys}
+
+
+def reconcile_coverage(cov, claims: list[TimelineClaim], findings: list[Finding], reason: str):
+    """Make the coverage tell the truth about what is IN the report.  A sentence that code accepted can still be withheld later (the authority rule, the evidence verifier); the claims it stood for
+    move from `narrated` to `withheld`, with the reason, and are shown as their recorded wording instead.  Pure: returns a new coverage."""
+    still = narrated_claim_ids(findings, claims)
+    gone = [i for i in cov.narrated if i not in still]
+    if not gone:
+        return cov
+    new = cov.model_copy(deep=True)
+    new.narrated = [i for i in cov.narrated if i in still]
+    new.withheld = list(dict.fromkeys(list(cov.withheld) + gone))
+    new.withheld_reasons = {**cov.withheld_reasons, **{i: reason for i in gone}}
+    for w in new.windows:
+        w.sentences_withheld = sum(1 for i in gone if i in w.claim_ids) + w.sentences_withheld
+    return new
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------ windows (Phase 2, B)
+WINDOW_SIZE = 10          # about this many relevant claims per narrative call ...
+WINDOW_HARD = 12          # ... never more than this, and a window ends at a meeting boundary once it has WINDOW_SIZE
+
+
+def narrative_windows(claims: list[TimelineClaim], size: int = WINDOW_SIZE, hard: int = WINDOW_HARD) -> list[list[TimelineClaim]]:
+    """The relevant claims (timeline.significant: retrieved turns that matter to the chronology) in date order, cut into consecutive windows.  Every relevant claim is in exactly one window; a
+    window is cut at a meeting boundary once it holds `size` claims (a meeting is not split unless it alone exceeds `hard`); a very small last window is merged into the one before it."""
+    pool = sorted((c for c in claims if significant(c)), key=_order_key)
+    windows: list[list[TimelineClaim]] = []
+    cur: list[TimelineClaim] = []
+    for i, c in enumerate(pool):
+        cur.append(c)
+        nxt = pool[i + 1] if i + 1 < len(pool) else None
+        if nxt is not None and (len(cur) >= hard or (len(cur) >= size and nxt.interaction_id != c.interaction_id)):
+            windows.append(cur)
+            cur = []
+    if cur:
+        if windows and len(cur) < 4 and len(windows[-1]) + len(cur) <= hard + 3:
+            windows[-1].extend(cur)
+        else:
+            windows.append(cur)
+    return windows
+
+
+def window_context(window: list[TimelineClaim], claims: list[TimelineClaim]) -> list[TimelineClaim]:
+    """Claims OUTSIDE the window that a window claim is related to (corrects / corrected by / conflicts with), so a correction at a window boundary can still name what it corrects."""
+    inside = {c.claim_id for c in window}
+    by_id = {c.claim_id: c for c in claims}
+    out: dict[str, TimelineClaim] = {}
+    for c in window:
+        for r in c.relations:
+            x = by_id.get(r["claim_id"])
+            if x is not None and x.claim_id not in inside and x.source == "source_turn":
+                out[x.claim_id] = x
+    return sorted(out.values(), key=_order_key)
+
+
+def window_block(window: list[TimelineClaim], context: list[TimelineClaim]) -> tuple[str, str]:
+    return "\n".join(_prompt_line(c) for c in window), "\n".join(_prompt_line(c) for c in context)
+
+
+def window_example(window: list[TimelineClaim]) -> str:
+    """One sentence in exactly the required shape, built by code from the window's own first usable line: a 3B model copies a concrete example far more reliably than it follows a description."""
+    for c in window:
+        first = (split_sentences(c.wording) or [""])[0].strip().replace('"', "'")
+        if 4 <= len(first.split()) <= 30 and first.endswith((".", "?", "!")):
+            who = "client" if c.statement_kind == "client_statement" else "advisor"
+            return f'On {c.event_date or "undated"} the {who} said "{first.rstrip(".?!")}". with claims ["{c.claim_id}"]'
+    return ""
+
+
+RETRY_NOTE = ("\n\nYOUR PREVIOUS ANSWER WAS REJECTED by the checks. Write again using ONLY this shape for every sentence: On <date> the client|advisor said \"<words copied exactly from the line>\". "
+              "Copy a whole sentence or two of the line unchanged; do not shorten it in the middle, do not add words of your own, do not comment or interpret. Use one sentence per line.")
+
+
+def narrative_user_window(request_text: str, block: str, context_block: str, index: int, total: int, first: Optional[str], last: Optional[str], example: str = "", retry: bool = False) -> str:
+    ex = f"\n\nEXAMPLE of one sentence in the required shape (for the line it quotes): {example}" if example else ""
+    ctx = (f"\n\nRELATED LINES OF OTHER PARTS (do not narrate them here; cite one only together with the TIMELINE line it is related to):\n{context_block}" if context_block else "")
+    return (f"REQUEST: {request_text}\n\nThis is part {index + 1} of {total} of the chronology ({first or 'undated'} to {last or 'undated'}). Write only about the TIMELINE lines below; the other parts are written separately."
+            f"\n\nTIMELINE (oldest first):\n{block}{ctx}{ex}\n\nWrite the paragraphs now: up to 4 paragraphs of up to 4 sentences, one sentence per line that matters to how the position developed, each line at most once."
+            + (RETRY_NOTE if retry else ""))
 
 
 def _prompt_line(c: TimelineClaim) -> str:

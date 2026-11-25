@@ -63,8 +63,8 @@ class HarnessConfig:
     max_llm_calls: int = 20
     max_retries: int = 6                    # validation retries across the whole request
     max_retries_per_operation: int = 2      # retries of one structured-output operation
-    max_tool_calls: int = 12
-    max_tool_calls_per_agent: int = 12
+    max_tool_calls: int = 30                # THE tool-call budget of one request (searches + reads); the Tool Selector's own execution budget is derived from it (runtime.selector_config)
+    max_tool_calls_per_agent: int = 30
     max_tool_iterations: int = 5
     max_input_tokens: int = 60_000
     max_output_tokens: int = 10_000

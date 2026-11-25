@@ -76,8 +76,19 @@ class ToolSelector:
         counter = _Counter()
         idle = 0
         await self._discover_sources(request_text, plan, catalog, validator, state, counter)
+        if state.retrieval_report and state.successes() and set(plan.required_tools) <= {SOURCE_TOOL}:
+            # Source discovery IS the whole job when the plan asks for nothing but source turns: the model would only be asked for more of the same calls (which a 3B model writes with mixed
+            # arguments the validator refuses, and which add nothing to a chronology whose meetings were already read).  What was and was not retrieved is already in missing_information.
+            state.stop_reason = "max_executions" if self._used(state) >= self.cfg.max_executions else "source_discovery_complete"
+            state.completion_status = "partial" if state.missing_information else "complete"
+            self.tracer.event(COMPONENT, "model_loop_skipped", reason="source discovery covered the plan", used=self._used(state), max=self.cfg.max_executions)
+            return
         for it in range(1, self.cfg.max_iterations + 1):
             state.iterations = it
+            if self._used(state) >= self.cfg.max_executions:          # the budget is spent (e.g. by source discovery): do not ask the model for calls that can only be refused
+                state.stop_reason, state.completion_status = "max_executions", "partial"
+                self.tracer.event(COMPONENT, "budget_exhausted_before_decision", iteration=it, used=self._used(state), max=self.cfg.max_executions)
+                return
             try:
                 decision = await asyncio.to_thread(self._decide, request_text, plan, memory, catalog, state, it)
             except (StructuredOutputError, LLMError) as e:
@@ -225,6 +236,12 @@ class ToolSelector:
                                  catalog: list[dict], retrieved: dict, failed: list, cut: list) -> int:
         """One get_source_evidence call per chosen meeting (conversation mode, through the normal validator and budget).  Records what came back in `retrieved`
         ({interaction_id: sorted turn indices}) and what failed in `failed`.  Returns the number of calls issued."""
+        room = max(self.cfg.max_executions - self._used(state), 0)
+        if len(chosen) > room:                                                   # never schedule a call the budget will refuse: the rest are reported as not retrieved (budget), not attempted
+            for i in chosen[room:]:
+                failed.append({"interaction_id": i, "date": meetings.get(i, {}).get("date", ""), "turns": sorted(meetings.get(i, {}).get("window") or meetings.get(i, {}).get("turns") or []),
+                               "reason": "tool-call budget"})
+            chosen = chosen[:room]
         calls, cut_now = meeting_calls(client, meetings, chosen)
         cut.extend(cut_now)
         n = len(state.executions)
@@ -341,9 +358,14 @@ class ToolSelector:
         report["not_retrieved"] = [{"interaction_id": o["interaction_id"], "date": o["date"], "reason": o["reason"], "found_by": o["found_by"], "tier": meetings.get(o["interaction_id"], {}).get("tier", 0)} for o in omitted]
         report["references_resolved"] = [{k: r.get(k) for k in ("from", "quote", "kind", "interaction_id", "date", "relevant", "retrieved", "not_followed")} for r in refs]
         report["references_unresolved"] = unresolved
+        report["meetings_identified"] = [{"interaction_id": i, "date": meetings[i]["date"], "found_by": meetings[i].get("found_by", "search"), "tier": meetings[i].get("tier", 0)}
+                                         for i in sorted(meetings, key=lambda i: (meetings[i]["date"], i))]       # refreshed: meetings added through references after the first listing are identified too
         report["budget"]["used"] = self._used(state)
         got = sum(len(v) for v in retrieved.values())
-        self.tracer.event(COMPONENT, "source_discovery", terms=terms, searched=len(found), meetings_found=len(meetings), meetings_retrieved=issued, turns_retrieved=got, budget=budget,
+        report["counts"] = {"identified": len(meetings), "retrieved": len(retrieved), "not_retrieved": len(report["not_retrieved"]), "references_unresolved": len(unresolved),
+                            "references_not_retrieved": sum(1 for r in refs if r.get("relevant") and not r["retrieved"] and not r.get("not_followed")), "calls_issued": issued, "turns_retrieved": got}
+        self.tracer.event(COMPONENT, "source_discovery", terms=terms, searched=len(found), meetings_found=len(meetings), meetings_retrieved=len(retrieved), calls_issued=issued, turns_retrieved=got, budget=budget,
+                          counts=report["counts"],
                           references_resolved=len(refs), references_unresolved=len(unresolved),
                           omitted=[{"interaction_id": o["interaction_id"], "turns": o["turns"], "reason": o["reason"][:60]} for o in omitted + cut])
 

@@ -262,8 +262,28 @@ def _outside_quotes(text: str, excerpts: list) -> str:
     return _QUOTED.sub(lambda m: " " if _genuine_quote(m.group(1) or m.group(2), excerpts) else m.group(0), text)
 
 
-def source_record_problem(text: str, items: list) -> Optional[str]:
-    """Why a MODEL-written finding may not rest on these source-turn items, or None.  `items` are the cited items that are source turns."""
+_ATTRIBUTING = re.compile(r"\b(?:said|says|told|tell|asked|asks|noted|recorded|explained|mentioned|stated|described|reported|recommended|suggested|proposed|advised|outlined|summari[sz]ed|wondered|raised|replied|"
+                          r"answered|added|clarified|repeated|reminded|wrote|corrected|listed|indicated|expressed|acknowledged|understood)\b", re.I)
+
+
+def _unattributed_overreach(rest: str, items: list) -> Optional[str]:
+    """The first overreach term (decided, agreed, accepted, signed, current, final ...) that is neither negated, nor reported as someone's statement ("... said that she had decided"), nor a word of a
+    cited turn.  Used for PARAPHRASED prose (a synthesised proposition): there the term cannot be inside a quotation, so it must be attributed to the speaker and present in the source turn."""
+    source = " ".join((e.excerpt or "").lower() for e in items)
+    for m in _OVERREACH.finditer(rest):
+        if _negated(_clause_before(rest, m.start())):
+            continue
+        start = max((rest.rfind(c, 0, m.start()) for c in ".!?"), default=-1) + 1
+        if _ATTRIBUTING.search(rest[start:m.start()]) and m.group(0).lower() in source:
+            continue
+        return m.group(0)
+    return None
+
+
+def source_record_problem(text: str, items: list, paraphrase: bool = False) -> Optional[str]:
+    """Why a MODEL-written finding may not rest on these source-turn items, or None.  `items` are the cited items that are source turns.  `paraphrase`: the finding is a validated paraphrase (origin
+    synthesis_checked): the speaker and the turn must still be named in the text (code writes them), but an overreach term outside quotation marks is allowed when it is attributed to the speaker
+    ("said that she had decided") and occurs in the cited turn; every other overreach term is refused exactly as before."""
     for e in items:
         low = text.lower()
         if (e.speaker or "").lower() not in low:
@@ -271,7 +291,7 @@ def source_record_problem(text: str, items: list) -> Optional[str]:
         if (e.interaction_id or "").lower() not in low or not re.search(rf"\bturns?\s*#?\s*{e.turn_index}\b", low):
             return f"{e.ref}: the statement does not cite the interaction id and turn index"
     rest = _outside_quotes(text, [e.excerpt for e in items])
-    hit = _unnegated(rest, _OVERREACH)
+    hit = _unattributed_overreach(rest, items) if paraphrase else _unnegated(rest, _OVERREACH)
     if hit:
         return f"a source turn shows what was said, not that it is true, agreed, decided, authorised or current ('{hit}')"
     return None

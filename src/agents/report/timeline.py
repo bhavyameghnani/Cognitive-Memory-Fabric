@@ -186,6 +186,7 @@ def build_timeline(evidence: list[EvidenceItem], topics=None) -> list[TimelineCl
     for i, c in enumerate(claims, 1):
         c.claim_id = f"C{i}"
     _relate(claims, memories)
+    link_wording_corrections(claims)
     return claims
 
 
@@ -245,6 +246,57 @@ def _relate(claims: list[TimelineClaim], memories: list[EvidenceItem]) -> None:
             else:
                 last.temporal_status = "unresolved"
                 last.notes.append("the latest decision-like claim is not a verified, confirmed client decision, so no current position is established")
+
+
+_LINK_STOP = frozenset("a an the and or but of to in on at for with by is are was were be been it its that this i you your my me we our he she they them his her their do did does not no have has "
+                       "had will would can could should may might as if so than then there here from up out about into over just also very".split())
+MIN_LINK_RUN = 5                  # a correction is linked to an earlier claim by wording only when they share this many consecutive words ...
+MIN_LINK_CONTENT = 3              # ... of which at least this many are not function words
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9']+", (text or "").lower())
+
+
+def _shared_run(a: list[str], b: list[str]) -> list[str]:
+    import difflib
+    m = difflib.SequenceMatcher(None, a, b, autojunk=False).find_longest_match(0, len(a), 0, len(b))
+    return a[m.a:m.a + m.size]
+
+
+def link_wording_corrections(claims: list[TimelineClaim]) -> None:
+    """A correction the RECORD states in its own words ("my earlier note that you had accepted the Lakeshore offer was wrong") names the position it corrects.  Memory structure links most
+    corrections (`_relate`); when it did not, the correction is linked to an earlier retrieved turn by SHARED WORDING, under strict conditions, and the link says so:
+      - the correcting claim is a retrieved turn that the wording itself marks as a correction, and nothing has linked it to an earlier claim yet;
+      - exactly one earlier retrieved turn shares the longest run of consecutive words with it (at least MIN_LINK_RUN words, MIN_LINK_CONTENT of them not function words); a tie links nothing;
+      - the relation carries basis "shared_wording" and the shared phrase, so no reader can mistake it for a memory-derived link.
+    The earlier claim keeps its wording and is marked corrected; nothing is edited or deleted."""
+    order = {id(c): i for i, c in enumerate(claims)}
+    for c in claims:
+        if c.source != "source_turn" or not (c.modality == "correction" or "correction" in c.cues) or any(r["type"] == "corrects" for r in c.relations):
+            continue
+        mine = _tokens(c.wording)
+        best: list[tuple[int, TimelineClaim, list[str]]] = []
+        for x in claims:
+            if x is c or x.source != "source_turn" or order[id(x)] >= order[id(c)] or (x.interaction_id, x.turn_index) == (c.interaction_id, c.turn_index):
+                continue
+            run = _shared_run(mine, _tokens(x.wording))
+            if len(run) >= MIN_LINK_RUN and sum(1 for w in run if w not in _LINK_STOP) >= MIN_LINK_CONTENT:
+                best.append((len(run), x, run))
+        if not best:
+            continue
+        top = max(n for n, _, _ in best)
+        winners = [(x, run) for n, x, run in best if n == top]
+        if len(winners) != 1:
+            c.notes.append("this is worded as a correction, but more than one earlier turn matches it equally well, so no earlier claim is named as the one corrected")
+            continue
+        target, run = winners[0]
+        phrase = " ".join(run)
+        c.relations.append({"type": "corrects", "claim_id": target.claim_id, "basis": "shared_wording", "phrase": phrase})
+        target.relations.append({"type": "corrected_by", "claim_id": c.claim_id, "basis": "shared_wording", "phrase": phrase})
+        c.notes.append(f"linked to {target.claim_id} by shared wording (\"{phrase}\"), not by a stored memory")
+        if target.temporal_status not in ("superseded", "disputed"):
+            target.temporal_status = "corrected"
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------ rendering

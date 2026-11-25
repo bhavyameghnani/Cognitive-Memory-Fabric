@@ -248,7 +248,7 @@ class EvidenceVerifier:
                 codes.append(Reason.SOURCE_NOT_PERMITTED.value)
             elif f.origin not in ("rendered", "tool_code"):
                 from agents.report.validate import source_record_problem
-                why = source_record_problem(f.text, turns)
+                why = source_record_problem(f.text, turns, paraphrase=f.origin == "synthesis_checked")
                 if why:
                     bad.append(why)
                     codes.append(Reason.SOURCE_NOT_PERMITTED.value)
@@ -262,7 +262,7 @@ class EvidenceVerifier:
             v.verdict, v.outcome = "unsupported", (Outcome.CONTRADICTED.value if Reason.POLARITY_MISMATCH.value in codes else Outcome.UNVERIFIED.value)
             v.reason_codes = list(dict.fromkeys(codes))
             return v
-        if f.origin == "narrative_checked":                     # model prose checked by code against cited timeline claims: re-checked here against a timeline THIS verifier rebuilds
+        if f.origin in ("narrative_checked", "synthesis_checked"):                     # model prose checked by code against cited timeline claims: re-checked here against a timeline THIS verifier rebuilds
             return self._narrative(v, f, items, evidence, plan_clients)
         return self._structured(v, f, items, plan_clients, tools, soft) if self.structured else self._lexical(v, f, items, tools, soft)
 
@@ -283,6 +283,7 @@ class EvidenceVerifier:
         the rebuilt claims at the source turns it names - attribution, figures, dates, correction/supersession/dispute relations, modality, causal and decision wording, quotations, and a closed vocabulary -
         and the finding's text and references must compose exactly from its sentences and those claims.  The source-turn restriction and the unverified-memory withholding have already run (above)."""
         from agents.report.semantic import check_narrative_finding
+        from agents.report.synthesis import check_synthesis_finding
         from agents.report.timeline import build_timeline
         names = self.names()
         own = [n.capitalize() for n, cid in names.items() if cid in plan_clients]
@@ -296,7 +297,7 @@ class EvidenceVerifier:
                     continue
             usable.append(e)
         claims = build_timeline(usable, sorted({e.topic for e in usable if e.topic}))
-        problems = check_narrative_finding(f, claims, own)
+        problems = (check_synthesis_finding if f.origin == "synthesis_checked" else check_narrative_finding)(f, claims, own)      # paraphrase is judged proposition by proposition, a quotation narrative sentence by sentence
         for cid, nm in ((c, n) for n, c in names.items() if c not in plan_clients):      # a sentence that names a client outside the plan is never presented
             if re.search(r"\b" + re.escape(nm.capitalize()) + r"\b", f.text):
                 problems.append("unknown_source: the statement names a client outside the plan")
@@ -487,7 +488,16 @@ class EvidenceVerifier:
         validation["harness_evidence"] = dict(counts=result.counts(), outcomes=result.outcome_counts(), mode="structured" if self.structured else "lexical",
                                               summary_replaced=result.summary_replaced, claim_evidence=result.claim_evidence(), findings=result.findings_summary(),
                                               withheld=result.withheld_public())
-        new = report.model_copy(update=dict(summary=summary, uncertainties=list(report.uncertainties) + withheld, validation=validation, **new_sections))
+        extra: dict = {}
+        if report.coverage is not None:                      # the coverage and the overview must describe the report as it now stands: claims whose verified sentence was just withheld are not narrated
+            from agents.report.overview import with_coverage
+            from agents.report.semantic import reconcile_coverage
+            cov = reconcile_coverage(report.coverage, report.timeline, new_sections.get("historical_context", report.historical_context), "withheld by the independent evidence verifier")
+            if cov is not report.coverage:
+                extra["coverage"] = cov
+                if report.overview is not None:
+                    extra["overview"] = with_coverage(report.overview, cov)
+        new = report.model_copy(update=dict(summary=summary, uncertainties=list(report.uncertainties) + withheld, validation=validation, **new_sections, **extra))
         return new, result
 
 

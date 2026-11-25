@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, BadgeCheck, ChevronDown, ChevronRight, CircleAlert, Info, Quote, ShieldCheck } from 'lucide-react';
 import type { AskResult, EvidenceItem, Finding } from '../types';
-import { buildView, kindLabel, splitCitations, type Banner, type Development, type Tone } from '../lib/reportView';
+import { buildView, splitCitations, type Banner, type Development, type Tone } from '../lib/reportView';
+import { buildClientReport, type Excerpt, type Para, type PeriodSection, type Sentence } from '../lib/clientReport';
 import { AgentRunPanel } from './AgentRunPanel';
 
 const TONE: Record<Tone, string> = {
@@ -11,7 +12,7 @@ const TONE: Record<Tone, string> = {
   bad: 'border-rose-500/40 bg-rose-500/10 text-rose-100',
 };
 const BADGE: Record<string, string> = {
-  complete_narrative: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', chronology_only: 'bg-sky-500/15 text-sky-300 border-sky-500/40',
+  complete_narrative: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', partial_narrative: 'bg-amber-500/15 text-amber-300 border-amber-500/40', chronology_only: 'bg-sky-500/15 text-sky-300 border-sky-500/40',
   degraded: 'bg-amber-500/15 text-amber-300 border-amber-500/40', fallback: 'bg-rose-500/15 text-rose-300 border-rose-500/40', memory_only: 'bg-slate-500/15 text-slate-300 border-slate-500/40',
 };
 
@@ -87,150 +88,274 @@ const DevList: React.FC<{ items: Development[]; open: string | null; onOpen: (r:
   </ul>
 );
 
+const EXCERPT_LABEL: Record<Excerpt['state'], string> = {
+  rejected: 'not written up: the checks rejected the wording',
+  not_cited: 'not used in the write-up',
+  window_failed: 'its period could not be written up',
+  withheld: 'withheld by a later safeguard',
+};
+const STATUS_TONE: Record<string, string> = {
+  ok: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', none: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', partial: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+  empty: 'bg-rose-500/15 text-rose-300 border-rose-500/40', failed: 'bg-rose-500/15 text-rose-300 border-rose-500/40', skipped: 'bg-rose-500/15 text-rose-300 border-rose-500/40',
+};
+const STATUS_LABEL: Record<string, string> = { ok: 'written up', none: 'written up', partial: 'partly written up', empty: 'not written up', failed: 'not written up', skipped: 'not written up' };
+
+const Tile: React.FC<{ a: string; b: string; warn?: boolean }> = ({ a, b, warn }) => (
+  <div className={`rounded-lg border py-2 px-1 text-center ${warn ? 'border-amber-500/40 bg-amber-500/[0.06]' : 'border-slate-800 bg-slate-900/60'}`}>
+    <p className="text-sm font-semibold text-slate-100 tabular-nums">{a}</p><p className="text-[10px] text-slate-500 leading-tight">{b}</p>
+  </div>
+);
+
 export const ReportView: React.FC<{ result: AskResult; onSelectMemory: (id: string) => void }> = ({ result, onSelectMemory }) => {
   const rep = result.report;
   const v = useMemo(() => buildView(result), [result]);
+  const cr = useMemo(() => buildClientReport(result), [result]);
   const [open, setOpen] = useState<string | null>(null);
+  const [shown, setShown] = useState<Record<string, boolean>>({});
   const toggle = (r: string) => setOpen((o) => (o === r ? null : r));
-  const ev = (ref: string) => rep.evidence.find((e) => e.ref === ref);
-  const opened = open ? ev(open) : undefined;
-  const refsOf = (f: Finding) => f.refs;
-  const para = (f: Finding, i: number, extra = '') => (
-    <div key={i} className={extra}>
-      <p className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>
-      {opened && refsOf(f).includes(opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+  const flip = (k: string) => setShown((s) => ({ ...s, [k]: !s[k] }));
+  const opened = open ? rep.evidence.find((e) => e.ref === open) : undefined;
+  const chip = (ref: string | null) => ref ? <button key={ref} onClick={() => toggle(ref)} data-cite={ref} className={`ml-0.5 px-1 rounded align-baseline font-mono text-[9px] cursor-pointer ${open === ref ? 'bg-blue-500 text-white' : 'bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/30'}`}>{ref}</button> : null;
+  const card = (ref: string | null) => (opened && ref && opened.ref === ref ? <EvidenceCard e={opened} onSelectMemory={onSelectMemory} /> : null);
+  const sentences = (ss: Sentence[]) => ss.map((s, i) => <React.Fragment key={i}>{s.text}{s.refs.map((r) => chip(r))}{' '}</React.Fragment>);
+  const evidenceList = (p: Para) => (
+    <ul className="mt-2 space-y-2 border-l border-slate-700 pl-3" data-testid="para-evidence">
+      {p.evidence.map((e) => (
+        <li key={e.claimId} className="text-xs text-slate-400 leading-relaxed">
+          <span className="font-mono text-[10px] text-slate-500">{e.date ?? 'undated'} · {e.where} · {e.who}</span>
+          <p className="text-slate-300"><Quote className="inline w-3 h-3 mr-1 text-slate-600" />{e.wording}{chip(e.ref)}</p>
+          {card(e.ref)}
+        </li>
+      ))}
+    </ul>
+  );
+  const prose = (p: Para, key: string, big = false) => (
+    <div key={key} data-testid="prose">
+      <p className={`${big ? 'text-[15px] leading-8' : 'text-[14px] leading-7'} text-slate-100`}>{sentences(p.sentences)}</p>
+      {p.evidence.length > 0 && (
+        <button onClick={() => flip(key)} className="mt-1 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer underline underline-offset-2" aria-expanded={!!shown[key]}>
+          {shown[key] ? 'Hide supporting evidence' : `Supporting evidence (${p.evidence.length} source turn${p.evidence.length === 1 ? '' : 's'})`}
+        </button>
+      )}
+      {shown[key] && evidenceList(p)}
     </div>
   );
-  const hasNarrative = v.narrative.length > 0;
+  const excerptList = (items: Excerpt[]) => (
+    <ul className="space-y-2" data-testid="excerpts">
+      {items.map((x) => (
+        <li key={x.claimId} className="text-xs text-slate-400 leading-relaxed">
+          <span className="font-mono text-[10px] text-slate-500">{x.date ?? 'undated'} · {x.where} · {x.who}</span>
+          {x.badges.map((b) => <span key={b} className="ml-1.5 text-[10px] px-1.5 rounded bg-slate-800 text-amber-300 border border-slate-700">{b}</span>)}
+          <span className="ml-1.5 text-[10px] px-1.5 rounded bg-slate-800 text-slate-500 border border-slate-700">{EXCERPT_LABEL[x.state]}</span>
+          <p className="text-slate-300 mt-0.5"><Quote className="inline w-3 h-3 mr-1 text-slate-600" />{x.wording}{chip(x.ref)}</p>
+          {card(x.ref)}
+        </li>
+      ))}
+    </ul>
+  );
+  const sectionView = (s: PeriodSection, n: number) => (
+    <section key={s.index} className="rounded-xl border border-slate-800 bg-slate-900/50 p-4" data-testid="period" data-status={s.status}>
+      <div className="flex flex-wrap items-center gap-2">
+        <h4 className="text-sm font-semibold text-slate-100">{n > 1 ? `${s.index + 1}. ` : ''}{s.title}</h4>
+        <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${STATUS_TONE[s.status]}`}>{STATUS_LABEL[s.status]}</span>
+      </div>
+      {s.gap && <div className="mt-2"><BannerBox b={{ tone: 'warn', title: 'Gap in this part of the history', detail: s.gap }} /></div>}
+      {s.paragraphs.length > 0 && <div className="mt-2 flex flex-col gap-3" data-testid="verified-paragraphs">{s.paragraphs.map((p, i) => prose(p, `s${s.index}p${i}`))}</div>}
+      {s.excerpts.length > 0 && (
+        <div className="mt-3">
+          <button onClick={() => flip(`ex${s.index}`)} className="text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer underline underline-offset-2" aria-expanded={!!shown[`ex${s.index}`]} data-testid="further-records">
+            {shown[`ex${s.index}`] ? 'Hide' : 'Show'} {s.excerpts.length} further record{s.excerpts.length === 1 ? '' : 's'} from this period (recorded wording, not written up)
+          </button>
+          {shown[`ex${s.index}`] && <div className="mt-2">{excerptList(s.excerpts)}</div>}
+        </div>
+      )}
+    </section>
+  );
+  const c = cr.coverage;
+  const notNarrated = c.relevant != null ? c.relevant - (c.narrated ?? 0) : 0;
   const summaryRefs = splitCitations(rep.summary).filter((s) => s.kind === 'cite').map((s) => s.ref!);
-  const summaryBox = (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4" data-testid="summary">
-      <h4 className="text-xs font-semibold text-slate-400 mb-1">{v.summaryIsBoilerplate ? 'Technical summary (as assembled by the backend: which turns were retrieved)' : 'Summary'}</h4>
-      <p className={`${v.summaryIsBoilerplate ? 'text-[11px] text-slate-500' : 'text-sm text-slate-100'} leading-relaxed`}><Cited text={rep.summary} open={open} onOpen={toggle} /></p>
-      {opened && summaryRefs.includes(opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
-    </div>
-  );
-  const g = v.glance;
 
   return (
     <div className="flex flex-col gap-3" data-report-kind={v.completeness}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${BADGE[v.completeness]}`} data-testid="report-kind">
-          {v.completeness === 'complete_narrative' ? <BadgeCheck className="w-3.5 h-3.5" /> : <CircleAlert className="w-3.5 h-3.5" />}{v.label}
-        </span>
-        <span className="text-[11px] font-mono text-slate-500">{rep.request_id} · {result.client_ids.join(', ')}</span>
-      </div>
-      {v.banners.map((b, i) => <BannerBox key={i} b={b} />)}
+      {/* 1. client and reporting period */}
+      <header className="rounded-xl border border-slate-700 bg-slate-900/70 p-4" data-testid="report-header">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-semibold text-slate-50">Client report · {cr.header.clientId || 'client'}</h3>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${BADGE[v.completeness]}`} data-testid="report-kind">
+            {v.completeness === 'complete_narrative' ? <BadgeCheck className="w-3.5 h-3.5" /> : <CircleAlert className="w-3.5 h-3.5" />}{v.label}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-slate-400" data-testid="report-period">{cr.header.from ? <>Reporting period <span className="font-mono text-slate-200">{cr.header.from}</span> to <span className="font-mono text-slate-200">{cr.header.to}</span></> : 'No dated source turns were retrieved'} · <span className="font-mono">{cr.header.requestId}</span></p>
+        <p className="mt-1 text-xs text-slate-500">Question: {rep.question}</p>
+      </header>
+      {v.banners.filter((b) => b.title !== 'Narrative verified').map((b, i) => <BannerBox key={i} b={b} />)}
       {v.singleClientNote && <BannerBox b={{ tone: 'info', title: 'Single-client source retrieval', detail: v.singleClientNote }} />}
 
-      {!v.summaryIsBoilerplate && summaryBox}
-
-      {v.story.length > 0 && (
-        <section className="rounded-xl border border-amber-500/40 bg-amber-500/[0.05] p-4" data-testid="story">
-          <h4 className="text-sm font-semibold text-amber-100 flex items-center gap-2"><Info className="w-4 h-4" />Story summary <span className="text-[10px] font-normal text-amber-200 border border-amber-500/40 rounded px-1.5">model-written · not independently verified</span></h4>
-          <p className="mt-1 text-[11px] text-amber-200/80 leading-relaxed">A plain-English account written from the claims below. Code removes invented causes, decisions, intentions, wrong speakers and any figure, date or name that is not in the cited lines, but it cannot check that a paraphrase means what the source says. The verified quotations below are the evidence; where they differ, trust them.</p>
-          {v.storyCoverage && (
-            <p className="mt-1.5 text-[11px] font-semibold text-amber-200" data-testid="story-coverage">
-              Covers {v.storyCoverage.meetings}{v.storyCoverage.of ? ` of ${v.storyCoverage.of}` : ''} meeting{v.storyCoverage.meetings === 1 ? '' : 's'}{v.storyCoverage.from ? ` (${v.storyCoverage.from}${v.storyCoverage.to && v.storyCoverage.to !== v.storyCoverage.from ? ' to ' + v.storyCoverage.to : ''})` : ''}.
-              {v.storyCoverage.of > v.storyCoverage.meetings ? ' Developments in the other meetings are not in this summary: see the verified narrative and the chronology below.' : ''}
-            </p>
-          )}
-          <div className="mt-2.5 flex flex-col gap-3 text-[14px] leading-7 text-slate-100">{v.story.map((f, i) => {
-            const first = ev(f.refs[0]);                      // the caption is the evidence's own date and meeting, written by the backend, not by the model
-            return <div key={i}>{first?.event_date && <p className="text-[10px] font-mono uppercase tracking-wide text-amber-300/70 mb-0.5">{first.event_date}{first.interaction_id ? ` · ${first.interaction_id}` : ''}</p>}{para(f, i)}</div>;
-          })}</div>
+      {/* 2. executive summary */}
+      {cr.executive ? (
+        <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4" data-testid="executive">
+          <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-400" />Executive summary</h4>
+          <div className="mt-2">{prose(cr.executive, 'exec', true)}</div>
         </section>
-      )}
-      {v.storyNote && <BannerBox b={{ tone: 'info', title: 'No story summary', detail: v.storyNote }} />}
-
-      {hasNarrative && (
-        <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-4" data-testid="narrative">
-          <h4 className="text-sm font-semibold text-emerald-200 flex items-center gap-2"><BadgeCheck className="w-4 h-4" />Narrative <span className="text-[10px] font-normal text-emerald-300/70 border border-emerald-500/30 rounded px-1.5">model-written · verified</span></h4>
-          <div className="mt-2 flex flex-col gap-3 text-[13px] text-slate-100">{v.narrative.map((f, i) => para(f, i))}</div>
+      ) : cr.overviewVerified.length > 0 && (
+        <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4" data-testid="overview">
+          <h4 className="text-sm font-semibold text-slate-100">Overview</h4>
+          <p className="text-[11px] text-slate-500 mt-0.5">No written executive summary passed the checks for this request; this is the record's own overview, written by code (counts and dates only).</p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-200 list-disc pl-5" data-testid="overview-verified">{cr.overviewVerified.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </section>
       )}
 
-      {g && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center" data-testid="glance">
-          {([[`${g.from ?? '?'} → ${g.to ?? '?'}`, `${g.meetings} meetings`], [String(g.clientStatements), "client's own statements"], [String(g.advisorStatements), "advisor's accounts / interpretations"],
-             [String(g.tentative), 'tentative'], [String(g.decisions), 'decisions'], [String(g.corrections), 'linked corrections'], [String(g.unresolved), 'unresolved'], [String(g.claims), 'dated statements']] as const).map(([a, b]) => (
-            <div key={b} className="rounded-lg border border-slate-800 bg-slate-900/60 py-2 px-1"><p className="text-sm font-semibold text-slate-100 tabular-nums">{a}</p><p className="text-[10px] text-slate-500 leading-tight">{b}</p></div>
-          ))}
+      {/* 3. chronological sections */}
+      {cr.sections.length > 0 && (
+        <div className="flex flex-col gap-2.5" data-testid="chronology-sections">
+          <h4 className="text-sm font-semibold text-slate-200 mt-1">How the history developed</h4>
+          {cr.sections.map((s) => sectionView(s, cr.sections.length))}
         </div>
       )}
 
-      {v.current.length > 0 ? (
-        <Section title="Current understanding" hint="verified and confirmed by the memory layer" count={v.current.length}>
-          <DevList items={v.current.map((c) => ({ date: c.date, where: c.where, who: "client's own words", wording: c.text, badges: ['verified, confirmed'], ref: c.ref }))} open={open} onOpen={toggle} />
-          {opened && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
-        </Section>
-      ) : v.glance && (
-        <Section title="Current understanding" open={false}>
-          <p className="text-xs text-slate-400">No retrieved statement is both verified and confirmed as the client's current position, so none is stated here. Read the developments and uncertainties below.</p>
-        </Section>
-      )}
-
-      {v.developments.length > 0 && (
-        <Section title="Important developments" hint="decisions, corrections and changes of status" count={v.developments.length} open={!hasNarrative}>
-          <DevList items={v.developments} open={open} onOpen={toggle} />
-          {opened && v.developments.some((d) => d.ref === opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
-        </Section>
-      )}
-
-      {(v.corrections.length > 0 || v.correctionStatements.length > 0) && (
-        <Section title="Corrections" count={v.corrections.length + v.correctionStatements.length}>
-          {v.corrections.map((c, i) => (
-            <div key={i} className="text-xs text-slate-300 mb-3 leading-relaxed"><p className="font-mono text-[11px] text-slate-500">{c.date ?? ''} · {c.correctionWhere} corrects {c.originalWhere}</p>
-              <p className="text-slate-400">Earlier: “{c.original}”</p><p className="text-slate-200">Correction: “{c.correction}”</p></div>
-          ))}
-          {v.correctionStatements.length > 0 && <><p className="text-[11px] text-slate-500 mb-1.5">Statements worded as corrections (the record does not link them to one specific earlier statement):</p><DevList items={v.correctionStatements} open={open} onOpen={toggle} /></>}
-        </Section>
-      )}
-
-      {v.contradictions.length > 0 && (
-        <Section title="Contradictions and conflicts" count={v.contradictions.length} open={false}><Bullets items={v.contradictions} tone="text-amber-200" /></Section>
-      )}
-
-      {v.otherFindings.length > 0 && (
-        <Section title="Other findings the verifier accepted" count={v.otherFindings.length} open={false}>
-          <div className="flex flex-col gap-2 text-xs text-slate-300">{v.otherFindings.map((f, i) => para(f, i))}</div>
-        </Section>
-      )}
-
-      {v.openQuestions.length > 0 && <Section title="Unresolved and open questions" count={v.openQuestions.length} open><Bullets items={v.openQuestions} tone="text-amber-200/90" /></Section>}
-      {v.systemNotes.length > 0 && <Section title="Retrieval, verification and coverage notes" count={v.systemNotes.length} open={false} hint="what was not retrieved, withheld or unverified"><Bullets items={v.systemNotes} tone="text-slate-400" limit={8} /></Section>}
-
-      {v.chronology.length > 0 && (
-        <Section title={hasNarrative ? 'Supporting chronology' : 'Chronology'} count={v.chronology.length} open={!hasNarrative}
-          hint={hasNarrative ? 'code-written; every statement quotes its source turn' : 'code-written from the conversation record'}>
-          <p className="text-[11px] text-slate-500 mb-2">{hasNarrative ? 'The same meetings in strict date order, with the original wording. Paragraphs already covered by the narrative above are marked.' : 'Strict date order, original wording, each statement attributed to its recorded speaker.'}</p>
-          <div className="flex flex-col gap-3 text-xs text-slate-300">
-            {v.chronology.map((f, i) => (
-              <div key={i}>
-                {f.refs.some((r) => v.narratedRefs.has(r)) && <span className="inline-block mb-0.5 text-[10px] px-1.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">also narrated above</span>}
-                {para(f, i)}
+      {/* 4. corrections and changes */}
+      {(cr.changes.length > 0 || cr.wordedCorrections.length > 0) && (
+        <Section title="Corrections and changes" count={cr.changes.length + cr.wordedCorrections.length} hint="original position, then the corrected position">
+          <div data-testid="corrections">
+            {cr.changes.map((p, i) => (
+              <div key={i} className="mb-3 text-xs leading-relaxed rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="font-mono text-[11px] text-slate-500">{p.date ?? 'undated'} · {p.corrected.where} corrects {p.original ? p.original.where : 'an earlier record whose source turn was not retrieved'}</p>
+                {p.explanation && p.explanation.length > 0 && <p className="mt-1.5 text-[14px] leading-7 text-slate-100" data-testid="correction-explanation">{sentences(p.explanation)}</p>}
+                <p className="mt-1.5 text-slate-400"><span className="text-[10px] uppercase tracking-wide text-slate-500">Original position · {p.original?.who ?? 'not retrieved'}{p.original?.date ? ` · ${p.original.date}` : ''}</span><br />{p.original ? <>“{p.original.wording}”{chip(p.original.ref)}{card(p.original.ref)}</> : 'The corrected statement is not among the retrieved turns.'}</p>
+                <p className="mt-1.5 text-slate-200"><span className="text-[10px] uppercase tracking-wide text-emerald-300/80">Corrected position · {p.corrected.who} · {p.corrected.date ?? 'undated'}</span><br />“{p.corrected.wording}”{chip(p.corrected.ref)}{card(p.corrected.ref)}</p>
+                <p className="mt-1.5 text-[10px] text-slate-500">{p.basis === 'shared_wording' ? `Linked by the words both turns share (“${p.phrase}”), not by a stored memory.` : 'Linked by the memory layer’s own correction record.'}</p>
               </div>
             ))}
+            {cr.wordedCorrections.length > 0 && (
+              <>
+                <p className="text-[11px] text-slate-500 mb-1.5">Statements worded as corrections that the record does not link to one specific earlier statement:</p>
+                <DevList items={cr.wordedCorrections.map((x) => ({ date: x.date, where: x.where, who: x.who, wording: x.wording, ref: x.ref, badges: ['worded as a correction'] }))} open={open} onOpen={toggle} />
+                {opened && cr.wordedCorrections.some((x) => x.ref === opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+              </>
+            )}
           </div>
         </Section>
       )}
 
-      {v.sourceRecords.length > 0 && (
-        <Section title="Source records" count={v.sourceRecords.length} open={false} hint="what each retrieved turn records, not that it is true">
-          <div className="flex flex-col gap-2 text-xs text-slate-400">{v.sourceRecords.map((f, i) => para(f, i))}</div>
+      {/* 5. current position and outcome: only what verified evidence establishes */}
+      {(cr.established.length > 0 || cr.header.from) && (
+        <Section title="Current position and outcome" hint={cr.established.length ? 'verified and confirmed' : 'none established'}>
+          <div data-testid="current-position" className="flex flex-col gap-3">
+            {cr.established.length > 0 ? (
+              <DevList items={cr.established.map((x) => ({ date: x.date, where: x.where, who: x.who, wording: x.wording, ref: x.ref, badges: ['verified, confirmed'] }))} open={open} onOpen={toggle} />
+            ) : (
+              <>
+                <p className="text-sm text-slate-200 leading-relaxed">No retrieved statement is both verified and confirmed as the client’s current position, so none is stated as established.</p>
+                {cr.latestUnestablished && (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.05] p-3" data-testid="latest-position">
+                    <p className="text-[11px] font-semibold text-amber-200 mb-1">Latest stated position ({cr.latestUnestablished.date ?? 'undated'}) · not established as final</p>
+                    {cr.latestExplanation && cr.latestExplanation.length > 0 && <p className="text-[14px] leading-7 text-slate-100 mb-1.5">{sentences(cr.latestExplanation)}</p>}
+                    <DevList items={[{ date: cr.latestUnestablished.date, where: cr.latestUnestablished.where, who: cr.latestUnestablished.who, wording: cr.latestUnestablished.wording, ref: cr.latestUnestablished.ref, badges: ['not established as current'] }]} open={open} onOpen={toggle} />
+                  </div>
+                )}
+              </>
+            )}
+            {cr.outcome && (cr.outcome.not_established.length > 0 || cr.outcome.established.length > 0) && (
+              <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3" data-testid="outcome">
+                <p className="text-[11px] font-semibold text-slate-300 mb-1">Signing and completion (written by code from the retrieved turns)</p>
+                {[...cr.outcome.established, ...cr.outcome.not_established].map((x, i) => <p key={i} className="text-sm text-slate-100 leading-relaxed">{x}</p>)}
+                {cr.outcome.mentions.length > 0 && (
+                  <>
+                    <button onClick={() => flip('outcome')} className="mt-1 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer underline underline-offset-2" aria-expanded={!!shown.outcome}>{shown.outcome ? 'Hide' : 'Show'} the {cr.outcome.mentions.length} turns that mention signing, closing or completion</button>
+                    {shown.outcome && (
+                      <ul className="mt-2 space-y-1.5 border-l border-slate-700 pl-3" data-testid="outcome-mentions">
+                        {cr.outcome.mentions.map((m, i) => <li key={i} className="text-xs text-slate-400"><span className="font-mono text-[10px] text-slate-500">{m.date ?? 'undated'} · {m.where} · {m.speaker} · {m.kind}</span><p className="text-slate-300">“{m.excerpt}”{chip(m.ref)}</p>{card(m.ref)}</li>)}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            {opened && [...cr.established, ...(cr.latestUnestablished ? [cr.latestUnestablished] : [])].some((x) => x.ref === opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+          </div>
         </Section>
       )}
 
-      {rep.financial_analysis.some((f) => f.origin === 'tool_code' || f.origin === 'rendered') && (
-        <Section title="Financial analysis (tool results)" open={false}>
-          <div className="flex flex-col gap-2 text-xs text-slate-300">{rep.financial_analysis.map((f, i) => para(f, i))}</div>
+      {/* 6. open questions, contradictions, uncertainties */}
+      {(v.openQuestions.length > 0 || v.contradictions.length > 0) && (
+        <Section title="Open questions, contradictions and uncertainties" count={v.openQuestions.length + v.contradictions.length} open={false}>
+          <div data-testid="open-items" className="flex flex-col gap-3">
+            {v.contradictions.length > 0 && <div><p className="text-[11px] font-semibold text-amber-200 mb-1">Contradictions</p><Bullets items={v.contradictions} tone="text-amber-200" /></div>}
+            {v.openQuestions.length > 0 && <div><p className="text-[11px] font-semibold text-amber-200 mb-1">Open questions and uncertainties</p><Bullets items={v.openQuestions} tone="text-amber-200/90" /></div>}
+          </div>
         </Section>
       )}
-      {v.summaryIsBoilerplate && summaryBox}
-      {rep.suggested_followups.length > 0 && <Section title="Suggested follow-ups" open={false}><Bullets items={rep.suggested_followups} tone="text-emerald-300" /></Section>}
-      {rep.limitations.length > 0 && <Section title="Limitations" open={false}><Bullets items={rep.limitations} tone="text-slate-400" /></Section>}
-      {result.agent_run && <AgentRunPanel run={result.agent_run} onSelectMemory={onSelectMemory} />}
-      <p className="text-[10px] text-slate-600">Provenance labels are set by the backend only: “verified narrative” = model prose that passed code checks and the independent evidence verifier; “code-written” = assembled by code from the cited turn. Kinds: {kindLabel('client_statement')}; {kindLabel('advisor_reported')}; {kindLabel('advisor_interpretation')}.</p>
+
+      {/* 7. supporting evidence */}
+      <div className="flex flex-col gap-2" data-testid="supporting">
+        <h4 className="text-sm font-semibold text-slate-200 mt-1">Supporting evidence</h4>
+        {cr.memoryOnly.length > 0 && (
+          <Section title="Recorded in memory only (source turn not retrieved)" count={cr.memoryOnly.length} open={false} hint="not source-verified: never stated as what was said">
+            <ul className="space-y-2 text-xs text-slate-400" data-testid="memory-only">
+              {cr.memoryOnly.map((m) => <li key={m.claimId}><span className="font-mono text-[11px] text-slate-500">{m.date ?? 'undated'} · memory record · {m.status}</span><p className="text-slate-300 mt-0.5">“{m.wording}”{chip(m.ref)}</p>{card(m.ref)}</li>)}
+            </ul>
+          </Section>
+        )}
+        {v.chronology.length > 0 && (
+          <Section title="Code-written chronology" count={v.chronology.length} open={false} hint="strict date order; every statement quotes its source turn">
+            <div className="flex flex-col gap-3 text-xs text-slate-300">{v.chronology.map((f, i) => <p key={i} className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>)}</div>
+            {opened && v.chronology.some((f) => f.refs.includes(opened.ref)) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+          </Section>
+        )}
+        {v.sourceRecords.length > 0 && (
+          <Section title="Source records" count={v.sourceRecords.length} open={false} hint="what each retrieved turn records, not that it is true">
+            <div className="flex flex-col gap-2 text-xs text-slate-400">{v.sourceRecords.map((f, i) => <p key={i} className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>)}</div>
+            {opened && v.sourceRecords.some((f) => f.refs.includes(opened.ref)) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+          </Section>
+        )}
+        {v.otherFindings.length > 0 && (
+          <Section title="Other findings the verifier accepted" count={v.otherFindings.length} open={false}>
+            <div className="flex flex-col gap-2 text-xs text-slate-300">{v.otherFindings.map((f, i) => <p key={i} className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>)}</div>
+          </Section>
+        )}
+        {rep.financial_analysis.some((f) => f.origin === 'tool_code' || f.origin === 'rendered') && (
+          <Section title="Financial analysis (tool results)" open={false}>
+            <div className="flex flex-col gap-2 text-xs text-slate-300">{rep.financial_analysis.map((f, i) => <p key={i} className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>)}</div>
+          </Section>
+        )}
+        {v.systemNotes.length > 0 && <Section title="Retrieval, verification and coverage notes" count={v.systemNotes.length} open={false} hint="what was not retrieved, withheld or unverified"><Bullets items={v.systemNotes} tone="text-slate-400" limit={8} /></Section>}
+        {v.story.length > 0 && (
+          <Section title="Unverified model summary (optional)" count={v.story.length} open={false} hint="model-written · not independently verified">
+            <div className="flex flex-col gap-2 text-xs text-amber-100/90" data-testid="story">{v.story.map((f, i) => <p key={i} className="leading-relaxed"><Cited text={f.text} open={open} onOpen={toggle} /></p>)}</div>
+          </Section>
+        )}
+        {!cr.executive && !v.summaryIsBoilerplate && rep.summary && (
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4" data-testid="summary">
+            <h4 className="text-xs font-semibold text-slate-400 mb-1">Model summary (checked by code; descriptive only)</h4>
+            <p className="text-sm text-slate-100 leading-relaxed"><Cited text={rep.summary} open={open} onOpen={toggle} /></p>
+            {opened && summaryRefs.includes(opened.ref) && <EvidenceCard e={opened} onSelectMemory={onSelectMemory} />}
+          </div>
+        )}
+        {rep.suggested_followups.length > 0 && <Section title="Suggested follow-ups" open={false}><Bullets items={rep.suggested_followups} tone="text-emerald-300" /></Section>}
+        {rep.limitations.length > 0 && <Section title="Limitations" open={false}><Bullets items={rep.limitations} tone="text-slate-400" /></Section>}
+        {result.agent_run && <AgentRunPanel run={result.agent_run} onSelectMemory={onSelectMemory} />}
+      </div>
+
+      {/* 8. report metadata: coverage statistics are secondary */}
+      <Section title="Report metadata" hint="retrieval and coverage statistics" open={false}>
+        <div data-testid="coverage" className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {c.meetingsFound != null && <Tile a={`${c.meetingsRetrieved} of ${c.meetingsFound}`} b="meetings retrieved" warn={(c.meetingsNotRetrieved ?? 0) > 0} />}
+            {c.relevant != null && <Tile a={`${c.narrated} of ${c.relevant}`} b="relevant records written up" warn={notNarrated > 0} />}
+            {c.windows > 0 && <Tile a={`${c.windows - c.windowsIncomplete} of ${c.windows}`} b="periods fully written up" warn={c.windowsIncomplete > 0} />}
+            <Tile a={String(c.memoryOnly)} b="memory-only records (not source-verified)" warn={c.memoryOnly > 0} />
+          </div>
+          {notNarrated > 0 && <p className="text-[11px] text-amber-200/90" data-testid="coverage-note">{notNarrated} relevant record{notNarrated === 1 ? '' : 's'} not written up ({c.rejected} rejected by a check, {c.notCited} not used, {c.withheld} withheld by a later safeguard, {c.windowFailed} in a period that was not written); each is still available as its recorded wording.</p>}
+          <p className="text-[11px] text-slate-500" data-testid="quote-share">{Math.round(cr.quoteShare * 100)}% of the written-up prose is direct quotation{c.modelCalls != null ? ` · ${c.modelCalls} narrative model calls` : ''}.</p>
+          {(cr.overviewVerified.length > 0 || cr.overviewUnresolved.length > 0) && (
+            <div data-testid="overview-metadata">
+              <ul className="space-y-1 text-xs text-slate-300 list-disc pl-5">{cr.overviewVerified.map((x, i) => <li key={i}>{x}</li>)}</ul>
+              {cr.overviewUnresolved.length > 0 && <div className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.06] p-2" data-testid="overview-unresolved"><div className="text-[11px] font-semibold text-amber-200 mb-1">Not established</div><ul className="space-y-1 text-xs text-amber-100 list-disc pl-5">{cr.overviewUnresolved.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
+            </div>
+          )}
+        </div>
+      </Section>
+      <p className="text-[10px] text-slate-600">Provenance labels are set by the backend only: written-up prose was produced by the model and checked sentence by sentence by code against the cited source turns, and again by the independent evidence verifier; “code-written” = assembled by code from the cited turn; “memory only” = a stored memory whose source turn was not retrieved. Nothing on this page is reworded in the browser.</p>
     </div>
   );
 };

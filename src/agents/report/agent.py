@@ -2,6 +2,8 @@
 no retrieval, no calculation, no memory writes."""
 from __future__ import annotations
 
+import os
+import time
 from typing import Optional
 
 from agents.report.assemble import assemble
@@ -9,8 +11,12 @@ from agents.report.claims import render_claims, summary_from_claims, validate_cl
 from agents.report.feasibility import feasibility_summary, guard_summary, is_feasibility, tool_findings
 from agents.report.narrative import summary_conflict
 from agents.report.timeline import build_timeline, significant, timeline_findings, timeline_summary, timeline_uncertainties
+from agents.report.overview import build_overview
+from agents.report import synthesis as SY
+from agents.report.validate import source_record_problem
 from agents.report.evidence import build_evidence, prompt_lines, select_for_prompt
-from agents.report.semantic import NARRATIVE_SYSTEM, STORY_SYSTEM, build_checked, build_story, client_names, filter_summary, narrative_user, story_user, timeline_prompt
+from agents.report.semantic import (NARRATIVE_SYSTEM, STORY_SYSTEM, WINDOW_SIZE, build_checked, build_story, client_names, filter_summary, narrative_user_window, narrative_windows, story_user,
+                                    timeline_prompt, window_block, window_context, window_example, reconcile_coverage, _order_key)
 from agents.report.prompts import REPORT_SYSTEM
 from agents.report.validate import (public_reason, authority_notes, authority_split, NumberChecker, check_prose, deterministic_sections, deterministic_summary, evidence_text,
                                     filter_findings, no_evidence_summary, source_record_findings, SOURCE_FINDINGS_LIMIT)
@@ -18,8 +24,23 @@ from llm.client import LLMClient, LLMError, StructuredOutputError, generate_stru
 from orchestration.tracing import NullTracer, Tracer
 from schemas.memory import MemoryContext
 from schemas.plan import ExecutionPlan
-from schemas.report import AdvisorReport, Finding, NarrativeLLMOutput, ReportLLMOutput, StoryLLMOutput, is_source_turn
+from schemas.report import (AdvisorReport, ClausesLLMOutput, ExecutiveLLMOutput, Finding, NarrativeCoverage, NarrativeLLMOutput, NarrativeWindow, OutcomeStatement, ReportLLMOutput, StoryLLMOutput, SynthesisLLMOutput,
+                            is_source_turn)
 from schemas.tools import ToolSelectorState
+
+
+MAX_WINDOW_ATTEMPTS = 2          # one try and ONE retry per window (a failed call, or a call none of whose sentences passed)
+MAX_WINDOW_CALLS = 14            # and never more narrative calls than this in one report, whatever the number of windows
+
+
+def report_mode() -> str:
+    """CMF_REPORT_MODE: "synthesis" (default) = paraphrased, proposition-validated prose; "quotes" = the Phase 2 verified-quotation narrative.  Synthesis falls back to quotes when nothing survives."""
+    return "quotes" if os.environ.get("CMF_REPORT_MODE", "synthesis").strip().lower() == "quotes" else "synthesis"
+
+
+def story_enabled() -> bool:
+    """The unverified model story is an optional extra (CMF_REPORT_STORY=1): it covers only part of a long history and the verified windowed narrative replaces it as the readable account."""
+    return os.environ.get("CMF_REPORT_STORY", "0").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _unverified_in(text: str, evidence: list) -> str:
@@ -66,7 +87,7 @@ class ReportAgent:
                      "evidence_items": len(evidence), "evidence_in_prompt": len(shown), "evidence_in_prompt_refs": [e.ref for e in shown],
                      "evidence_not_in_prompt_refs": [e.ref for e in hidden], "duplicate_source_turns": removed.get("duplicate_source_turns", [])}
         base = dict(request_id=plan.request_id, client_id=",".join(plan.client_ids), question=request_text, evidence=evidence,
-                    assumptions=assumptions, limitations=limitations, timeline=tl)
+                    assumptions=assumptions, limitations=limitations, timeline=tl, overview=build_overview(plan, tl, tools, evidence))
 
         if not evidence:
             rec["mode"] = "no_evidence"
@@ -84,8 +105,19 @@ class ReportAgent:
         rendered = render_claims(claims, evidence)
         key = rendered["key_findings"] + filter_findings(out.key_findings, evidence, nc, rec)
         names = client_names(request_text)
-        narr = self._narrate(request_text, plan, tl, names, rec)
-        story = self._tell(request_text, plan, tl, names, rec)            # B6: a readable account for humans, labelled unverified; it never enters the findings the verifier checks          # follow-up to B4: a dedicated call; accepted paragraphs carry origin "narrative_checked" and the verifier re-checks them
+        coverage, outcome = None, None
+        if report_mode() == "synthesis":
+            narr, coverage, outcome = self._synthesize(request_text, plan, tl, names, rec, evidence)
+            if not [f for f in narr if f.window != -1]:                          # nothing survived proposition validation: the verified-quotation narrative is the bounded fallback
+                rec["synthesis_fallback"] = "no paraphrased proposition passed the checks; the verified-quotation narrative was used instead"
+                narr, coverage = self._narrate(request_text, plan, tl, names, rec, evidence)
+        else:
+            narr, coverage = self._narrate(request_text, plan, tl, names, rec, evidence)
+        if story_enabled():
+            story = self._tell(request_text, plan, tl, names, rec)
+        else:
+            story, rec["story"] = [], {"attempted": False, "disabled": "the unverified story is off (CMF_REPORT_STORY=1 turns it on)", "paragraphs_returned": 0, "sentences_returned": 0,
+                                       "paragraphs_accepted": 0, "sentences_rejected": []}            # B6: a readable account for humans, labelled unverified; it never enters the findings the verifier checks          # follow-up to B4: a dedicated call; accepted paragraphs carry origin "narrative_checked" and the verifier re-checks them
         hist = narr + timeline_findings(tl, evidence) + rendered["historical_context"] + source_record_findings(evidence) + filter_findings(out.historical_context, evidence, nc, rec)
         fin = tool_findings(evidence, tools) + filter_findings(out.financial_analysis, evidence, nc, rec)
         key, m1 = authority_split(key, evidence, rec)
@@ -130,34 +162,221 @@ class ReportAgent:
         if tls and tls not in summary:
             summary = f"{summary} {tls}".strip()
         rec["mode"] = "llm"
+        if coverage is not None:
+            coverage = reconcile_coverage(coverage, tl, hist, "withheld because it cites an unverified, contradicted or conflicting stored memory")
+            base["overview"] = build_overview(plan, tl, tools, evidence, coverage)
+            unc.extend(x for x in coverage_notes(coverage) if x not in unc)
         self.tracer.event("report", "report_written", **{**_why(rec), "mode": "llm", "claims_rejected": len(rejected), "dropped": len(rec["findings_dropped"]),
                                                          "summary_replaced": bool(rec["summary_replaced"])})
         return AdvisorReport(**base, summary=summary, key_findings=_dedupe(key), historical_context=_dedupe(hist), financial_analysis=_dedupe(fin),
-                             uncertainties=unc, suggested_followups=fol[:5], validation=rec, story=story)
+                             uncertainties=unc, suggested_followups=fol[:5], validation=rec, story=story, coverage=coverage, outcome=outcome)
 
     # ------------------------------------------------------------------
-    def _narrate(self, request_text, plan, tl, names, rec) -> list:
-        """The dedicated narrative call.  Shown ONLY the timeline lines and strict writing rules; returns paragraphs of sentences, each with the claim ids it rests on.  Code judges every sentence
-        (agents/report/semantic.py) and keeps the survivors as findings with origin "narrative_checked".  A model or schema failure, or a narrative with no surviving sentence, leaves the report exactly
-        as B3 wrote it: the deterministic chronology never depends on this call."""
+    def _narrate(self, request_text, plan, tl, names, rec, evidence=None) -> tuple[list, Optional[NarrativeCoverage]]:
+        """The verified narrative, written WINDOW BY WINDOW (Phase 2, B).  The relevant claims are cut into consecutive windows of about ten (semantic.narrative_windows); each window gets its own
+        narrative call shown only its lines (plus the related lines of other windows, so a correction can name what it corrects).  Code judges every sentence exactly as before, and in addition
+        rejects a sentence that cites outside its window, repeats claims or text already narrated, or goes back in date order across a window boundary.  A window whose call fails, or none of whose
+        sentences pass, is retried ONCE; if it still yields nothing it stays a recorded gap (never silently dropped): the deterministic chronology still covers its claims and the report says so.
+        Returns (findings in chronological order, coverage).  Coverage is None only when no narrative was attempted."""
         info = rec["narrative"] = {"attempted": False, "paragraphs_returned": 0, "sentences_returned": 0, "paragraphs_accepted": 0, "sentences_rejected": []}
         if plan.task_type != "history" or not any(c.source == "source_turn" and significant(c) for c in tl):
-            return []
-        block, shown, left = timeline_prompt(tl)
-        info.update(attempted=True, claims_shown=[c.claim_id for c in shown], claims_not_shown=left)
-        try:
-            out = generate_structured(self.llm, "report", NARRATIVE_SYSTEM, narrative_user(request_text, block), NarrativeLLMOutput, retries=1, tracer=self.tracer)
-        except (StructuredOutputError, LLMError) as e:
-            self.tracer.event("report", "narrative_call_failed", error=str(e)[:200])
-            info["error"] = "the narrative call failed; the deterministic chronology stands"
-            return []
-        except Exception as e:                                       # never let the optional narrative take the report down
-            self.tracer.event("report", "narrative_call_failed", error=type(e).__name__)
-            info["error"] = "the narrative call failed; the deterministic chronology stands"
-            return []
-        findings, rejected = build_checked(out.paragraphs, tl, names)
-        info.update(paragraphs_returned=len(out.paragraphs), sentences_returned=sum(len(p.sentences) for p in out.paragraphs), paragraphs_accepted=len(findings), sentences_rejected=rejected)
-        return findings
+            return [], None
+        windows = narrative_windows(tl)
+        total = len(windows)
+        cov = NarrativeCoverage(window_size=WINDOW_SIZE, relevant=sum(len(w) for w in windows), memory_only=[c.claim_id for c in tl if c.source == "memory"],
+                                unresolved=[c.claim_id for w in windows for c in w if c.temporal_status in ("unresolved", "disputed", "corrected")])
+        info.update(attempted=True, claims_shown=[c.claim_id for w in windows for c in w], claims_not_shown=0, windows=total)
+        findings: list[Finding] = []
+        narrated: set[str] = set()
+        seen: set[str] = set()
+        rejected_claims: set[str] = set()
+        repairs: list = []
+        after = None
+        budget_stop = False
+        risky = {e.ref for e in (evidence or []) if e.evidence_class in ("unverified", "contradicted", "open_conflict")}
+        for wi, w in enumerate(windows):
+            ctx = window_context(w, tl)
+            entry = NarrativeWindow(index=wi, first_date=w[0].event_date, last_date=w[-1].event_date, claim_ids=[c.claim_id for c in w], context_ids=[c.claim_id for c in ctx])
+            cov.windows.append(entry)
+            block, ctx_block = window_block(w, ctx)
+            example = window_example(w)
+            t0 = time.perf_counter()
+            for attempt in range(1, MAX_WINDOW_ATTEMPTS + 1):
+                if budget_stop or cov.model_calls >= MAX_WINDOW_CALLS:
+                    entry.status, entry.error = "skipped", entry.error or ("the request's model-call budget was used up" if budget_stop else "the cap on narrative calls was reached")
+                    break
+                cov.model_calls += 1
+                entry.attempts = attempt
+                user = narrative_user_window(request_text, block, ctx_block, wi, total, entry.first_date, entry.last_date, example, retry=attempt > 1)      # the retry is told what went wrong in general terms
+                try:
+                    out = generate_structured(self.llm, "report", NARRATIVE_SYSTEM, user, NarrativeLLMOutput, retries=1, tracer=self.tracer)
+                except Exception as e:                                       # a window may fail; the report never does
+                    entry.status, entry.error = "failed", f"{type(e).__name__}: {str(e)[:120]}"
+                    self.tracer.event("report", "narrative_window_failed", window=wi, attempt=attempt, error=type(e).__name__)
+                    if type(e).__name__ == "BudgetExceeded":                    # the request's budget is gone: no retry, and no further window is tried
+                        budget_stop = True
+                        break
+                    continue
+                acc: list = []
+                n_rep = len(repairs)
+                got, bad = build_checked(out.paragraphs, tl, names, repairs, window=entry.claim_ids, context=entry.context_ids, narrated=narrated, seen_texts=seen, after=after, accepted=acc, risky=risky)
+                for r in repairs[n_rep:]:
+                    r["window"] = wi
+                entry.sentences_returned += sum(len(x.sentences) for x in out.paragraphs)
+                entry.sentences_accepted += len(acc)
+                entry.sentences_rejected += [{**r, "attempt": attempt} for r in bad]
+                for r in bad:
+                    rejected_claims.update(r.get("claims") or [])
+                if acc:
+                    for f in got:
+                        f.window = wi
+                    findings += got
+                    after = max(_order_key(c) for c in tl if c.claim_id in {i for a in acc for i in a["primary"]})
+                    entry.status = "ok" if not bad else "partial"           # judged on the attempt that was accepted (earlier attempts stay listed in sentences_rejected)
+                    entry.error = None
+                    break
+                entry.status, entry.error = "empty", "the model answered but no sentence passed the checks"
+            entry.duration_ms = int((time.perf_counter() - t0) * 1000)
+            entry.quotes_repaired = sum(r.get("quotes", 0) for r in repairs if r.get("window") == wi)
+        # ---- every relevant claim is in exactly one state
+        failed_ids = {i for e in cov.windows if e.status in ("failed", "skipped") for i in e.claim_ids}
+        for w in windows:
+            for c in w:
+                i = c.claim_id
+                (cov.narrated if i in narrated else cov.window_failed if i in failed_ids else cov.rejected if i in rejected_claims else cov.not_cited).append(i)
+        info.update(paragraphs_returned=sum(1 for _ in findings), sentences_returned=sum(e.sentences_returned for e in cov.windows), paragraphs_accepted=len(findings),
+                    sentences_rejected=[{**r, "window": e.index} for e in cov.windows for r in e.sentences_rejected], quotes_repaired=sum(r.get("quotes", 0) for r in repairs),
+                    repairs=repairs, model_calls=cov.model_calls, windows_ok=sum(1 for e in cov.windows if e.status == "ok"), windows_incomplete=sum(1 for e in cov.windows if e.status != "ok"),
+                    claims_narrated=len(cov.narrated))
+        if any(e.status in ("failed", "skipped") for e in cov.windows):
+            info["error"] = "one or more narrative windows could not be written; they are listed in the coverage and the deterministic chronology stands for them"
+        return findings, cov
+
+    def _synthesize(self, request_text, plan, tl, names, rec, evidence=None):
+        """Phase 3: the report's prose, PARAPHRASED and validated proposition by proposition (agents/report/synthesis.py).  Chronological windows; per window one call for a sentence per source line, one
+        retry (stricter) if the call fails or nothing passes, and ONE repair call for the lines the checks rejected when at least two were (it is told, in plain words, what each rule objected to).  A call
+        cap and a request-budget stop bound the whole.  After the windows, ONE call writes the executive summary from the accepted propositions, judged the same way.  Returns (findings: the executive
+        summary first (window -1), then each window's paragraphs; coverage; the code-written outcome)."""
+        info = rec["narrative"] = {"attempted": False, "mode": "synthesis", "paragraphs_returned": 0, "sentences_returned": 0, "paragraphs_accepted": 0, "sentences_rejected": []}
+        if plan.task_type != "history" or not SY.synthesis_pool(tl):
+            return [], None, None
+        windows = SY.synthesis_windows(tl)
+        total = len(windows)
+        cov = NarrativeCoverage(window_size=SY.SYN_WINDOW, relevant=sum(len(w) for w in windows), memory_only=[c.claim_id for c in tl if c.source == "memory"],
+                                unresolved=[c.claim_id for w in windows for c in w if c.temporal_status in ("unresolved", "disputed", "corrected")])
+        info.update(attempted=True, claims_shown=[c.claim_id for w in windows for c in w], claims_not_shown=0, windows=total, repairs=0)
+        findings: list[Finding] = []
+        narrated: set[str] = set()
+        seen: set[str] = set()
+        rejected_claims: set[str] = set()
+        after = None
+        budget_stop = False
+        risky = {e.ref for e in (evidence or []) if e.evidence_class in ("unverified", "contradicted", "open_conflict")}
+        window_kept: dict = {}
+
+        def call(system, user, schema):
+            nonlocal budget_stop
+            cov.model_calls += 1
+            try:
+                return generate_structured(self.llm, "report", system, user, schema, retries=1, tracer=self.tracer), None
+            except Exception as e:                                       # a call may fail; the report never does
+                if type(e).__name__ == "BudgetExceeded":                 # the request's budget is gone: no retry, and no further call is tried
+                    budget_stop = True
+                return None, f"{type(e).__name__}: {str(e)[:120]}"
+
+        for wi, w in enumerate(windows):
+            ctx = window_context(w, tl)
+            entry = NarrativeWindow(index=wi, first_date=w[0].event_date, last_date=w[-1].event_date, claim_ids=[c.claim_id for c in w], context_ids=[c.claim_id for c in ctx])
+            cov.windows.append(entry)
+            by_id = {c.claim_id: c for c in w}
+            block = "\n".join(SY.synthesis_line(c) for c in w)
+            ctx_block = "\n".join(SY.synthesis_line(c) for c in ctx)
+            start_after = after
+            wk: list = []                                                # what this window has accepted, so that passes can be merged in the record's order
+            window_kept[wi] = wk
+            acc: list = []
+            t0 = time.perf_counter()
+            for attempt in range(1, MAX_WINDOW_ATTEMPTS + 1):
+                if budget_stop or cov.model_calls >= MAX_WINDOW_CALLS:
+                    entry.status, entry.error = "skipped", entry.error or ("the request's model-call budget was used up" if budget_stop else "the cap on narrative calls was reached")
+                    break
+                entry.attempts = attempt
+                out, err = call(SY.SYNTHESIS_SYSTEM, SY.synthesis_user_window(request_text, block, ctx_block, wi, total, entry.first_date, entry.last_date, names, retry=attempt > 1), ClausesLLMOutput)
+                if out is None:
+                    entry.status, entry.error = "failed", err
+                    self.tracer.event("report", "synthesis_window_failed", window=wi, attempt=attempt)
+                    if budget_stop:
+                        break
+                    continue
+                _, bad = SY.build_lines(out.lines, tl, names, window=entry.claim_ids, context=entry.context_ids, narrated=narrated, seen_texts=seen, after=start_after, accepted=acc, risky=risky, kept=wk)
+                entry.sentences_returned += len(out.lines)
+                entry.sentences_rejected += [{**r, "attempt": attempt} for r in bad]
+                if wk:
+                    entry.status, entry.error = ("ok" if not bad else "partial"), None
+                    break
+                entry.status, entry.error = "empty", "the model answered but no proposition passed the checks"
+            # ---- one repair call for the lines the checks rejected (never when the window failed, never more than once)
+            todo = [i for r in entry.sentences_rejected for i in (r.get("claims") or []) if i in by_id and i not in narrated]
+            todo = list(dict.fromkeys(todo))
+            if len(todo) >= 3 and entry.status in ("ok", "partial") and not budget_stop and cov.model_calls < MAX_WINDOW_CALLS:
+                codes = {i: [c for r in entry.sentences_rejected if i in (r.get("claims") or []) for c in r["problems"]] for i in todo}
+                rblock = "\n".join(SY.synthesis_line(by_id[i]) + "\n   NOTE: " + SY.repair_hints(codes[i], names) for i in todo)
+                out, err = call(SY.SYNTHESIS_SYSTEM, SY.synthesis_user_repair(request_text, rblock, wi, total, names), ClausesLLMOutput)
+                info["repairs"] += 1
+                if out is not None:
+                    n0 = len(wk)
+                    _, bad2 = SY.build_lines(out.lines, tl, names, window=todo, context=(), narrated=narrated, seen_texts=seen, after=start_after, accepted=acc, risky=risky, kept=wk)
+                    entry.sentences_returned += len(out.lines)
+                    entry.sentences_rejected += [{**r, "attempt": "repair"} for r in bad2]
+                    entry.attempts += 1
+            # ---- the verifier's own source-record rule, applied here: a line it would refuse is not offered (and its claim is not counted as narrated)
+            ref_item = {e.ref: e for e in (evidence or [])}
+            for k in list(wk):
+                if not all(self._source_ok(k[0], d, ref_item) for d, _ in k[1]):
+                    wk.remove(k)
+                    narrated.discard(k[0].claim_id)
+                    entry.sentences_rejected.append({"line": None, "problems": ["source_record"], "claims": [k[0].claim_id], "attempt": "pre-check"})
+            # ---- this window's findings: every accepted line, in the record's order
+            if wk:
+                got, badk = SY.findings_from_kept(wk, tl, names)
+                for b in badk:
+                    entry.sentences_rejected.append({**b, "attempt": "merge"})
+                    narrated.difference_update(b["claims"])
+                for f in got:
+                    f.window = wi
+                findings += got
+                after = max(_order_key(c) for c, _, _ in wk if c.claim_id in narrated) if any(c.claim_id in narrated for c, _, _ in wk) else after
+            entry.sentences_accepted = sum(1 for c, _, _ in wk if c.claim_id in narrated)
+            for r in entry.sentences_rejected:
+                rejected_claims.update(r.get("claims") or [])
+            entry.duration_ms = int((time.perf_counter() - t0) * 1000)
+        failed_ids = {i for e in cov.windows if e.status in ("failed", "skipped") for i in e.claim_ids}
+        for w in windows:
+            for c in w:
+                i = c.claim_id
+                (cov.narrated if i in narrated else cov.window_failed if i in failed_ids else cov.rejected if i in rejected_claims else cov.not_cited).append(i)
+        # ---- the executive summary: a digest SELECTED by code from the accepted propositions (no further model call)
+        allkept = [k for kk in window_kept.values() for k in kk if k[0].claim_id in narrated]
+        ref_item = {e.ref: e for e in (evidence or [])}
+        executive = SY.select_executive(allkept, tl, names, accept=lambda c, d: self._source_ok(c, d, ref_item))
+        ex_info = {"attempted": True, "selected": len(executive.narrative or []) if executive else 0, "model_call": False}
+        props = {f"P{n}": 1 for n in range(1, sum(len(f.narrative or []) for f in findings) + 1)}
+        if executive is not None:
+            findings = [executive] + findings
+        info.update(paragraphs_returned=len(findings), sentences_returned=sum(e.sentences_returned for e in cov.windows), paragraphs_accepted=len(findings),
+                    sentences_rejected=[{**r, "window": e.index} for e in cov.windows for r in e.sentences_rejected], model_calls=cov.model_calls,
+                    windows_ok=sum(1 for e in cov.windows if e.status == "ok"), windows_incomplete=sum(1 for e in cov.windows if e.status != "ok"), claims_narrated=len(cov.narrated),
+                    propositions=len(props), executive=ex_info, readability=SY.readability([f for f in findings if f.window != -1]))
+        if any(e.status in ("failed", "skipped") for e in cov.windows):
+            info["error"] = "one or more narrative windows could not be written; they are listed in the coverage and the excerpts stand for them"
+        return findings, cov, OutcomeStatement(**SY.outcome_lines(tl))
+
+    @staticmethod
+    def _source_ok(c, text: str, ref_item: dict) -> bool:
+        """True when the verifier's source-record rule (speaker and turn named in the text; overreach terms only as attributed reported speech) accepts this sentence for this claim.  With no evidence
+        item to check against (a unit test without one) the rule cannot be applied here and the verifier remains the judge."""
+        e = ref_item.get(c.evidence_refs[0]) if c.evidence_refs else None
+        return e is None or source_record_problem(SY.S.compose(text, [c]), [e], paraphrase=True) is None
 
     def _tell(self, request_text, plan, tl, names, rec) -> list:
         """The readable story: one more model call over the same timeline lines, a free-prose account rather than quotations.  Every sentence names the claims it rests on; code removes what a story must not
@@ -173,8 +392,9 @@ class ReportAgent:
             self.tracer.event("report", "story_call_failed", error=type(e).__name__)
             info["error"] = "the story call failed"
             return []
-        findings, rejected = build_story(out.lines, tl, names)
-        info.update(paragraphs_returned=len(findings), sentences_returned=len(out.lines), paragraphs_accepted=len(findings), sentences_rejected=rejected)
+        repairs: list = []
+        findings, rejected = build_story(out.lines, tl, names, repairs)
+        info.update(paragraphs_returned=len(findings), sentences_returned=len(out.lines), paragraphs_accepted=len(findings), sentences_rejected=rejected, quotes_repaired=sum(r.get('quotes', 0) for r in repairs), repairs=repairs)
         return findings
 
     def _ask(self, request_text, plan, evidence, assumptions, limitations, uncertainties, rec) -> Optional[ReportLLMOutput]:
@@ -218,6 +438,16 @@ class ReportAgent:
         if any(u.startswith(("Missing", "Tool error", "No tool results", "Tool ")) for u in unc):
             out.append("Obtain the missing information or tool results listed under uncertainties.")
         return out[:5]
+
+
+def coverage_notes(cov: NarrativeCoverage) -> list[str]:
+    """Code-written uncertainty lines for the narrative windows that could not be written.  (Counts of narrated claims live in the structured coverage and the overview: they can change after a later safeguard withholds a sentence, a list of strings could not follow.)"""
+    out = []
+    for w in cov.windows:
+        if w.status in ("failed", "skipped", "empty"):
+            out.append(f"Narrative window {w.index + 1} of {len(cov.windows)} ({w.first_date or 'undated'} to {w.last_date or 'undated'}; claims {w.claim_ids[0]} to {w.claim_ids[-1]}) was not written ({w.status}"
+                       + (f": {w.error}" if w.error else "") + "); its claims appear only in the code-written chronology.")
+    return out
 
 
 def _why(rec: dict) -> dict:

@@ -339,6 +339,11 @@ class Story(Base):
         self.assertEqual(build_story(None, self.tl, self.names), ([], []))
 
     def test_the_agent_returns_the_story_in_its_own_field_and_survives_a_failing_story_call(self):
+        import os
+        from unittest import mock
+        p = mock.patch.dict(os.environ, {"CMF_REPORT_STORY": "1"})            # the story is an optional extra since Phase 2
+        p.start()
+        self.addCleanup(p.stop)
         good = {"lines": [{"claims": ["C4"], "sentence": "On 2026-03-04 Kenji said he had only been exploring the possibility."}]}
         a, llm = T.agent_for([T.llm_out(summary="The record shows how the retirement age was discussed.", key_findings=[]), self.nar((GOOD_C4, ["C4"])), good])
         rep = a.write(Q, self.plan, self.mem, T.tstate(*self.execs))
@@ -353,6 +358,11 @@ class Story(Base):
         self.assertTrue([f for f in rep.historical_context if f.origin == "narrative_checked"])                    # the verified narrative is unaffected
 
     def test_the_verifier_does_not_check_or_alter_the_story(self):
+        import os
+        from unittest import mock
+        p = mock.patch.dict(os.environ, {"CMF_REPORT_STORY": "1"})            # the story is an optional extra since Phase 2
+        p.start()
+        self.addCleanup(p.stop)
         good = {"lines": [{"claims": ["C4"], "sentence": "On 2026-03-04 Kenji said he had only been exploring the possibility."}]}
         a, _ = T.agent_for([T.llm_out(summary="The record shows how the retirement age was discussed.", key_findings=[]), self.nar((GOOD_C4, ["C4"])), good])
         rep = a.write(Q, self.plan, self.mem, T.tstate(*self.execs))

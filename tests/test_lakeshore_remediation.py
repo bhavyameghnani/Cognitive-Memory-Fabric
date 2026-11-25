@@ -8,6 +8,7 @@ Everything is synthetic and in memory: a tiny controlled conversations file, scr
 """
 import asyncio
 import csv
+import os
 import re
 import sys
 import tempfile
@@ -81,6 +82,11 @@ def synthetic_conversations() -> Conversations:
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------
 class Issue1Planner(unittest.TestCase):
+    def setUp(self):                                    # these tests are about CORRECTING a model plan (Planner._build); the deterministic path (Phase 1, C) never asks the model, so it is switched off here
+        p = mock.patch.dict(os.environ, {"CMF_DETERMINISTIC_PLANNING": "0"})
+        p.start()
+        self.addCleanup(p.stop)
+
     OBSERVED = TP.out(task_type="followup_review", memory_topics=["liquidity_reserve", "business_sale"], needs_calculation=True,
                       required_tools=["get_client_profile", "get_client_portfolio", "get_portfolio_history", "get_client_goals", "get_client_liabilities", "get_source_evidence"],
                       subtasks=[{"id": "T1", "description": "memory", "agent": "memory_orchestrator"}, {"id": "T2", "description": "tools", "agent": "tool_selector", "depends_on": ["T1"]},
@@ -318,7 +324,7 @@ class Issue3SourceTurns(unittest.TestCase):
         self.assertEqual([(e.arguments["interaction_id"], e.arguments["turn_indices"]) for e in reads], [("INT-9001", [1, 2, 3]), ("INT-9002", [1, 2]), ("INT-9003", [1, 2])])   # earliest to latest, ever.  B1: INT-9001 turn 3 (the advisor's reply to the client's matching turn 2) is read as contexty matching turn
         self.assertFalse([e for e in st.executions if "entity_id" in e.arguments])                                      # no guessed entity ids
         self.assertEqual(st.missing_information, [])
-        self.assertEqual(len(llm.calls), 1)                                                                             # the model is only asked whether anything is missing
+        self.assertEqual(len(llm.calls), 0)                                                                             # source discovery covered the plan: the model is not asked for more calls
         for e in reads:
             for t in e.result.data["turns"]:
                 row = self.conv.turn(t["interaction_id"], t["turn_index"])

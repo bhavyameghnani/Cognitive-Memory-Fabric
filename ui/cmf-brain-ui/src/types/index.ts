@@ -122,7 +122,7 @@ export interface MemoryDetail {
 
 /** `origin` is set only by backend code: "rendered" = assembled by code from one evidence item, "narrative_checked" = MODEL-written prose that code and the independent verifier checked sentence by sentence,
  *  absent = a finding the model wrote that the verifier accepted.  The UI never sets or changes it. */
-export interface Finding { text: string; refs: string[]; origin?: 'rendered' | 'tool_code' | 'narrative_checked' | null; narrative?: { text: string; sources: string[] }[] | null }
+export interface Finding { text: string; refs: string[]; origin?: 'rendered' | 'tool_code' | 'narrative_checked' | 'synthesis_checked' | null; narrative?: { text: string; sources: string[] }[] | null; /** narrative window (0-based) this paragraph was written for; -1 = the executive summary */ window?: number | null }
 export interface EvidenceItem {
   ref: string;
   source_class: string;
@@ -158,7 +158,8 @@ export interface TimelineClaim {
   relevant: boolean;
   mentions_topic?: boolean | null;
   memory_refs?: string[];
-  relations: { type: 'corrects' | 'corrected_by' | 'contradicts' | string; claim_id: string }[];
+  relations: { type: 'corrects' | 'corrected_by' | 'contradicts' | string; claim_id: string; /** 'shared_wording' = linked by the words both turns share, not by a stored memory */ basis?: string; phrase?: string }[];
+  notes?: string[];
 }
 
 export interface NarrativeStatus {
@@ -166,8 +167,28 @@ export interface NarrativeStatus {
   paragraphs_returned?: number;
   sentences_returned?: number;
   paragraphs_accepted?: number;
-  sentences_rejected?: { paragraph: number; sentence: number | null; problems: string[] }[];
+  sentences_rejected?: { paragraph: number; sentence: number | null; problems: string[]; window?: number; claims?: string[] }[];
   error?: string;
+  windows?: number; windows_ok?: number; windows_incomplete?: number; model_calls?: number; claims_narrated?: number; quotes_repaired?: number;
+}
+
+export interface OutcomeStatement {
+  established: string[]; not_established: string[];
+  mentions: { claim_id: string; date: string | null; where: string; speaker: string; excerpt: string; kind: 'event' | 'hedged' | 'pending'; ref: string | null }[];
+}
+
+export interface NarrativeWindow {
+  index: number; first_date?: string | null; last_date?: string | null; claim_ids: string[]; context_ids: string[];
+  status: 'ok' | 'partial' | 'empty' | 'failed' | 'skipped'; attempts: number; sentences_returned: number; sentences_accepted: number;
+  sentences_rejected: { attempt?: number; paragraph: number; sentence: number | null; problems: string[]; claims?: string[] }[]; quotes_repaired: number; duration_ms: number; error?: string | null;
+}
+
+/** Where every relevant source claim stands in the verified narrative: each is in exactly one of narrated / rejected / not_cited / window_failed. memory_only claims were never narrated. */
+export interface NarrativeCoverage {
+  window_size: number; relevant: number; narrated: string[]; rejected: string[]; not_cited: string[]; window_failed: string[]; memory_only: string[]; unresolved: string[];
+  /** a verified sentence was written, then withheld by a later safeguard (unverified memory evidence, the evidence verifier) */
+  withheld?: string[]; withheld_reasons?: Record<string, string>;
+  model_calls: number; windows: NarrativeWindow[];
 }
 
 export interface HarnessSummary {
@@ -194,6 +215,12 @@ export interface AdvisorReport {
   timeline?: TimelineClaim[];
   /** Model-written readable account: NOT verified (the backend never puts it through the evidence verifier and gives it no provenance label). Each sentence ends with the evidence handles it rests on. */
   story?: Finding[];
+  /** Code-written opening (counts and dates only; no model, no inference): what was retrieved, what is established, and what is not. */
+  overview?: ReportOverview | null;
+  /** Phase 2: window-by-window and claim-by-claim account of the verified narrative. */
+  coverage?: NarrativeCoverage | null;
+  /** Phase 3: what the record does and does not establish about signing and completion (code-written). */
+  outcome?: OutcomeStatement | null;
   validation: Record<string, unknown> & { mode?: string; model_error?: string; narrative?: NarrativeStatus; story?: NarrativeStatus; summary_replaced?: string | null };
 }
 
@@ -250,3 +277,16 @@ export interface DsStep {
 }
 export interface DsScenarioDetail { scenario: DsScenario; steps: DsStep[]; memories: MemoryItem[] }
 export interface DsTablePage { key: string; file: string; label: string; columns: string[]; total: number; offset: number; rows: string[][] }
+
+export interface ReportOverview {
+  origin: 'code';
+  client_id: string; client_name?: string | null;
+  first_date?: string | null; last_date?: string | null;
+  meetings_identified?: number | null; meetings_retrieved?: number | null; meetings_not_retrieved?: number | null;
+  not_retrieved: { interaction_id: string; date?: string | null; reason?: string | null }[];
+  source_turns: number; claims: number; corrections: number; contradictions: number; references_unresolved: number; memory_only_claims: number;
+  relevant_claims?: number | null; narrated_claims?: number | null; windows?: number | null; windows_incomplete?: number | null;
+  /** what the verified narrative covers / does not cover, recomputed from the coverage record after every later safeguard */
+  narrative_verified?: string[]; narrative_unresolved?: string[];
+  verified: string[]; unresolved: string[];
+}

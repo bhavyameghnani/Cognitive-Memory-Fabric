@@ -215,7 +215,7 @@ class RequestRuntime:
     def selector_config(self):
         from agents.tool_selector.agent import SelectorConfig
         c = self.cfg
-        return SelectorConfig(max_iterations=min(5, c.max_tool_iterations), max_executions=min(12, c.max_tool_calls), call_timeout_s=min(90.0, c.max_tool_seconds))
+        return SelectorConfig(max_iterations=min(5, c.max_tool_iterations), max_executions=min(c.max_tool_calls, c.max_tool_calls_per_agent), call_timeout_s=min(90.0, c.max_tool_seconds))
 
     # ------------------------------------------------------------------ gates
     def authorize_request(self) -> None:

@@ -1,6 +1,7 @@
 """Planner Agent: advisor request -> validated, structured ExecutionPlan. Plans only; executes nothing, queries nothing."""
 from __future__ import annotations
 
+import os
 import re
 import uuid
 from typing import Optional
@@ -64,6 +65,15 @@ class Planner:
         user = (f"REQUEST: {request_text}\nKNOWN CLIENTS: {known}\nCLIENTS FOUND IN THE REQUEST: {', '.join(clients) or 'none'}\n"
                 f"ALLOWED TOPICS: {', '.join(TOPICS)}\nAVAILABLE TOOLS: {', '.join(available_tools)}\n"
                 f"SUBTASK AGENTS: memory_orchestrator, tool_selector, report_agent" + (f"\nREVISION FEEDBACK: {feedback}" if feedback else ""))
+        if self._deterministic_eligible(request_text, clients, available_tools, feedback, revision):
+            # C: a single-client chronology request is fully decided by its own words (the client, the subject, the task type, the only tool) - _build already overrides the model on exactly these
+            # points - so the model planner would add only latency (and a way to fail).  The plan is the same ExecutionPlan, built by the same _build, and goes through the same gates.
+            self.tracer.event("planner", "deterministic_plan", reason="single-client chronology request", client=clients[0])
+            notes.append("deterministic plan: a single-client chronology request is planned from the request itself (no model planner call)")
+            plan = self._build(rid, request_text, self._chronology_plan(request_text, available_tools), clients, available_tools, notes, revision)
+            self.tracer.event("planner", "plan_created", plan_id=plan.plan_id, clients=plan.client_ids, task_type=plan.task_type, topics=plan.memory_topics,
+                              tools=plan.required_tools, order=plan.execution_order, parallel=plan.parallelizable_tasks, missing=plan.missing_information, notes=plan.planner_notes)
+            return plan
         try:
             out = generate_structured(self.llm, "planner", PLANNER, user, PlannerLLMOutput, retries=2, tracer=self.tracer,
                                       validator=lambda o: self._check_subtasks(o.subtasks))
@@ -75,6 +85,23 @@ class Planner:
         self.tracer.event("planner", "plan_created", plan_id=plan.plan_id, clients=plan.client_ids, task_type=plan.task_type, topics=plan.memory_topics,
                           tools=plan.required_tools, order=plan.execution_order, parallel=plan.parallelizable_tasks, missing=plan.missing_information, notes=plan.planner_notes)
         return plan
+
+    @staticmethod
+    def _deterministic_eligible(text: str, clients, available_tools, feedback, revision) -> bool:
+        """Exactly ONE client was resolved from the request's own words, the request is a source-chronology request, get_source_evidence exists, and this is a first plan (a replan or a plan with
+        feedback needs the model).  CMF_DETERMINISTIC_PLANNING=0 turns the path off."""
+        return (os.environ.get("CMF_DETERMINISTIC_PLANNING", "1").strip().lower() not in ("0", "false", "no", "off") and not feedback and revision == 0 and len(clients) == 1
+                and SOURCE_TOOL in available_tools and is_source_chronology(text) and not names_source_turns(text))
+
+    @staticmethod
+    def _chronology_plan(text: str, available_tools: list[str]) -> PlannerLLMOutput:
+        asked = [t for t in available_tools if t != SOURCE_TOOL and t in _TOOL_NEED_RX and re.search(_TOOL_NEED_RX[t], text, re.I)]      # a tool only when the request itself asks for what it returns (the same filter _build applies to a model plan)
+        subs = [Subtask(id="T1", description="Retrieve relevant client memories", agent="memory_orchestrator"),
+                Subtask(id="T2", description="Find and retrieve the relevant source conversation turns with get_source_evidence", agent="tool_selector", depends_on=["T1"]),
+                Subtask(id="T3", description="Write the advisor-ready chronology report", agent="report_agent", depends_on=["T1", "T2"])]
+        return PlannerLLMOutput(user_intent=text[:280], task_type="history", time_period=None, needs_history=True, needs_calculation=False,
+                                required_memory_categories=["episodic", "semantic"], memory_topics=infer_topics(text), required_data=["source conversation turns"],
+                                required_tools=[SOURCE_TOOL] + asked, subtasks=subs, missing_information=[], success_criteria=["answer the question using cited evidence"])
 
     def replan(self, plan: ExecutionPlan, unavailable_tools: list[str], reason: str, available_tools: list[str], visible_clients=None) -> ExecutionPlan:
         """New plan after a tool or data source turned out to be unavailable. Never silently assumes the missing piece."""

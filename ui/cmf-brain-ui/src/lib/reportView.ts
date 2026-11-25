@@ -4,7 +4,7 @@ import type { AskResult, EvidenceItem, Finding, TimelineClaim } from '../types';
 
 export const STORY_START = ['In meeting', 'Later, in meeting', 'Continuing in meeting', 'On the same day, in meeting'];
 
-export type Completeness = 'complete_narrative' | 'chronology_only' | 'degraded' | 'fallback' | 'memory_only';
+export type Completeness = 'complete_narrative' | 'partial_narrative' | 'chronology_only' | 'degraded' | 'fallback' | 'memory_only';
 export type NarrativeState = 'verified' | 'failed' | 'not_attempted';
 export type Tone = 'ok' | 'warn' | 'info' | 'bad';
 
@@ -150,7 +150,7 @@ export function buildView(r: AskResult): ReportView {
   const rep = r.report;
   const tl = rep.timeline ?? [];
   const hc = rep.historical_context ?? [];
-  const narrative = hc.filter((f) => f.origin === 'narrative_checked');
+  const narrative = hc.filter((f) => (f.origin === 'narrative_checked' || f.origin === 'synthesis_checked') && f.window !== -1);
   const chronology = hc.filter(isStory);
   const sourceRecords = hc.filter((f) => f.origin === 'rendered' && !isStory(f));
   const otherFindings = [...rep.key_findings.filter((f) => f.origin !== 'rendered'), ...hc.filter((f) => !f.origin), ...rep.financial_analysis.filter((f) => f.origin !== 'rendered' && f.origin !== 'tool_code')];
@@ -174,10 +174,10 @@ export function buildView(r: AskResult): ReportView {
   let completeness: Completeness;
   if (fallback) completeness = 'fallback';
   else if (degraded) completeness = 'degraded';
-  else if (narrativeState === 'verified') completeness = 'complete_narrative';
+  else if (narrativeState === 'verified') completeness = rep.coverage && rep.coverage.narrated.length < rep.coverage.relevant ? 'partial_narrative' : 'complete_narrative';     // verified prose that covers only part of the relevant claims is never called complete
   else if (hasSource) completeness = 'chronology_only';
   else completeness = 'memory_only';
-  const label = { complete_narrative: 'Verified narrative', chronology_only: 'Chronology only (no verified narrative)', degraded: 'Partial report (degraded)', fallback: 'Fallback report (not model-written)', memory_only: 'Memory-based answer (no source turns)' }[completeness];
+  const label = { complete_narrative: 'Evidence-checked report', partial_narrative: `Evidence-checked report · partial coverage (${rep.coverage?.narrated.length ?? 0} of ${rep.coverage?.relevant ?? 0} relevant records written up)`, chronology_only: 'Chronology only (no verified narrative)', degraded: 'Partial report (degraded)', fallback: 'Fallback report (not model-written)', memory_only: 'Memory-based answer (no source turns)' }[completeness];
 
   const banners: Banner[] = [];
   if (fallback) {
