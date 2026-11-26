@@ -123,10 +123,10 @@ def _isolated_databases(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True, scope="module")
 def _report_mode(request):
-    """The Phase 1 and 2 tests describe the verified-quotation narrative: they run in CMF_REPORT_MODE=quotes (the baseline that is preserved).  Phase 3 (tests/test_phase3.py) runs in the default,
+    """The Phase 1 and 2 tests describe the verified-quotation narrative: they run in CMF_REPORT_MODE=quotes (the baseline that is preserved).  Phase 3 (tests/test_phase3.py) and Phase 4A (tests/test_phase4a.py) run in the default,
     synthesis mode.  Module scope, so that setUpClass code which builds a report sees it too."""
     old = os.environ.get("CMF_REPORT_MODE")
-    if "test_phase3" in request.module.__name__:
+    if request.module.__name__.split(".")[-1] in ("test_phase3", "test_phase4a", "test_phase4a_followup", "test_focused_retrieval"):
         os.environ.pop("CMF_REPORT_MODE", None)
     else:
         os.environ["CMF_REPORT_MODE"] = "quotes"

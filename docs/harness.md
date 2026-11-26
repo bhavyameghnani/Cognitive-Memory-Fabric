@@ -123,6 +123,14 @@ Misreadings cost recall (a true claim shown qualified or withheld), not safety.
 Before any text is compared (both modes): the finding cites evidence; the handle exists; its client is in the plan and in the actor's scope; the kind of evidence may support the kind of
 statement; memory evidence is re-read from the store (exists, same client, a superseded memory cannot support a "current" statement).
 
+### Phase 4A: report fields the verifier re-derives
+`AdvisorReport.answer` (the five-slot question-answering block), `.transaction` (decision, signing, agreement execution and completion as four independent facets) and `.corrections` (original record / what the client said / the
+advisor's correction) are written by code (`agents/report/answer.py`, `status.py`, `corrections.py`) from the report's timeline.  `EvidenceVerifier.verify_report` does **not** trust the Report Agent's copy: it rebuilds the
+timeline itself (`_rebuild`: authorised evidence whose quotation really is text of the source turn), derives all three again and puts its own versions in the report.  The prose of a slot is restricted to the sentences of the
+executive finding (window -1) that survived verification, so a withheld sentence cannot reappear in a slot.  `validation["harness_phase4a"] = {rederived, differs_from_agent}` records any difference.  `verify_report(..., topics=)`
+takes the plan's memory topics (the runtime passes `plan.memory_topics`), which decide which meetings are about the request.  No new model call, and no verification rule was removed or relaxed.  The proposition rules the verifier
+applies to every synthesised sentence gained two structural checks (`informativeness_problems`, `role_problems` in `agents/report/synthesis.py`).
+
 ## Memory write validator
 * Writes: rejects missing/foreign turns, speaker mismatch, excerpt not in the turn, unknown topic, statements not supported by their excerpt. Downgrades hypothesis
   wording, reported preferences and advisor-side inferences from `confirmed`. Never upgrades. A semantic version can only be created from an active confirmed episode whose evidence

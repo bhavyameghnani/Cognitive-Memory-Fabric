@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, BadgeCheck, ChevronDown, ChevronRight, CircleAlert, Info, Quote, ShieldCheck } from 'lucide-react';
 import type { AskResult, EvidenceItem, Finding } from '../types';
 import { buildView, splitCitations, type Banner, type Development, type Tone } from '../lib/reportView';
-import { buildClientReport, type Excerpt, type Para, type PeriodSection, type Sentence } from '../lib/clientReport';
+import { buildClientReport, snippet, type Excerpt, type FacetView, type Para, type PeriodSection, type Sentence, type SlotView } from '../lib/clientReport';
+import type { CorrectionPart, CorrectionRecord, StatusEvidence } from '../types';
 import { AgentRunPanel } from './AgentRunPanel';
 
 const TONE: Record<Tone, string> = {
@@ -100,6 +101,12 @@ const STATUS_TONE: Record<string, string> = {
 };
 const STATUS_LABEL: Record<string, string> = { ok: 'written up', none: 'written up', partial: 'partly written up', empty: 'not written up', failed: 'not written up', skipped: 'not written up' };
 
+const SLOT_TONE: Record<string, string> = {
+  filled: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', partial: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+  negative: 'bg-sky-500/15 text-sky-300 border-sky-500/40', unavailable: 'bg-slate-500/15 text-slate-300 border-slate-600',
+  established: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', referenced: 'bg-amber-500/15 text-amber-300 border-amber-500/40', pending: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+};
+
 const Tile: React.FC<{ a: string; b: string; warn?: boolean }> = ({ a, b, warn }) => (
   <div className={`rounded-lg border py-2 px-1 text-center ${warn ? 'border-amber-500/40 bg-amber-500/[0.06]' : 'border-slate-800 bg-slate-900/60'}`}>
     <p className="text-sm font-semibold text-slate-100 tabular-nums">{a}</p><p className="text-[10px] text-slate-500 leading-tight">{b}</p>
@@ -171,6 +178,95 @@ export const ReportView: React.FC<{ result: AskResult; onSelectMemory: (id: stri
       )}
     </section>
   );
+  const evList = (ev: StatusEvidence[], key: string) => ev.length === 0 ? null : (
+    <>
+      <button onClick={() => flip(key)} className="mt-1 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer underline underline-offset-2" aria-expanded={!!shown[key]} data-testid="slot-evidence-toggle">
+        {shown[key] ? 'Hide supporting evidence' : `Supporting evidence (${ev.length} source turn${ev.length === 1 ? '' : 's'})`}
+      </button>
+      {shown[key] && (
+        <ul className="mt-2 space-y-2 border-l border-slate-700 pl-3" data-testid="slot-evidence">
+          {ev.map((e, i) => (
+            <li key={i} className="text-xs text-slate-400 leading-relaxed">
+              <span className="font-mono text-[10px] text-slate-500">{e.date ?? 'undated'} · {e.where} · {e.speaker}{e.role ? ` · ${e.role.replace(/_/g, ' ')}` : ''}{e.kind ? ` · ${e.kind}` : ''}</span>
+              <p className="text-slate-300"><Quote className="inline w-3 h-3 mr-1 text-slate-600" />{e.excerpt}{chip(e.ref)}</p>
+              {card(e.ref)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+  const slotBox = (sl: SlotView) => (
+    <div key={sl.key} className="rounded-lg border border-slate-800 bg-slate-900/60 p-3" data-testid="slot" data-slot={sl.key} data-status={sl.status}>
+      <div className="flex flex-wrap items-center gap-2">
+        <h5 className="text-[13px] font-semibold text-slate-100">{sl.label}</h5>
+        <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${SLOT_TONE[sl.status]}`} data-testid="slot-status">{sl.statusLabel}</span>
+      </div>
+      {sl.items.map((it, i) => {
+        const first = it.evidence[0];
+        return (
+          <div key={i} className="mt-2" data-testid="slot-item" data-status={it.status}>
+            <p className="text-[11px] text-slate-400">{it.label}</p>
+            {it.sentences.length > 0 && <p className="text-[14px] leading-7 text-slate-100" data-testid="slot-prose">{sentences(it.sentences)}</p>}
+            {it.sentences.length === 0 && first && it.status !== 'unavailable' && first.role !== 'mention' && (
+              <p className="text-[13px] leading-6 text-slate-200" data-testid="slot-wording"><span className="text-[10px] uppercase tracking-wide text-slate-500 mr-1.5">recorded wording, not paraphrased</span><Quote className="inline w-3 h-3 mr-1 text-slate-600" />{snippet(first.excerpt, 320)}{chip(first.ref)}</p>
+            )}
+            {it.note && <p className="mt-1 text-xs text-slate-300 leading-relaxed" data-testid="slot-note">{it.note}</p>}
+            {evList(it.evidence, `slot-${sl.key}-${i}`)}
+          </div>
+        );
+      })}
+      {sl.reason && sl.status === 'unavailable' && <p className="mt-2 text-xs text-slate-400" data-testid="slot-reason">{sl.reason}</p>}
+    </div>
+  );
+  const facetBox = (f: FacetView) => (
+    <div key={f.key} className="rounded-lg border border-slate-800 bg-slate-900/60 p-3" data-testid="facet" data-facet={f.key} data-status={f.status}>
+      <div className="flex flex-wrap items-center gap-2">
+        <h5 className="text-[13px] font-semibold text-slate-100">{f.label}</h5>
+        <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${SLOT_TONE[f.status] ?? SLOT_TONE.unavailable}`} data-testid="facet-status">{f.statusLabel}</span>
+      </div>
+      <p className="mt-1.5 text-sm text-slate-100 leading-relaxed" data-testid="facet-statement">{f.statement}</p>
+      {f.documents.length > 1 && (
+        <ul className="mt-1.5 space-y-1 text-xs text-slate-300" data-testid="facet-documents">
+          {f.documents.map((d, i) => <li key={i}><span className={`mr-1.5 text-[10px] px-1.5 rounded border ${SLOT_TONE[d.status] ?? SLOT_TONE.unavailable}`}>{d.statusLabel}</span>{d.document}</li>)}
+        </ul>
+      )}
+      {evList(f.evidence, `facet-${f.key}`)}
+    </div>
+  );
+  const partBox = (title: string, p: CorrectionPart | null | undefined, tone: string, testid: string) => !p ? null : (
+    <div className={`mt-2 rounded-md border p-2.5 ${tone}`} data-testid={testid} data-status={p.status}>
+      <p className="text-[10px] uppercase tracking-wide text-slate-400">{title}{p.evidence ? ` · ${p.evidence.speaker} · ${p.evidence.date ?? 'undated'} · ${p.evidence.where}` : ''}</p>
+      {p.status === 'unavailable' && <p className="mt-1 text-xs text-slate-300">{p.note}</p>}
+      {p.status === 'described' && <p className="mt-1 text-[11px] text-amber-200">{p.label}. {p.note}</p>}
+      {p.evidence && <p className="mt-1 text-[13px] leading-6 text-slate-100"><Quote className="inline w-3 h-3 mr-1 text-slate-500" />“{p.evidence.excerpt}”{chip(p.evidence.ref)}</p>}
+      {p.evidence && card(p.evidence.ref)}
+    </div>
+  );
+  const correctionBox = (r: CorrectionRecord, i: number) => {
+    const why = cr.changes.find((x) => x.corrected.where === r.correction.evidence?.where)?.explanation;
+    return (
+      <div key={i} className="mb-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs" data-testid="correction-record">
+        <p className="font-mono text-[11px] text-slate-500">{r.date ?? 'undated'} · {r.correction.evidence?.where}</p>
+        {why && why.length > 0 && <p className="mt-1.5 text-[14px] leading-7 text-slate-100" data-testid="correction-explanation">{sentences(why)}</p>}
+        {partBox('1. What was originally recorded (incorrect)', r.original, 'border-rose-500/30 bg-rose-500/[0.05]', 'correction-original')}
+        {r.client_said ? partBox('2. What the client actually said', r.client_said, 'border-slate-700 bg-slate-900', 'correction-client')
+          : <p className="mt-2 text-[11px] text-slate-400" data-testid="correction-client">2. What the client actually said: the client's own answer was not among the retrieved turns.</p>}
+        {r.acknowledgement && partBox('The advisor’s acknowledgement earlier in the same meeting', r.acknowledgement, 'border-emerald-500/20 bg-emerald-500/[0.03]', 'correction-ack')}
+        {partBox('3. How the advisor corrected it', r.correction, 'border-emerald-500/30 bg-emerald-500/[0.05]', 'correction-advisor')}
+        {r.check && (
+          <>
+            <button onClick={() => flip(`chk${i}`)} className="mt-2 text-[11px] text-slate-500 hover:text-slate-200 cursor-pointer underline underline-offset-2" aria-expanded={!!shown[`chk${i}`]} data-testid="correction-check-toggle">
+              {shown[`chk${i}`] ? 'Hide' : 'Show'} context: the advisor’s question to the client about the note
+            </button>
+            {shown[`chk${i}`] && partBox('Context only: a question about a record is not the record', r.check, 'border-slate-800 bg-slate-950/40', 'correction-check')}
+          </>
+        )}
+        {r.missing && <p className="mt-2 text-[11px] text-amber-200/90" data-testid="correction-missing">Missing evidence: {r.missing}</p>}
+        <p className="mt-1.5 text-[10px] text-slate-500">{r.basis === 'shared_wording' ? `Linked by the words the correction and the earlier turn share (“${r.phrase}”), not by a stored memory.` : 'Linked by the memory layer’s own correction record.'}</p>
+      </div>
+    );
+  };
   const c = cr.coverage;
   const notNarrated = c.relevant != null ? c.relevant - (c.narrated ?? 0) : 0;
   const summaryRefs = splitCitations(rep.summary).filter((s) => s.kind === 'cite').map((s) => s.ref!);
@@ -191,8 +287,15 @@ export const ReportView: React.FC<{ result: AskResult; onSelectMemory: (id: stri
       {v.banners.filter((b) => b.title !== 'Narrative verified').map((b, i) => <BannerBox key={i} b={b} />)}
       {v.singleClientNote && <BannerBox b={{ tone: 'info', title: 'Single-client source retrieval', detail: v.singleClientNote }} />}
 
-      {/* 2. executive summary */}
-      {cr.executive ? (
+      {/* 2. the answer to the question: five code-filled slots (Phase 4A), or the executive summary of an older report */}
+      {cr.answer ? (
+        <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4" data-testid="answer">
+          <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-400" />Answer to your question</h4>
+          <p className="text-[11px] text-slate-500 mt-0.5">Filled by code from the retrieved source turns and the validated sentences, chosen by what they are about, not by where they fall. A slot with no evidence says so; it is never guessed.</p>
+          <div className="mt-2 flex flex-col gap-2.5">{cr.answer.slots.map(slotBox)}</div>
+          {cr.answer.notApplicable.length > 0 && <p className="mt-2 text-[10px] text-slate-500" data-testid="answer-not-applicable">Left out because the subject is not a transaction: {cr.answer.notApplicable.join(', ')}.</p>}
+        </section>
+      ) : cr.executive ? (
         <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4" data-testid="executive">
           <h4 className="text-sm font-semibold text-slate-100 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-400" />Executive summary</h4>
           <div className="mt-2">{prose(cr.executive, 'exec', true)}</div>
@@ -214,10 +317,11 @@ export const ReportView: React.FC<{ result: AskResult; onSelectMemory: (id: stri
       )}
 
       {/* 4. corrections and changes */}
-      {(cr.changes.length > 0 || cr.wordedCorrections.length > 0) && (
-        <Section title="Corrections and changes" count={cr.changes.length + cr.wordedCorrections.length} hint="original position, then the corrected position">
+      {(cr.correctionRecords.length > 0 || cr.changes.length > 0 || cr.wordedCorrections.length > 0) && (
+        <Section title="Corrections and changes" count={cr.correctionRecords.length || cr.changes.length + cr.wordedCorrections.length} hint="what was recorded, what the client said, how it was corrected">
           <div data-testid="corrections">
-            {cr.changes.map((p, i) => (
+            {cr.correctionRecords.map(correctionBox)}
+            {cr.correctionRecords.length === 0 && cr.changes.map((p, i) => (
               <div key={i} className="mb-3 text-xs leading-relaxed rounded-lg border border-slate-800 bg-slate-900/60 p-3">
                 <p className="font-mono text-[11px] text-slate-500">{p.date ?? 'undated'} · {p.corrected.where} corrects {p.original ? p.original.where : 'an earlier record whose source turn was not retrieved'}</p>
                 {p.explanation && p.explanation.length > 0 && <p className="mt-1.5 text-[14px] leading-7 text-slate-100" data-testid="correction-explanation">{sentences(p.explanation)}</p>}
@@ -238,7 +342,11 @@ export const ReportView: React.FC<{ result: AskResult; onSelectMemory: (id: stri
       )}
 
       {/* 5. current position and outcome: only what verified evidence establishes */}
-      {(cr.established.length > 0 || cr.header.from) && (
+      {cr.transaction ? (
+        <Section title="Decision and transaction status" hint="four independent facts, each from its own evidence">
+          <div data-testid="transaction" className="flex flex-col gap-2.5">{cr.transaction.map(facetBox)}</div>
+        </Section>
+      ) : (cr.established.length > 0 || cr.header.from) && (
         <Section title="Current position and outcome" hint={cr.established.length ? 'verified and confirmed' : 'none established'}>
           <div data-testid="current-position" className="flex flex-col gap-3">
             {cr.established.length > 0 ? (

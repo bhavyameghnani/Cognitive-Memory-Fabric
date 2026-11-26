@@ -15,6 +15,10 @@ relations, dates, figures and names, all still run):
   * OUTCOMES: signing, completion, closing, acceptance and agreement words must occur in the cited wording and may not be firmer than the clause they come from.
   * DATES: a day-and-month in the sentence must be the date of a cited claim (or a date inside the cited wording); a year must be a cited year.
   * TIME: a sentence that joins claims of different dates carries a time marker.
+  * INFORMATIVENESS (Phase 4A): the sentence has a proposition of its own: not an interjection or agenda reply ("said that fine, net proceeds ..."), not an elliptical reply ("said that it is, ..."), not
+    a bare "it / that" with nothing to refer to, not a verbless fragment after "said".  Structural rules (informativeness_problems), not a list of topic words.
+  * ROLES (Phase 4A): who is "I" and who is "you" is kept.  A cited sentence that joins the speaker with someone ("your accountant and I", "we agreed") is paraphrased only if both the advisor and the client
+    are named in plain words, and a role may appear only where the cited wording licenses it (role_problems).
 The Evidence Verifier re-runs the same function on claims it rebuilds itself (harness/evidence_verifier.py), so the Report Agent's own judgement is never the only one."""
 from __future__ import annotations
 
@@ -22,6 +26,7 @@ import re
 from typing import Optional
 
 from agents.report import semantic as S
+from agents.report import status as ST
 from agents.report.timeline import _where, significant
 from agents.report.validate import _ATTRIBUTING, _OVERREACH, source_record_problem
 from schemas.report import Finding, NarrativeSentence, TimelineClaim
@@ -37,15 +42,42 @@ GREETING = re.compile(r"^(?:hi|hey|hello|morning|good (?:morning|timing)|it's \w
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------ what is narrated
-def synthesis_pool(claims: list[TimelineClaim]) -> list[TimelineClaim]:
+NEAR_TURNS = 3       # a relation word (agree, speak, propose) counts only within this many turns of a line about the MAIN subject, in the same meeting
+
+
+def _focus_keep(c: TimelineClaim, roots: set, main: Optional[set], mains: dict) -> bool:
+    """Is this claim part of the focused subject?  It mentions the main subject itself (the best grounded search phrase: "accountant"), or it mentions a RELATION word of the question (agree, speak, propose) within
+    NEAR_TURNS turns of such a line in the same meeting.  "I'd only propose changes if the mix drifts" in another meeting says nothing about who proposed a call."""
+    if ST.about(c, main or roots):
+        return True
+    return ST.about(c, roots) and any(abs(int(c.turn_index or 0) - t) <= NEAR_TURNS for t in mains.get(c.interaction_id, ()))
+
+
+def synthesis_pool(claims: list[TimelineClaim], roots: Optional[set] = None, main: Optional[set] = None) -> list[TimelineClaim]:
     """The claims a synthesised report covers: the significant ones (timeline.significant) and the advisor's substantive accounts that mention the subject (a recap, a plan, an open-items list), which are
-    where outcomes and next steps are stated.  Greetings and agenda lines are not."""
+    where outcomes and next steps are stated.  Greetings and agenda lines are not.
+
+    `roots` (status.subject_roots / grounded_roots) is given ONLY when the plan names no topic.  Without a topic nothing is "the subject" for the old test (`mentions_topic` is None), so every advisor
+    line was dropped and every client line kept: a question about ONE call with an accountant came back as the client's whole history, without the advisor's own words about the call.  With `roots`, the
+    pool is the claims that are ABOUT those roots - the advisor's and the client's alike - and nothing else: a relevant advisor statement is no longer excluded, an unrelated one still is."""
     out = []
+    mains: dict = {}
+    if roots:
+        for c in claims:
+            if c.source == "source_turn" and ST.about(c, main or roots):
+                mains.setdefault(c.interaction_id, set()).add(c.turn_index)
     for c in claims:
         if c.source != "source_turn" or not c.relevant:
             continue
         if len(c.wording.split()) < MIN_LINE_WORDS and not any(r["type"] == "corrects" for r in c.relations):
             continue                                    # "Go ahead." / "Correct. Move on it.": a paraphrase would have to supply the meaning; the line stays available as its recorded wording
+        if acknowledgement_only(c.wording):
+            continue                                    # "Fine. Net proceeds and the people side of a sale first.": an agenda reply with nothing to report (Phase 4A); it stays in the code-written chronology
+        if roots:
+            if _focus_keep(c, roots, main, mains) and (significant(c) or (c.statement_kind in ("advisor_reported", "advisor_interpretation") and len(c.wording.split()) >= 10 and not GREETING.match(c.wording.strip())
+                                                          and "anything pressing" not in c.wording.lower())):
+                out.append(c)
+            continue
         if significant(c):
             out.append(c)
         elif c.mentions_topic and c.statement_kind in ("advisor_reported", "advisor_interpretation") and len(c.wording.split()) >= 10 and not GREETING.match(c.wording.strip()) \
@@ -54,9 +86,9 @@ def synthesis_pool(claims: list[TimelineClaim]) -> list[TimelineClaim]:
     return sorted(out, key=S._order_key)
 
 
-def synthesis_windows(claims: list[TimelineClaim], size: int = SYN_WINDOW, hard: int = SYN_HARD) -> list[list[TimelineClaim]]:
+def synthesis_windows(claims: list[TimelineClaim], size: int = SYN_WINDOW, hard: int = SYN_HARD, roots: Optional[set] = None, main: Optional[set] = None) -> list[list[TimelineClaim]]:
     """The pool cut into consecutive chronological windows (a window ends at a meeting boundary once it holds `size` claims; never more than `hard`; a tiny last window joins the one before)."""
-    pool = synthesis_pool(claims)
+    pool = synthesis_pool(claims, roots, main)
     windows: list[list[TimelineClaim]] = []
     cur: list[TimelineClaim] = []
     for i, c in enumerate(pool):
@@ -180,6 +212,184 @@ def unsupported_words(text: str, cited: list[TimelineClaim], names=()) -> list[s
     return list(dict.fromkeys(stray))
 
 
+# ------------------------------------------------------------------------------------------------------------------------------------ Phase 4A (C): informativeness
+# A sentence can pass every support rule and still say nothing: "Rebecca said that fine, net proceeds and the people side of a sale first." (the reply "Fine. Net proceeds and the people side of a sale first."
+# answers an agenda question the report never shows) or "The advisor said that it is, the more important question is ..." (an elliptical reply with no antecedent).  These rules reject a sentence that has
+# no understandable proposition of its own.  They look at the STRUCTURE of the reported clause and of the cited line (an interjection or an elliptical reply at the start, a bare demonstrative with nothing it
+# could refer to, a fragment with no predicate after "said that"), never at a list of topic words, so an ordinary tentative statement, question, correction or preference is untouched.
+_INTERJECTION = re.compile(r"^\W*(?:fine|ok(?:ay)?|yes|yeah|yep|yup|no|nope|sure|alright|all right|right|well|so|good|great|thanks|thank you|sounds good|got it|i see|indeed|absolutely|exactly|correct|of course|certainly)\s*[,.;:!—-]"
+                           r"|^\W*(?:fine|ok(?:ay)?|yeah|yep|yup|alright)\s+(?=[a-z])|^\W*that(?:'s| is) (?:fine|good|great|right|correct|ok(?:ay)?)\b\s*[,.;:!]?", re.I)
+_ELLIPTICAL = re.compile(r"^\W*(?:it|that|this|there|he|she|they|i|we|you)\s+(?:is|are|was|were|do|does|did|will|would|can|could|has|have|had)\s*[,;:.!—-]", re.I)
+_DEMONSTRATIVE = re.compile(r"^\W*(?:it|that|this|these|those|there)\b", re.I)
+_SAYING = re.compile(r"\b(?:said|says|replied|answered|added|responded)\b", re.I)         # verbs that take a CLAUSE ("said that ..."); "explained the risk of ...", "noted the offer" take a noun phrase and are not tested for a verb
+_AUXILIARY = frozenset("""is are was were be been being am do does did have has had will would can could should may might must shall isn't aren't wasn't weren't don't doesn't didn't haven't hasn't hadn't won't wouldn't can't
+couldn't shouldn't cannot""".split())
+_VERBISH = frozenset("""want wants wanted need needs needed sell sells sold send sends sent give gives gave ask asks asked feel feels felt think thinks thought know knows knew like likes liked plan plans planned decide
+decides decided consider considers considered move moves moved keep keeps kept take takes took make makes made get gets got go goes went come comes came see sees saw hold holds held wait waits waited accept accepts
+accepted agree agrees agreed sign signs signed close closes closed expect expects expected review reviews reviewed cover covers covered discuss discusses discussed model prepare prepares prepared draft drafted hear
+heard talk talks talked speak speaks spoke call calls called set sets raise raises raised weigh weighs weighed hope hopes hoped worry worries worried change changes changed correct corrects corrected continue
+continues continued remain remains remained run runs ran carry carries carried care cares cared prefer prefers preferred remember remembers remembered understand understands understood appear appears appeared
+seem seems seemed look looks looked mean means meant matter matters mattered depend depends depended help helps helped lose loses lost leave leaves left stay stays stayed stop stops stopped start starts started
+tell tells told show shows showed shown pay pays paid fund funds funded hire hires hired buy buys bought invest invests invested""".split())
+_NOT_VERBS = frozenset("morning evening meeting building during following financing housing nothing something anything everything wedding savings".split())
+
+
+def has_predicate(clause: str) -> bool:
+    """Does this stretch of words contain a verb?  (auxiliary, a common verb, or an -ed / -ing word that is not a known noun).  Deliberately generous: a doubtful clause counts as having one, so that a
+    real statement is never refused for lack of one; only a clear fragment ("net proceeds and the people side of a sale first") has none."""
+    for w in re.findall(r"[A-Za-z][A-Za-z']*", clause.lower().replace("’", "'")):
+        if w in _AUXILIARY or w in _VERBISH or re.search(r"'(?:ll|ve|re|m|d)$", w) or w.endswith("n't"):
+            return True
+        if len(w) >= 5 and w.endswith(("ed", "ing")) and w not in _NOT_VERBS:
+            return True
+    return False
+
+
+def acknowledgement_only(wording: str) -> bool:
+    """A source line that opens with an interjection and whose remainder has no predicate of its own ("Fine. Net proceeds and the people side of a sale first."): an answer to a question the report does not
+    contain, with nothing to report.  The line stays in the code-written chronology; it is not narrated."""
+    parts = S.split_sentences(wording) or [wording]
+    if len(parts) < 2 or len(parts[0].split()) > 3 or not _INTERJECTION.match(parts[0] + " x"):
+        return False
+    return not has_predicate(" ".join(parts[1:]))
+
+
+def reported_clause(text: str, names=()) -> tuple[str, str]:
+    """(clause, verb): what a sentence reports, after its speaker and speech verb and an optional "that / whether / if"; ("", "") when the sentence does not open with a speaker and a speech verb."""
+    opening = _LEAD_DATE.sub("", " ".join(S.MARK.sub("", text).split())).strip()
+    found = _subject_rx(names).match(opening)
+    if not found:
+        return "", ""
+    rest = opening[found.end():]
+    m = ATTRIB_VERBS.search(rest[:80])
+    if not m:
+        return "", ""
+    clause = re.sub(r"^\s*(?:(?:to|of)\s+\w+\s+)?(?:that|whether|if)\b\s*", "", rest[m.end():], flags=re.I).strip()
+    return clause, m.group(0).lower()
+
+
+def _concrete(clause: str, names=()) -> bool:
+    """A figure, a number word, a month or a proper name: something the clause is about even if its subject is a bare pronoun."""
+    if re.search(r"\d", clause) or {w.lower() for w in re.findall(r"[A-Za-z]+", clause)} & _NUM_OR_MONTH:
+        return True
+    return any(w for w in re.findall(r"(?<=[a-z,;] )[A-Z][a-z]{2,}", clause) if w.lower() not in {n.lower() for n in names})
+
+
+_NUM_OR_MONTH = frozenset(S._MONTHS) | frozenset("one two three four five six seven eight nine ten eleven twelve twenty thirty forty fifty sixty seventy eighty ninety hundred thousand million".split())
+
+
+def informativeness_problems(text: str, cited: list[TimelineClaim], names=()) -> list[str]:
+    """Why a sentence says nothing of its own (empty list = it has a proposition).  Structural, never keyword-only:
+      empty_acknowledgement  every cited line is an interjection plus a fragment ("Fine. Net proceeds and the people side of a sale first.")
+      filler_clause          the reported clause begins with an interjection ("said that fine, ...", "said that yes, ...")
+      elliptical_reply       it begins with a pronoun and an auxiliary and then breaks off ("said that it is, the more important ...")
+      no_antecedent          the clause is about a bare "it / that / this / these / those" and names nothing concrete the pronoun could stand for
+      fragment               after "said / told / noted ...", the clause has no verb at all"""
+    out: list[str] = []
+    if cited and all(acknowledgement_only(c.wording) for c in cited):
+        out.append("empty_acknowledgement: the cited line is an acknowledgement or an agenda reply with nothing to report")
+    clause, verb = reported_clause(text, names)
+    if not clause:
+        return out
+    if _INTERJECTION.match(clause):
+        out.append("filler_clause: the reported clause begins with an interjection (fine, yes, no, well ...); it is an answer to a question the sentence does not give")
+    elif _ELLIPTICAL.match(clause):
+        out.append("elliptical_reply: the reported clause is an elliptical reply (\"it is,\" ...) whose meaning depends on a question the sentence does not give")
+    elif _DEMONSTRATIVE.match(clause) and not _concrete(clause, names):
+        out.append("no_antecedent: the reported clause is about a bare 'it / that / this' that nothing in the sentence names")
+    if _SAYING.fullmatch(verb) and not has_predicate(clause) and not any(o.startswith("filler_clause") for o in out):
+        out.append("fragment: after the speech verb the clause has no verb, so it is not a proposition")
+    return out
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------ Phase 4A (E): who is "I" and who is "you"
+# The support rules compare WORDS, so a paraphrase that swaps the two speakers keeps every word: "Your accountant and I should speak" (the advisor speaks, with Rebecca's accountant) became
+# "Rebecca and her accountant should speak".  The rule is conservative and structural, not a ban on pronouns:
+#   * a cited sentence that JOINS the speaker with someone ("your accountant and I", "we agreed", "both of us", "let's") may be paraphrased only if the reported clause keeps BOTH roles in plain words;
+#   * a role may appear in the clause only if the cited wording licenses it: the advisor as an actor only where the line speaks in the first person (advisor speaker) or addresses "you" / names the
+#     advisor (client speaker), and the client only where the line says "you / your" (advisor speaker) or speaks in the first person (client speaker).
+_FIRST = re.compile(r"\b(?:i|me|my|mine|myself|we|us|our|ours|let's|i['’](?:m|ve|d|ll)|we['’](?:re|ve|d|ll))\b", re.I)
+_SECOND = re.compile(r"\b(?:you|your|yours|yourself|you['’](?:re|ve|d|ll))\b", re.I)
+_JOINT = re.compile(r"^\W*(?:(?:your|my|the|our|her|his)\s+)?[\w'’-]+(?:\s+[\w'’-]+)?\s+and\s+(?:i|me)\b|\byou\s+and\s+(?:i|me)\b|\b(?:i|me)\s+and\s+(?:you|your)\b|\b(?:both|each|all|two) of (?:us|you)\b|"
+                    r"\bwe\b|\bus\b|\bour\b|\blet['’]?s\b|\btogether\b", re.I)
+_ADVISOR_REF = re.compile(r"\bthe advisor\b|\badvisor['’]s\b", re.I)
+
+
+def _client_named(clause: str, names=()) -> bool:
+    """The client by name or as 'the client' (a pronoun does not name a role: 'he' may be the advisor)."""
+    nm = "|".join(re.escape(n) for n in names)
+    return bool(re.search(rf"\b(?:the client{('|' + nm) if nm else ''})\b", clause, re.I)) if clause else False
+
+
+def role_problems(text: str, cited: list[TimelineClaim], names=()) -> list[str]:
+    """The roles of 'I', 'we', 'you' and 'your' in the cited line, kept in the paraphrase (see the section comment).  Empty = the roles are preserved or the line has no first / second person.  Only the
+    cited sentences the paraphrase actually covers (two or more content words in common) are examined for a joint role: another sentence of the same turn ("Let me say it back to you so we don't
+    misremember it.") does not bind a paraphrase of the sentence beside it."""
+    clause, _ = reported_clause(text, names)
+    if not clause or not cited:
+        return []
+    out: list[str] = []
+    wording = " ".join(c.wording for c in cited)
+    advisor_speaks = all(c.speaker == "Advisor" for c in cited)
+    client_speaks = all(c.speaker == "Client" for c in cited)
+    from agents.report.status import content_roots
+    mine = content_roots(clause)
+    covered = [x for x in (S.split_sentences(wording) or [wording]) if len(content_roots(x) & mine) >= 2]
+    if not (advisor_speaks or client_speaks):
+        # the speaker is not established as the advisor or the client (several speakers, or none): "I" and "you" cannot be mapped to a role, so a paraphrase of them cannot preserve one
+        if any(_FIRST.search(x) or _SECOND.search(x) for x in covered):
+            return ["role_unknown: the cited wording uses 'I', 'we', 'you' or 'your', but its speaker is not established as the advisor or the client, so who is meant cannot be preserved in a paraphrase"]
+        return []
+    has_first, has_second = bool(_FIRST.search(wording)), bool(_SECOND.search(wording))
+    adv_in, cli_in = bool(_ADVISOR_REF.search(clause)), _client_named(clause, names)
+    if any(_JOINT.search(x) and _FIRST.search(x) for x in covered):
+        cli_pron = bool(re.search(r"\b(?:she|he|her|his|they|their)\b", clause, re.I))
+        speaker_kept, other_kept = (adv_in, cli_in) if advisor_speaks else (cli_in or cli_pron, adv_in)
+        if not (speaker_kept and other_kept):
+            return ["role_swap: the cited line joins the speaker with someone ('your accountant and I', 'we', 'both of us'); the sentence must keep both the advisor and the client in plain words, or the roles cannot be preserved"]
+    if advisor_speaks:
+        if adv_in and not (has_first or re.search(r"\badvisor\b", wording, re.I)):
+            out.append("role_swap: the sentence gives the advisor a part, but the cited line never speaks in the first person or names the advisor")
+        if cli_in and not (has_second or any(n.lower() in wording.lower() for n in names) or re.search(r"\bclient\b", wording, re.I)):
+            out.append("role_swap: the sentence gives the client a part, but the cited line never says 'you / your' or names the client")
+    else:
+        if cli_in and not (has_first or any(n.lower() in wording.lower() for n in names)):
+            out.append("role_swap: the sentence gives the client a part, but the cited line never speaks in the first person")
+        if adv_in and not (has_second or re.search(r"\badvisor\b", wording, re.I)):
+            out.append("role_swap: the sentence gives the advisor a part, but the cited line never says 'you / your' or names the advisor")
+    return out
+
+
+# A promise is not a deed.  "From my side, I'll arrange a call with your accountant" (INT-070, turn 11) was reported as "the advisor arranged a call with the client's accountant": every word is supported, but a
+# commitment became something done.  When the cited wording PROMISES an action ("I'll ...", "you'll ...", "I'm going to ...") and does not also state it as done, the paraphrase may not put that action in the
+# past tense unless it keeps the promise ("said he would arrange", "agreed to send", "planned to").
+_PROMISE = re.compile(r"\b(?:i['’]ll|i will|we['’]ll|we will|you['’]ll|you will|i['’]m going to|i am going to|we['’]re going to|you['’]re going to)\s+(?:also\s+|then\s+|just\s+|first\s+)?([a-z]{3,})\b", re.I)
+# verbs whose SAYING is the act ("I'll record that as your plan" records it as it is said; "I'll outline ..." outlines): reporting them in the past tense is not a promise turned into a deed
+_PERFORMATIVE = frozenset("record note say tell mention outline summarise summarize recap repeat explain state log put".split())
+_KEEPS_PROMISE = re.compile(r"\b(?:would|will|going to|agreed to|planned to|promised|offered to|intended|intends|undertook|committed to|expected to|was to|were to|is to|are to)\b", re.I)
+
+
+def tense_problems(text: str, cited: list[TimelineClaim], names=()) -> list[str]:
+    """A promised action reported as a completed one (see the comment above).  Empty = no promised action is turned into a past one."""
+    opening = _LEAD_DATE.sub("", " ".join(S.MARK.sub("", text).split())).strip()
+    found = _subject_rx(names).match(opening)
+    if not found or not cited:
+        return []
+    clause = opening[found.end():]                                        # everything the sentence says after its speaker ("arranged a call ... and reminded the client to send ...")
+    wording = " ".join(c.wording for c in cited)
+    promised = {_root(m.group(1)): m.group(1).lower() for m in _PROMISE.finditer(wording) if m.group(1).lower() not in _PERFORMATIVE}
+    if not promised or _KEEPS_PROMISE.search(clause):
+        return []
+    said_done = {_root(w) for w in S._WORD.findall(wording) if w.lower().endswith("ed") or w.lower() in _IRREGULAR}
+    for w in S._WORD.findall(clause):
+        lw = w.lower()
+        base = _IRREGULAR.get(lw)
+        past = lw.endswith("ed") or base is not None
+        if past and (_root(lw) in promised or (base is not None and _root(base) in promised)) and _root(lw) not in said_done:
+            return [f"tense_shift: the cited wording only promises '{next((v for r, v in promised.items() if r == _root(lw) or (base and r == _root(base))), lw)}' (\"I'll ...\", \"you'll ...\"); the sentence reports it as done"]
+    return []
+
+
 def proposition_problems(text: str, cited: list[TimelineClaim], names=(), *, summary: bool = False) -> list[str]:
     """The problems of one paraphrased proposition against the claims it rests on.  Empty = every rule holds.  `summary` relaxes only what an executive-summary sentence legitimately does (rest on the
     claims of several propositions, open with a time phrase, name the client anywhere in the sentence)."""
@@ -242,6 +452,11 @@ def proposition_problems(text: str, cited: list[TimelineClaim], names=(), *, sum
     pron = _PERSON.search(rest)
     if pron:
         out.append(f"person_shift: '{pron.group(0)}' is the line's own first or second person; a paraphrase is in the third person")
+    # --- Phase 4A: the sentence must have a proposition of its own (C), and must keep who is "I" and who is "you" (E)
+    out += informativeness_problems(body, cited, names)
+    if not summary:
+        out += role_problems(body, cited, names)
+        out += tense_problems(body, cited, names)
     # --- certainty: a tentative client line stays tentative
     client_lines = [c for c in cited if c.statement_kind == "client_statement"]
     if client_lines and all(c.modality in ("tentative", "hypothetical") for c in client_lines) and not HEDGE_OK.search(rest) and not any(c.statement_kind != "client_statement" for c in cited):
@@ -447,40 +662,6 @@ def check_synthesis_finding(f: Finding, claims: list[TimelineClaim], names=()) -
     return out
 
 
-def select_executive(kept: list, claims: list[TimelineClaim], names=(), limit: int = 7, accept=None) -> Optional[Finding]:
-    """The executive summary of a synthesised report: a short chronological digest chosen BY CODE from the propositions that already passed every check (no further model call, so nothing new can be
-    invented): the first record, each of the client's tentative or decisive statements (one per meeting), every correction and the line it corrects, and the latest record.  Each sentence is the
-    validated proposition itself, with its date; the finding is marked window -1 and is re-checked like every other synthesised finding.  `kept`: (claim, [(dated, plain)], risky) tuples."""
-    items = sorted((k for k in kept if not k[2] and (accept is None or accept(k[0], k[1][0][0]))), key=lambda k: S._order_key(k[0]))
-    if not items:
-        return None
-    chosen: dict[str, tuple] = {}
-
-    def take(k):
-        chosen.setdefault(k[0].claim_id, k)
-
-    take(items[0])
-    seen_meeting: set = set()
-    for k in items:
-        c = k[0]
-        key_meeting = (c.interaction_id, c.statement_kind == "client_statement")
-        if any(r["type"] in ("corrects", "corrected_by") for r in c.relations) or c.modality == "correction":
-            take(k)
-        elif c.statement_kind == "client_statement" and c.modality in ("tentative", "decision", "hypothetical") and c.mentions_topic and key_meeting not in seen_meeting:      # on the subject of the request
-            seen_meeting.add(key_meeting)
-            take(k)
-    take(items[-1])
-    picked = sorted(chosen.values(), key=lambda k: S._order_key(k[0]))
-    if len(picked) > limit:                                                   # keep the first, the last, every correction, then the earliest of the rest
-        must = [k for k in picked if any(r["type"] in ("corrects", "corrected_by") for r in k[0].relations)] + [picked[0], picked[-1]]
-        rest = [k for k in picked if k not in must]
-        picked = sorted({id(k): k for k in must + rest[: max(0, limit - len(must))]}.values(), key=lambda k: S._order_key(k[0]))
-    parts = [(good[0][0], c) for c, good, _ in picked]                       # the DATED sentence of each line
-    sents = [NarrativeSentence(text=t, sources=[S.source_key(c)]) for t, c in parts]
-    f = Finding(text=" ".join(compose_synthesis(t, [c]) for t, c in parts), refs=list(dict.fromkeys(c.evidence_refs[0] for _, c in parts if c.evidence_refs)), origin="synthesis_checked", narrative=sents, window=-1)
-    return None if check_synthesis_finding(f, claims, names) else f
-
-
 def build_executive(sentences, props: dict, claims: list[TimelineClaim], names=()) -> tuple[Optional[Finding], list[dict]]:
     """The executive summary: each sentence names the accepted propositions (P1, P2 ...) it summarises; its sources are the claims those propositions rest on.  A sentence is judged exactly like a
     proposition (summary mode).  Returns (one finding, marked window -1) or None, and the rejection records."""
@@ -526,7 +707,8 @@ HOW TO WRITE A SENTENCE
 - Keep it exactly as firm as the line. If the line is tentative ("curious", "inclined", "weighing", "not sure", "not yet", "haven't decided"), the sentence says so in those terms. Never write "decided", "agreed", "accepted", "confirmed" or "signed" unless the line itself says it, and then in the line's own terms ("Rebecca said she had decided to sell ...").
 - Never add a reason, cause, motive or feeling the line does not state: no "because", "so that", "worried", "wanted", "felt", "desire", "primary reason". Never add an outcome or a next step the line does not state.
 - Third person only: write "she", "her", "the advisor", never "you", "your", "I" or "we" (the lines are spoken to and by people; you are reporting them).
-- Skip a line that cannot be understood without the lines around it (it says "it", "that" or "this" without saying what): do not guess what it refers to. Skip a very short reply ("Go ahead.", "Fine.") rather than turn it into a decision.
+- Skip a line that cannot be understood without the lines around it (it says "it", "that" or "this" without saying what): do not guess what it refers to. Skip a very short reply ("Go ahead.", "Fine.") rather than turn it into a decision. Skip an agenda reply such as "Fine. Net proceeds and the people side of a sale first." Start every sentence with the speaker, never with "fine", "yes", "no" or "it is".
+- Keep who is who. "I", "my" and "we" are the person speaking; "you" and "your" are the person spoken to. When a line joins them ("Your accountant and I should speak", "we agreed"), the sentence names both ("The advisor said that the advisor and Rebecca's accountant should speak").
 - A line marked as correcting an earlier record gets one sentence that says what the earlier record had said and what this line says instead, e.g. "The advisor corrected his earlier note, which had said that Rebecca had accepted the offer, to say that she was inclined to accept but had not signed."
 - One sentence per line, one line per id, under 45 words."""
 
@@ -557,7 +739,12 @@ _HINTS = (("decision_language", "do not write decided, agreed, accepted, confirm
           ("inner_state", "give no feeling, wish or intention that the line does not state"), ("causal", "give no reason or cause that the line does not state"),
           ("attribution", "open with the speaker and a speech verb: \"{client} said that ...\" for the client's line, \"The advisor said that ...\" for the advisor's line"),
           ("certainty", "keep it tentative, exactly as the line is"), ("relation", "do not say anything was corrected or replaced"), ("supersession", "do not say anything was corrected or replaced"),
-          ("temporal", "do not use then, later, still, finally, now or other time words that the line does not use"), ("duplicate", "skip it"))
+          ("temporal", "do not use then, later, still, finally, now or other time words that the line does not use"), ("duplicate", "skip it"),
+          ("role_swap", "keep who is speaking and who is spoken to: when the line says \"I\" or \"we\" together with someone, name both the advisor and the client"),
+          ("filler", "start with the speaker and say what was said, never with fine, yes, no or it is"), ("elliptical", "start with the speaker and say what was said, never with fine, yes, no or it is"),
+          ("no_antecedent", "say what \"it\" or \"that\" refers to, or skip the line"), ("fragment", "write a full statement with a verb, or skip the line"),
+          ("empty_acknowledgement", "skip it: it is only an acknowledgement"),
+          ("tense_shift", "a promise is not a deed: write \"said he would ...\" or \"agreed to ...\" for what the line only promises"), ("role_unknown", "skip the line: it is not clear who \"I\" and \"you\" are"))
 
 
 def repair_hints(codes, names=()) -> str:
@@ -608,7 +795,7 @@ def outcome_lines(claims: list[TimelineClaim]) -> dict:
         for part in re.split(r"(?<=[.!?])\s+", c.wording):
             if _SIGN.search(part):
                 hedged = bool(NEG_COND.search(part)) or part.strip().endswith("?")                 # a question ("Have you signed anything?") establishes nothing
-                kind = "hedged" if hedged else "event" if _EVENT.search(part) else "pending"
+                kind = "hedged" if hedged else "event" if (_EVENT.search(part) and ST.is_event_sentence(part)) else "pending"        # "please get me the signed exclusivity agreement" is a request, not a signing
                 mentions.append({"claim_id": c.claim_id, "date": c.event_date, "where": _where(c), "speaker": S.TAG[c.statement_kind], "excerpt": " ".join(part.split())[:220],
                                  "kind": kind, "ref": c.evidence_refs[0] if c.evidence_refs else None})
     events = [m for m in mentions if m["kind"] == "event"]

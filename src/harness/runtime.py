@@ -243,7 +243,7 @@ class RequestRuntime:
         from agents.report.validate import deterministic_summary
         if self.cfg.evidence_verification:
             verifier = EvidenceVerifier(self.harness.conv, self.store, owns=lambda cid: self.gate.owns(self.auth, cid), structured=self.cfg.structured_claim_verification)
-            report, self.verification = verifier.verify_report(report, plan.client_ids, tools, lambda: deterministic_summary(report.evidence, plan))
+            report, self.verification = verifier.verify_report(report, plan.client_ids, tools, lambda: deterministic_summary(report.evidence, plan), topics=list(plan.memory_topics or []))
             self.tracer.event("harness.evidence", "verified", counts=self.verification.counts(), summary_replaced=self.verification.summary_replaced,
                               withheld=[v.as_dict() for v in self.verification.verdicts if v.verdict == "unsupported"])
         exhausted = self.budget.exhausted

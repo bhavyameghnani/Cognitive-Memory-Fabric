@@ -38,6 +38,10 @@ happened""".split())
 _REQUEST_WORDS |= set("""including includes included include explain explains explaining show shows showing change changes changed changing conversation conversations turn turns stated stating states
 reported reporting reports inferred infer infers inference uncertain uncertainty unverified verified verify remains remain remaining anything everything each every provide provides describe
 describes summarise summarize summary detail details clearly briefly format output write written walk through full complete whole entire""".split())
+# the words that REPORT or FRAME a question rather than name what it is about: "says" in "unless the source explicitly says so" and "actually" in "what the source actually establishes" matched
+# unrelated turns of eight meetings and took the place of the subject.  (The relation words a question really asks about - agree, speak, propose - are NOT here: they are searched, in their inflections.)
+_REQUEST_WORDS |= set("""says say saying said tells telling told mention mentions mentioned mentioning stated noted asks asked actually really cite cited citing original originally unless regarding happen happens
+happened happening supposed participate participates participated participant participants establishes establish established""".split())
 _STOP = _FUNCTION_WORDS | _REQUEST_WORDS
 
 
@@ -54,12 +58,54 @@ def source_search_terms(request_text: str, client_id: str, conv, known_first_nam
     return [t for t, _ in source_search_plan(request_text, client_id, conv, known_first_names)]
 
 
+_ADVISOR_INTRO = re.compile(r"\b(?:It's|It is|This is)\s+([A-Z][a-z]+)\b")
+_ADVISORS: dict = {}
+
+
+def advisor_first_names(conv) -> set:
+    """The advisors' first names as the DATA gives them: an advisor introduces themselves in the first turns of a meeting ("It's Daniel."), three times or more.  A name that opens eight meetings
+    matches eight meetings and says nothing about a subject, so it is never a search phrase (the client's own first name already was not)."""
+    key = id(conv)
+    if key not in _ADVISORS or _ADVISORS[key][0] is not conv:
+        from collections import Counter
+        seen: Counter = Counter()
+        for r in conv.rows:
+            if r["speaker"] == "Advisor" and int(r["turn_index"]) <= 2:
+                for m in _ADVISOR_INTRO.finditer(str(r["utterance"])[:100]):
+                    seen[m.group(1).lower()] += 1
+        _ADVISORS.clear()
+        _ADVISORS[key] = (conv, {n for n, k in seen.items() if k >= 3})
+    return _ADVISORS[key][1]
+
+
+def inflections(word: str) -> set:
+    """The simple inflections of ONE word, and nothing broader: speak / speaks / speaking / speaked, agree / agrees / agreed / agreeing.  No stemming of meaning, no fuzzy matching, no irregular
+    forms (spoke, said): a form that is not in this set is not searched."""
+    w = (word or "").lower()
+    if not re.fullmatch(r"[a-z]{4,}", w):
+        return {w} if w else set()
+    bases = {w}
+    for suf in ("ing", "ed", "es", "s", "d"):
+        if w.endswith(suf) and len(w) - len(suf) >= 3:
+            b = w[: -len(suf)]
+            bases |= {b, b + "e"}
+    out = set()
+    for b in bases:
+        out |= {b, b + "s", b + "es", b + "d", b + "ed", b + "ing"}
+        if b.endswith("e"):
+            out.add(b[:-1] + "ing")
+    return out
+
+
 def source_search_plan(request_text: str, client_id: str, conv, known_first_names: Optional[set] = None) -> list[tuple[str, float]]:
     """The phrases of the request that are the SUBJECT of what the client's conversations discuss, best first (at most MAX_QUERIES).
 
-    Candidates are the 1-3 word phrases of the request (function words and the request's own framing words cannot start or end one; a name already identifying the client is not a subject).  A candidate
-    must occur in this client's turns.  Its score is how much the client talks about it (log of its turn count) times how rare it is across all conversations (inverse document frequency),  This needs no capitalisation, so a sentence-initial subject ("Lakeshore letter of intent: ...") and a lowercase one ("the sale of the company") are found the same way."""
-    names = {n.lower() for n in (known_first_names or set()) if n}
+    Candidates are the 1-3 word phrases of the request (function words and the request's own framing words cannot start or end one; a name already identifying the client, or an advisor's own first name,
+    is not a subject).  A candidate must occur in this client's turns.  Its score is how much the client talks about it (log of its turn count) times how rare it is across all conversations (inverse
+    document frequency).  A single word counts with its simple inflections (`inflections`), so "speaking" in the request finds "Please speak to Mei Lin" and "agree" finds "agreed"; the phrase that is
+    SEARCHED is the form the request used if the client's turns contain it, otherwise the commonest form they do contain.  This needs no capitalisation, so a sentence-initial subject ("Lakeshore letter
+    of intent: ...") and a lowercase one ("the sale of the company") are found the same way."""
+    names = {n.lower() for n in (known_first_names or set()) if n} | advisor_first_names(conv)
     toks = _tokens(request_text)
     cands: dict[str, None] = {}
     for n in (3, 2, 1):
@@ -72,7 +118,8 @@ def source_search_plan(request_text: str, client_id: str, conv, known_first_name
     total = len(texts)
     scored: list[tuple[float, str, frozenset]] = []
     for c in cands:
-        rx = re.compile(r"(?<!\w)" + re.escape(c) + r"(?!\w)")
+        forms = inflections(c) if " " not in c else {c}
+        rx = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True)) + r")(?!\w)")
         hits = frozenset(n for n, (cid, t) in enumerate(texts) if cid == client_id and rx.search(t))
         tf = len(hits)
         if not tf:
@@ -80,7 +127,12 @@ def source_search_plan(request_text: str, client_id: str, conv, known_first_name
         df = sum(1 for _, t in texts if rx.search(t))
         if df / total > MAX_DF_SHARE:
             continue
-        scored.append((math.log(1 + tf) * math.log(total / df), c, hits))
+        surface = c
+        if len(forms) > 1:                               # which FORM is searched: the request's own if the client's turns contain it, else the commonest form they do contain
+            count = {f: sum(1 for n in hits if re.search(r"(?<!\w)" + re.escape(f) + r"(?!\w)", texts[n][1])) for f in forms}
+            if not count.get(c):
+                surface = max((f for f in forms if count[f]), key=lambda f: (count[f], -len(f), f))
+        scored.append((math.log(1 + tf) * math.log(total / df), surface, hits))
     best: dict[frozenset, tuple] = {}
     for item in scored:                                  # candidates that find exactly the same client turns: keep the most specific wording (same recall, least noise)
         cur = best.get(item[2])
@@ -303,7 +355,29 @@ def enrich_meetings(meetings: dict, conv, client_id: str, terms: list[str], requ
     for iid, mt in meetings.items():
         if iid in allm:
             mt["window"] = expand_turns(allm[iid]["rows"], set(mt["turns"]), stems, set(mt.get("cue_turns") or ()), correction=bool(mt.get("ctx_correction")))
+    _read_short_meetings_whole(meetings, allm)
     return meetings
+
+
+MAX_FOCUS_MEETINGS = 12      # a request whose searches find at most this many meetings is about something NARROW (a call, a person, one document), not a history of a subject
+
+
+def _read_short_meetings_whole(meetings: dict, allm: dict) -> None:
+    """A narrow question ("what was agreed about a call with her accountant?") is answered by the few meetings where it was discussed, and the sentence that completes the exchange is often more than
+    one turn away from the phrase that matched (INT-070: the advisor proposes the call in turn 3, the client answers in turn 6).  When ALL the searches together find at most MAX_FOCUS_MEETINGS meetings
+    (a broad subject is found in twice as many), each meeting with a STRONG hit (a turn found by a phrase at least 90% as distinctive as the best one) and MAX_TURNS_PER_CALL turns or fewer is read WHOLE:
+    still one call, so the tool-call budget does not change.  A broad subject (a company sale, a retirement age) is never widened: its windows stay as `expand_turns` made them."""
+    top = max((w for m in meetings.values() for w in m["turns"].values()), default=0)
+    if not top or len(meetings) > MAX_FOCUS_MEETINGS:
+        return
+    strong = [i for i, m in meetings.items() if any(w >= 0.9 * top for w in m["turns"].values()) and i in allm]
+    if not strong:
+        return
+    for i in strong:
+        rows = allm[i]["rows"]
+        if len(rows) <= MAX_TURNS_PER_CALL:
+            meetings[i]["window"] = sorted(int(r["turn_index"]) for r in rows)
+            meetings[i]["whole_meeting"] = True
 
 
 def find_references(texts: list[dict], conv, client_id: str, exclude: set = frozenset()) -> tuple[list[dict], list[dict]]:

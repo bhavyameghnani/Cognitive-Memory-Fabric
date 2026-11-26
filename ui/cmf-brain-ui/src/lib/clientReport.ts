@@ -6,7 +6,7 @@
 //  - a claim that is not in any validated sentence is shown as its own recorded wording, labelled as such, never paraphrased;
 //  - a memory-only claim (its source turn was not retrieved) is kept apart and never shown as a source statement;
 //  - a "current position" is shown only when the backend's timeline marks a claim as verified-and-confirmed (or current); otherwise the report says none is established.
-import type { AskResult, Finding, NarrativeCoverage, OutcomeStatement, ReportOverview, TimelineClaim } from '../types';
+import type { AskResult, CorrectionRecord, FacetStatus, Finding, NarrativeCoverage, OutcomeStatement, ReportOverview, SlotStatus, StatusEvidence, TimelineClaim } from '../types';
 
 export type ExcerptState = 'rejected' | 'not_cited' | 'window_failed' | 'withheld';
 export interface Excerpt { claimId: string; date: string | null; where: string; who: string; wording: string; ref: string | null; state: ExcerptState; badges: string[] }
@@ -29,6 +29,12 @@ export interface ChangePair {
 export interface PositionLine { date: string | null; where: string; who: string; wording: string; ref: string | null; note: string | null }
 export interface MemoryOnlyLine { claimId: string; date: string | null; wording: string; ref: string | null; status: string }
 export interface Header { clientId: string; requestId: string; from: string | null; to: string | null }
+/** Phase 4A: the question-answering block, as the backend filled it (code, by relevance to the subject). */
+export interface SlotItemView { label: string; status: SlotStatus; sentences: Sentence[]; evidence: StatusEvidence[]; note: string | null }
+export interface SlotView { key: string; label: string; status: SlotStatus; statusLabel: string; items: SlotItemView[]; reason: string | null }
+export interface AnswerView { slots: SlotView[]; notApplicable: string[] }
+export interface FacetView { key: string; label: string; status: FacetStatus; statusLabel: string; statement: string; asOf: string | null; evidence: StatusEvidence[]; documents: { document: string; status: FacetStatus; statusLabel: string; statement: string }[] }
+
 export interface CoverageSummary {
   meetingsRetrieved: number | null; meetingsFound: number | null; meetingsNotRetrieved: number | null;
   relevant: number | null; narrated: number | null; rejected: number; notCited: number; windowFailed: number; withheld: number; windows: number; windowsIncomplete: number; memoryOnly: number; modelCalls: number | null;
@@ -37,6 +43,12 @@ export interface ClientReport {
   header: Header; coverage: CoverageSummary; overviewVerified: string[]; overviewUnresolved: string[];
   /** the executive summary: validated prose over the whole history, or null when none passed the checks */
   executive: Para | null;
+  /** Phase 4A: the five-slot answer to the question (null for an older report or a request without a chronology) */
+  answer: AnswerView | null;
+  /** Phase 4A: decision, signing, agreement execution and completion, each on its own (null for an older report) */
+  transaction: FacetView[] | null;
+  /** Phase 4A: original record / what the client said / the advisor's correction (empty for an older report: `changes` then applies) */
+  correctionRecords: CorrectionRecord[];
   sections: PeriodSection[]; changes: ChangePair[]; wordedCorrections: PositionLine[];
   established: PositionLine[]; latestUnestablished: PositionLine | null; latestExplanation: Sentence[] | null;
   outcome: OutcomeStatement | null;
@@ -130,6 +142,37 @@ function changes(tl: TimelineClaim[], sentencesBySource: Map<string, Sentence[]>
   return out;
 }
 
+
+export const SLOT_STATUS_LABEL: Record<SlotStatus, string> = { filled: 'answered from the record', partial: 'partly established', negative: 'the record says it had not happened, as of the dates shown', unavailable: 'no retrieved evidence' };
+export const FACET_STATUS_LABEL: Record<FacetStatus, string> = { established: 'established', partial: 'stated, not established', referenced: 'referenced only, not established', pending: 'described as still to come', negative: 'recorded as not having happened', unavailable: 'no retrieved evidence' };
+export const FACET_ORDER = ['decision', 'signing', 'agreement', 'completion'] as const;
+
+function answerView(rep: AskResult['report'], byKey: Map<string, TimelineClaim>): AnswerView | null {
+  const a = rep.answer;
+  if (!a || !a.slots || a.slots.length === 0) return null;
+  const sent = (ss: { text: string; sources: string[] }[]): Sentence[] => ss.map((sn) => ({ text: sn.text, refs: [...new Set(sn.sources.map((k) => byKey.get(k)?.evidence_refs[0]).filter((r): r is string => !!r))] }));
+  return {
+    notApplicable: a.not_applicable ?? [],
+    slots: a.slots.map((sl) => ({
+      key: sl.key, label: sl.label, status: sl.status, reason: sl.reason ?? null,
+      // the transaction slot summarises three independent facts: it never says "had not happened" as a whole, each item below carries its own status and date
+      statusLabel: sl.key === 'transaction' && sl.status !== 'filled' ? 'not established in the retrieved turns; each item below has its own status' : SLOT_STATUS_LABEL[sl.status] ?? sl.status,
+      items: sl.items.map((it) => ({ label: it.label, status: it.status, sentences: sent(it.sentences ?? []), evidence: it.evidence ?? [], note: it.note ?? null })),
+    })),
+  };
+}
+
+function transactionView(rep: AskResult['report']): FacetView[] | null {
+  const t = rep.transaction;
+  if (!t) return null;
+  return FACET_ORDER.map((k) => t[k]).filter((f) => !!f).map((f) => ({
+    key: f.key, label: f.label, status: f.status, statement: f.statement, asOf: f.as_of ?? null, evidence: f.evidence ?? [],
+    // a finding that something had not happened or is still to come is true AS OF a date: the label says so
+    statusLabel: (FACET_STATUS_LABEL[f.status] ?? f.status) + ((f.status === 'negative' || f.status === 'pending') && f.as_of ? ` as of ${f.as_of}` : ''),
+    documents: (f.documents ?? []).map((d) => ({ document: d.document, status: d.status, statusLabel: FACET_STATUS_LABEL[d.status] ?? d.status, statement: d.statement })),
+  }));
+}
+
 export function buildClientReport(r: AskResult): ClientReport {
   const rep = r.report;
   const tl = rep.timeline ?? [];
@@ -144,6 +187,9 @@ export function buildClientReport(r: AskResult): ClientReport {
   const established = tl.filter((c) => c.source === 'source_turn' && (c.confirmed_client_decision || c.temporal_status === 'current')).sort(byOrder).map((c) => line(c));
   const unestablished = tl.filter((c) => c.source === 'source_turn' && c.temporal_status === 'unresolved').sort(byOrder).pop();
   const linked = new Set(tl.filter((c) => c.relations.some((x) => x.type === 'corrects')).map((c) => c.claim_id));
+  const shownKeys = new Set<string>();       // turns shown inside a correction record (identified by interaction#turn: the verifier's claim numbers can differ from the agent's)
+  for (const rec of rep.corrections ?? []) for (const p of [rec.acknowledgement, rec.correction]) if (p?.evidence) shownKeys.add(p.evidence.key);
+  for (const c of tl) if (shownKeys.has(keyOf(c))) linked.add(c.claim_id);
   // validated sentences by the source turn they cite (to attach an explanation to a correction or to the latest position)
   const bySource = new Map<string, Sentence[]>();
   for (const f of verified) for (const sn of f.narrative ?? []) {
@@ -161,6 +207,7 @@ export function buildClientReport(r: AskResult): ClientReport {
     },
     overviewVerified: [...(ov?.verified ?? []), ...(ov?.narrative_verified ?? [])], overviewUnresolved: [...(ov?.unresolved ?? []), ...(ov?.narrative_unresolved ?? [])],
     executive: execF ? paraOf(execF, byKey) : null,
+    answer: answerView(rep, byKey), transaction: transactionView(rep), correctionRecords: rep.corrections ?? [],
     sections: sections(verified, tl, cov, byKey), changes: changes(tl, bySource),
     wordedCorrections: tl.filter((c) => c.source === 'source_turn' && c.relevant && c.modality === 'correction' && !linked.has(c.claim_id)).sort(byOrder).map((c) => line(c, 'worded as a correction; not linked to one specific earlier statement')),
     established,

@@ -277,13 +277,10 @@ class EvidenceVerifier:
                          ("chronology_reversed", Reason.TEMPORAL_MISMATCH), ("cross_meeting", Reason.TEMPORAL_MISMATCH), ("unsupported_figure", Reason.VALUE_MISMATCH), ("decision_language", Reason.MODALITY_MISMATCH),
                          ("certainty_adverb", Reason.MODALITY_MISMATCH), ("quote_not_verbatim", Reason.QUOTE_NOT_IN_SOURCE), ("no_quotation", Reason.QUOTE_UNAVAILABLE))
 
-    def _narrative(self, v: FindingVerdict, f: Finding, items: list, evidence: dict, plan_clients: set) -> FindingVerdict:
-        """MODEL-written prose that the Report Agent validated sentence by sentence.  The Report Agent's own timeline is NOT trusted: the claims are rebuilt here, by the same deterministic builder, from the
-        report's evidence items that are in scope for this caller and whose quotation really is text of the source turn (the check every evidence item already faces).  Each sentence is then judged against
-        the rebuilt claims at the source turns it names - attribution, figures, dates, correction/supersession/dispute relations, modality, causal and decision wording, quotations, and a closed vocabulary -
-        and the finding's text and references must compose exactly from its sentences and those claims.  The source-turn restriction and the unverified-memory withholding have already run (above)."""
-        from agents.report.semantic import check_narrative_finding
-        from agents.report.synthesis import check_synthesis_finding
+    def _rebuild(self, evidence: dict, plan_clients: set, topics=None) -> tuple:
+        """The timeline as THIS verifier rebuilds it - never the Report Agent's own - from the report's evidence items that are in scope for this caller and whose quotation really is text of the source
+        turn.  Returns (claims, the client names of the plan).  `topics`: the plan's memory topics (the Report Agent uses them to decide which meetings are about the request); by default the topics of the
+        evidence itself."""
         from agents.report.timeline import build_timeline
         names = self.names()
         own = [n.capitalize() for n, cid in names.items() if cid in plan_clients]
@@ -296,7 +293,53 @@ class EvidenceVerifier:
                         self.conv.verify_excerpt(e.client_id, e.interaction_id, e.turn_index, e.excerpt.replace("...", "").strip())):
                     continue
             usable.append(e)
-        claims = build_timeline(usable, sorted({e.topic for e in usable if e.topic}))
+        return build_timeline(usable, list(topics) if topics is not None else sorted({e.topic for e in usable if e.topic})), own      # topics=[] means "the plan named none": not the topics of the evidence
+
+    def _rederive(self, report: AdvisorReport, evidence: dict, plan_clients: set, historical: list, topics, validation: dict) -> dict:
+        """Phase 4A: the question-answering block, the four status facets and the correction records are written by code from the timeline, so the verifier does not TRUST the Report Agent's copy: it
+        rebuilds the timeline itself (`_rebuild`), derives all three again, and puts ITS OWN versions in the report.  The block's prose is restricted to the sentences of the executive finding that
+        survived verification above (a withheld sentence cannot reappear in a slot).  Anything that differs is recorded in `validation["harness_phase4a"]`."""
+        from agents.report.answer import assemble_answer
+        from agents.report.corrections import correction_records
+        from agents.report.status import outcome_from, subject_roots, transaction_status
+        claims, own = self._rebuild(evidence, plan_clients, topics)
+        surviving = {k: sn.text for f in historical if f.window == -1 and f.origin == "synthesis_checked" for sn in (f.narrative or []) for k in sn.sources[:1]}
+        plan_topics = list(topics) if topics is not None else sorted({e.topic for e in evidence.values() if e.topic})
+        terms: list = []
+        if not plan_topics and len(plan_clients) == 1:                    # a plan with no topic: the subject is what source discovery found in the client's own conversations - derived again here, from the same data
+            from agents.tool_selector.source_discovery import source_search_terms
+            terms = source_search_terms(report.question, next(iter(plan_clients)), self.conv, {v["first_name"] for v in self.conv.directory().values()})
+        block, _ = assemble_answer(report.question, claims, surviving, own, plan_topics, terms=terms)
+        txn = transaction_status(claims, subject_roots(report.question, plan_topics, own, terms=terms))
+        recs = correction_records(claims)
+        out: dict = {}
+        diff = []
+        if report.answer is not None:
+            if [(s.key, s.status) for s in report.answer.slots] != [(s.key, s.status) for s in block.slots]:
+                diff.append("answer")
+            out["answer"] = block
+        if report.transaction is not None:
+            if _no_ids(report.transaction.model_dump()) != _no_ids(txn.model_dump()):
+                diff.append("transaction")
+            out["transaction"] = txn
+            if report.outcome is not None:
+                out["outcome"] = report.outcome
+        if report.corrections or recs:
+            if [_no_ids(r.model_dump()) for r in report.corrections] != [_no_ids(r.model_dump()) for r in recs]:
+                diff.append("corrections")
+            out["corrections"] = recs
+        validation["harness_phase4a"] = {"rederived": True, "differs_from_agent": diff}
+        return out
+
+    def _narrative(self, v: FindingVerdict, f: Finding, items: list, evidence: dict, plan_clients: set) -> FindingVerdict:
+        """MODEL-written prose that the Report Agent validated sentence by sentence.  The Report Agent's own timeline is NOT trusted: the claims are rebuilt here, by the same deterministic builder, from the
+        report's evidence items that are in scope for this caller and whose quotation really is text of the source turn (the check every evidence item already faces).  Each sentence is then judged against
+        the rebuilt claims at the source turns it names - attribution, figures, dates, correction/supersession/dispute relations, modality, causal and decision wording, quotations, and a closed vocabulary -
+        and the finding's text and references must compose exactly from its sentences and those claims.  The source-turn restriction and the unverified-memory withholding have already run (above)."""
+        from agents.report.semantic import check_narrative_finding
+        from agents.report.synthesis import check_synthesis_finding
+        names = self.names()
+        claims, own = self._rebuild(evidence, plan_clients)
         problems = (check_synthesis_finding if f.origin == "synthesis_checked" else check_narrative_finding)(f, claims, own)      # paraphrase is judged proposition by proposition, a quotation narrative sentence by sentence
         for cid, nm in ((c, n) for n, c in names.items() if c not in plan_clients):      # a sentence that names a client outside the plan is never presented
             if re.search(r"\b" + re.escape(nm.capitalize()) + r"\b", f.text):
@@ -445,7 +488,7 @@ class EvidenceVerifier:
         return " ".join(parts)
 
     # ------------------------------------------------------------------ whole report
-    def verify_report(self, report: AdvisorReport, plan_clients: Iterable[str], tools, fallback_summary: Optional[Callable[[], str]] = None) -> tuple:
+    def verify_report(self, report: AdvisorReport, plan_clients: Iterable[str], tools, fallback_summary: Optional[Callable[[], str]] = None, topics=None) -> tuple:
         evidence = {e.ref: e for e in report.evidence}
         pc = set(plan_clients)
         result = VerificationResult()
@@ -497,8 +540,19 @@ class EvidenceVerifier:
                 extra["coverage"] = cov
                 if report.overview is not None:
                     extra["overview"] = with_coverage(report.overview, cov)
+        if report.answer is not None or report.transaction is not None or report.corrections:
+            extra.update(self._rederive(report, evidence, pc, new_sections.get("historical_context", report.historical_context), topics, validation))
         new = report.model_copy(update=dict(summary=summary, uncertainties=list(report.uncertainties) + withheld, validation=validation, **new_sections, **extra))
         return new, result
+
+
+def _no_ids(o):
+    """A dump without the timeline's claim numbers (C1, C2 ...): they depend on how many claims the builder saw, and the verifier's timeline can hold fewer than the agent's; the turn key (INT-083#2) is the identity."""
+    if isinstance(o, dict):
+        return {k: _no_ids(v) for k, v in o.items() if k != "claim_id"}
+    if isinstance(o, list):
+        return [_no_ids(v) for v in o]
+    return o
 
 
 def _redact_claims(claims: list) -> list:

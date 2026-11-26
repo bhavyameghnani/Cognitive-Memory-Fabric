@@ -12,7 +12,10 @@ from agents.report.feasibility import feasibility_summary, guard_summary, is_fea
 from agents.report.narrative import summary_conflict
 from agents.report.timeline import build_timeline, significant, timeline_findings, timeline_summary, timeline_uncertainties
 from agents.report.overview import build_overview
+from agents.report import status as ST
 from agents.report import synthesis as SY
+from agents.report.answer import assemble_answer
+from agents.report.corrections import correction_records
 from agents.report.validate import source_record_problem
 from agents.report.evidence import build_evidence, prompt_lines, select_for_prompt
 from agents.report.semantic import (NARRATIVE_SYSTEM, STORY_SYSTEM, WINDOW_SIZE, build_checked, build_story, client_names, filter_summary, narrative_user_window, narrative_windows, story_user,
@@ -96,23 +99,33 @@ class ReportAgent:
                                  suggested_followups=self._followups(uncertainties, True), validation=rec)
 
         out = self._ask(request_text, plan, evidence, assumptions, limitations, uncertainties, rec)
+        if out is None and rec.get("main_call_timeout") and report_mode() == "synthesis" and plan.task_type == "history" and any(c.source == "source_turn" for c in tl):
+            # The OVERVIEW call (summary, key findings) timed out: a model-call timeout does not stop later calls, and the checked narrative is written window by window by separate calls,
+            # so it still runs.  The summary is then the code-written one, and the report says so.  Any other model failure keeps the deterministic report.
+            out = ReportLLMOutput(summary="")
+            uncertainties.append("The model's overview call did not finish within its time limit, so the summary is the code-written one; the narrative below was written and checked window by window.")
         if out is None:
             return self._deterministic(base, plan, evidence, uncertainties + tl_unc, rec, "deterministic_model_failure", tools, request_text, tl, incomplete)
 
-        nc = NumberChecker(evidence_text(evidence, request_text))
+        nc =NumberChecker(evidence_text(evidence, request_text))
         claims, rejected = validate_claims(out.claims, evidence, plan)
         rec.update(claims_total=len(out.claims), claims_accepted=len(claims), claims_rejected=rejected)
         rendered = render_claims(claims, evidence)
         key = rendered["key_findings"] + filter_findings(out.key_findings, evidence, nc, rec)
         names = client_names(request_text)
         coverage, outcome = None, None
+        sentence_for: dict[str, str] = {}
         if report_mode() == "synthesis":
-            narr, coverage, outcome = self._synthesize(request_text, plan, tl, names, rec, evidence)
+            narr, coverage, outcome, sentence_for = self._synthesize(request_text, plan, tl, names, rec, evidence, tools)
             if not [f for f in narr if f.window != -1]:                          # nothing survived proposition validation: the verified-quotation narrative is the bounded fallback
                 rec["synthesis_fallback"] = "no paraphrased proposition passed the checks; the verified-quotation narrative was used instead"
                 narr, coverage = self._narrate(request_text, plan, tl, names, rec, evidence)
         else:
             narr, coverage = self._narrate(request_text, plan, tl, names, rec, evidence)
+        extras = self._answer_extras(request_text, plan, tl, names, sentence_for, rec, tools)
+        if extras.get("executive") is not None:
+            narr = [extras.pop("executive")] + narr                                  # the question-answering block's validated sentences, window -1: the Evidence Verifier re-checks them like every synthesised finding
+        extras.pop("executive", None)
         if story_enabled():
             story = self._tell(request_text, plan, tl, names, rec)
         else:
@@ -169,7 +182,7 @@ class ReportAgent:
         self.tracer.event("report", "report_written", **{**_why(rec), "mode": "llm", "claims_rejected": len(rejected), "dropped": len(rec["findings_dropped"]),
                                                          "summary_replaced": bool(rec["summary_replaced"])})
         return AdvisorReport(**base, summary=summary, key_findings=_dedupe(key), historical_context=_dedupe(hist), financial_analysis=_dedupe(fin),
-                             uncertainties=unc, suggested_followups=fol[:5], validation=rec, story=story, coverage=coverage, outcome=outcome)
+                             uncertainties=unc, suggested_followups=fol[:5], validation=rec, story=story, coverage=coverage, outcome=outcome, **extras)
 
     # ------------------------------------------------------------------
     def _narrate(self, request_text, plan, tl, names, rec, evidence=None) -> tuple[list, Optional[NarrativeCoverage]]:
@@ -252,18 +265,32 @@ class ReportAgent:
             info["error"] = "one or more narrative windows could not be written; they are listed in the coverage and the deterministic chronology stands for them"
         return findings, cov
 
-    def _synthesize(self, request_text, plan, tl, names, rec, evidence=None):
+    @staticmethod
+    def _focus_terms(plan, tools) -> list:
+        """The search phrases source discovery found in the client's own conversations, when the plan names NO topic (then they are the only grounded statement of what the question is about)."""
+        if plan.memory_topics:
+            return []
+        return list((getattr(tools, "retrieval_report", None) or {}).get("terms") or [])
+
+    def _focus_roots(self, request_text, plan, tools, names) -> tuple:
+        """(all roots, main roots) of a plan with no topic: the grounded search phrases, and the best one (the subject itself, as against the relation words of the question)."""
+        terms = self._focus_terms(plan, tools)
+        return (ST.subject_roots(request_text, plan.memory_topics, names, terms=terms), ST.grounded_roots(terms[:1])) if terms else (set(), set())
+
+    def _synthesize(self, request_text, plan, tl, names, rec, evidence=None, tools=None):
         """Phase 3: the report's prose, PARAPHRASED and validated proposition by proposition (agents/report/synthesis.py).  Chronological windows; per window one call for a sentence per source line, one
         retry (stricter) if the call fails or nothing passes, and ONE repair call for the lines the checks rejected when at least two were (it is told, in plain words, what each rule objected to).  A call
         cap and a request-budget stop bound the whole.  After the windows, ONE call writes the executive summary from the accepted propositions, judged the same way.  Returns (findings: the executive
         summary first (window -1), then each window's paragraphs; coverage; the code-written outcome)."""
         info = rec["narrative"] = {"attempted": False, "mode": "synthesis", "paragraphs_returned": 0, "sentences_returned": 0, "paragraphs_accepted": 0, "sentences_rejected": []}
-        if plan.task_type != "history" or not SY.synthesis_pool(tl):
-            return [], None, None
-        windows = SY.synthesis_windows(tl)
+        roots, main = self._focus_roots(request_text, plan, tools, names)
+        if plan.task_type != "history" or not SY.synthesis_pool(tl, roots, main):
+            return [], None, None, {}
+        windows = SY.synthesis_windows(tl, roots=roots, main=main) if roots else SY.synthesis_windows(tl)
         total = len(windows)
         cov = NarrativeCoverage(window_size=SY.SYN_WINDOW, relevant=sum(len(w) for w in windows), memory_only=[c.claim_id for c in tl if c.source == "memory"],
                                 unresolved=[c.claim_id for w in windows for c in w if c.temporal_status in ("unresolved", "disputed", "corrected")])
+        cov.uninformative = [c.claim_id for c in tl if c.source == "source_turn" and c.relevant and SY.acknowledgement_only(c.wording)]
         info.update(attempted=True, claims_shown=[c.claim_id for w in windows for c in w], claims_not_shown=0, windows=total, repairs=0)
         findings: list[Finding] = []
         narrated: set[str] = set()
@@ -355,21 +382,32 @@ class ReportAgent:
             for c in w:
                 i = c.claim_id
                 (cov.narrated if i in narrated else cov.window_failed if i in failed_ids else cov.rejected if i in rejected_claims else cov.not_cited).append(i)
-        # ---- the executive summary: a digest SELECTED by code from the accepted propositions (no further model call)
-        allkept = [k for kk in window_kept.values() for k in kk if k[0].claim_id in narrated]
+        # ---- the validated, dated sentence of every accepted turn the verifier's source-record rule accepts: what the question-answering block may use (Phase 4A; no further model call)
+        allkept = [k for kk in window_kept.values() for k in kk if k[0].claim_id in narrated and not k[2]]
         ref_item = {e.ref: e for e in (evidence or [])}
-        executive = SY.select_executive(allkept, tl, names, accept=lambda c, d: self._source_ok(c, d, ref_item))
-        ex_info = {"attempted": True, "selected": len(executive.narrative or []) if executive else 0, "model_call": False}
+        sentence_for = {ST.key_of(c): good[0][0] for c, good, _ in allkept if good and self._source_ok(c, good[0][0], ref_item)}
         props = {f"P{n}": 1 for n in range(1, sum(len(f.narrative or []) for f in findings) + 1)}
-        if executive is not None:
-            findings = [executive] + findings
         info.update(paragraphs_returned=len(findings), sentences_returned=sum(e.sentences_returned for e in cov.windows), paragraphs_accepted=len(findings),
                     sentences_rejected=[{**r, "window": e.index} for e in cov.windows for r in e.sentences_rejected], model_calls=cov.model_calls,
                     windows_ok=sum(1 for e in cov.windows if e.status == "ok"), windows_incomplete=sum(1 for e in cov.windows if e.status != "ok"), claims_narrated=len(cov.narrated),
-                    propositions=len(props), executive=ex_info, readability=SY.readability([f for f in findings if f.window != -1]))
+                    propositions=len(props), readability=SY.readability(findings))
         if any(e.status in ("failed", "skipped") for e in cov.windows):
             info["error"] = "one or more narrative windows could not be written; they are listed in the coverage and the excerpts stand for them"
-        return findings, cov, OutcomeStatement(**SY.outcome_lines(tl))
+        return findings, cov, OutcomeStatement(**SY.outcome_lines(tl)), sentence_for
+
+    def _answer_extras(self, request_text, plan, tl, names, sentence_for: dict, rec: dict, tools=None) -> dict:
+        """Phase 4A: the question-answering executive block, the four independent status facets and the correction records, all written by code from the timeline and the validated sentences (agents/report/answer.py,
+        status.py, corrections.py).  No model call.  Only for a history request that has retrieved source turns.  Returns the AdvisorReport fields and, under "executive", the finding that carries the
+        validated sentences the block uses (window -1), which the caller puts first in the narrative so that the Evidence Verifier re-checks them."""
+        if plan.task_type != "history" or not any(c.source == "source_turn" for c in tl):
+            return {}
+        terms = self._focus_terms(plan, tools)
+        block, executive = assemble_answer(request_text, tl, sentence_for, names, plan.memory_topics, terms=terms)
+        txn = ST.transaction_status(tl, ST.subject_roots(request_text, plan.memory_topics, names, terms=terms))
+        recs = correction_records(tl)
+        info = rec.setdefault("narrative", {})
+        info["executive"] = {"attempted": True, "model_call": False, "sentences": len(executive.narrative or []) if executive else 0, "slots": {s.key: s.status for s in block.slots}, "not_applicable": block.not_applicable}
+        return {"answer": block, "transaction": txn, "corrections": recs, "executive": executive}
 
     @staticmethod
     def _source_ok(c, text: str, ref_item: dict) -> bool:
@@ -409,6 +447,7 @@ class ReportAgent:
         except (StructuredOutputError, LLMError) as e:
             self.tracer.event("report", "llm_failure_deterministic_report", error=str(e)[:300])
             rec["model_error"] = str(e)[:300]
+            rec["main_call_timeout"] = "model_call_timeout" in str(e)          # the overview call ran out of time (a slow or looping local model); nothing else was refused
             return None
 
     def _deterministic(self, base, plan, evidence, uncertainties, rec, mode, tools, request_text, tl=(), incomplete=False) -> AdvisorReport:

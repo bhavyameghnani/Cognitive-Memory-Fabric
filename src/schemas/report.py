@@ -129,6 +129,7 @@ class TimelineClaim(BaseModel):
     mentions_topic: Optional[bool] = None                    # does the wording itself mention the plan's topic?  None when the plan names no topic
     relations: list[dict] = Field(default_factory=list)      # {"type": corrects | corrected_by | contradicts, "claim_id": ...}
     notes: list[str] = Field(default_factory=list)
+    decision_link: Optional[dict] = None                     # Phase 4A: {"role": decision | restatement | confirmation, "decision": "INT-083#2" | None, "restatement": "INT-083#3", "confirmation": "INT-083#4", "basis": ...}: a client's decision, the advisor's accurate restatement of it and the client's explicit reply, in adjacent retrieved turns of one meeting (agents/report/status.py)
 
 
 class NarrativeSentenceOut(BaseModel):
@@ -226,6 +227,7 @@ class NarrativeCoverage(BaseModel):
     withheld_reasons: dict[str, str] = Field(default_factory=dict)
     memory_only: list[str] = Field(default_factory=list)
     unresolved: list[str] = Field(default_factory=list)     # relevant claims the record itself leaves unresolved, disputed or corrected
+    uninformative: list[str] = Field(default_factory=list)  # Phase 4A: significant claims left out of the pool because the line is an empty acknowledgement or an agenda reply ("Fine. Net proceeds first."): they stay in the code-written chronology
     model_calls: int = 0
     windows: list[NarrativeWindow] = Field(default_factory=list)
 
@@ -265,6 +267,87 @@ class OutcomeStatement(BaseModel):
     mentions: list[dict] = Field(default_factory=list)       # {claim_id, date, where, speaker, excerpt, kind: hedged|plain, ref}
 
 
+class StatusEvidence(BaseModel):
+    """One retrieved source turn that a status, a slot or a correction rests on: where it is, who spoke, what role it plays, and its EXACT wording (never a paraphrase)."""
+    claim_id: str
+    key: str                                                  # "INT-083#2": the interaction and turn
+    date: Optional[str] = None
+    where: str = ""
+    speaker: str = ""                                         # the client's own words | the advisor's account ... (timeline.TAG)
+    role: str = ""                                            # decision | restatement | confirmation | mention | original | client_said | check | acknowledgement | correction | first_record ...
+    kind: Optional[str] = None                                # for a mention: event | negative | pending | referenced | question
+    excerpt: str = ""
+    ref: Optional[str] = None
+
+
+class StatusFacet(BaseModel):
+    """One INDEPENDENT fact about the matter: the client's decision, signing, execution of an agreement, completion.  `status`: established (a retrieved turn establishes it) | partial (stated, not
+    confirmed) | referenced (a document is called signed only in a request, plan or question) | pending (described as still to come) | negative (a retrieved turn says it had NOT happened, as of `as_of`) |
+    unavailable (no retrieved turn addresses it: absence of evidence, which is NOT a finding that it did not happen)."""
+    key: Literal["decision", "signing", "agreement", "completion"]
+    label: str
+    status: Literal["established", "partial", "referenced", "pending", "negative", "unavailable"] = "unavailable"
+    statement: str = ""                                       # written by code from the structure of the evidence (dates, places, speakers, classes), never from the wording
+    as_of: Optional[str] = None
+    evidence: list[StatusEvidence] = Field(default_factory=list)
+    documents: list[dict] = Field(default_factory=list)       # agreement facet: per document {document, status, statement, keys}
+
+
+class TransactionStatus(BaseModel):
+    """The four facets, kept apart (Phase 4A, B): a confirmed decision to sell is NOT a signing, a signed agreement is NOT a completion."""
+    decision: StatusFacet
+    signing: StatusFacet
+    agreement: StatusFacet
+    completion: StatusFacet
+    record_through: Optional[str] = None
+
+
+class CorrectionPart(BaseModel):
+    """One part of a correction.  status: retrieved (the turn is in the retrieved evidence) | described (the earlier record itself was not retrieved; only a later turn says what it said) | unavailable."""
+    role: Literal["original", "client_said", "check", "acknowledgement", "correction"]
+    status: Literal["retrieved", "described", "unavailable"] = "retrieved"
+    label: str = ""
+    evidence: Optional[StatusEvidence] = None
+    note: Optional[str] = None
+
+
+class CorrectionRecord(BaseModel):
+    """What was recorded wrongly, what the client actually said, and how the advisor corrected it - three different things (Phase 4A, D)."""
+    date: Optional[str] = None
+    basis: str = "memory"                                     # memory | shared_wording
+    phrase: Optional[str] = None
+    original: CorrectionPart
+    client_said: Optional[CorrectionPart] = None
+    check: Optional[CorrectionPart] = None                    # the advisor's question to the client about his own record: context, NEVER the record itself
+    acknowledgement: Optional[CorrectionPart] = None
+    correction: CorrectionPart
+    missing: Optional[str] = None                             # what evidence is missing, in plain words
+
+
+class SlotItem(BaseModel):
+    label: str
+    status: Literal["filled", "partial", "negative", "unavailable"] = "unavailable"
+    sentences: list[NarrativeSentence] = Field(default_factory=list)      # validated paraphrase (the same sentences as the executive finding)
+    evidence: list[StatusEvidence] = Field(default_factory=list)         # exact wording of the turns, shown when no validated sentence exists and as secondary evidence
+    note: Optional[str] = None                                            # code-written
+
+
+class ExecutiveSlot(BaseModel):
+    key: Literal["beginning", "acceptance", "corrections", "decision", "transaction", "subject"]
+    label: str
+    status: Literal["filled", "partial", "negative", "unavailable"] = "unavailable"
+    items: list[SlotItem] = Field(default_factory=list)
+    reason: Optional[str] = None                                          # why the slot is unavailable / partial
+
+
+class AnswerBlock(BaseModel):
+    """The question-answering executive block (Phase 4A, A): five slots filled by CODE from validated propositions and retrieved source turns, selected by relevance to the subject of the request.  No model call."""
+    origin: Literal["code"] = "code"
+    subject_terms: list[str] = Field(default_factory=list)
+    slots: list[ExecutiveSlot] = Field(default_factory=list)
+    not_applicable: list[str] = Field(default_factory=list)               # slots left out because the subject of the request is not a transaction (a retirement age has no signing or completion)
+
+
 class AdvisorReport(BaseModel):
     request_id: str
     client_id: str
@@ -276,6 +359,9 @@ class AdvisorReport(BaseModel):
     evidence: list[EvidenceItem] = Field(default_factory=list)
     timeline: list[TimelineClaim] = Field(default_factory=list)       # B2B (additive): the structured chronology the narrative findings were written from
     outcome: Optional[OutcomeStatement] = None                         # Phase 3: signing / completion status, code-written
+    transaction: Optional[TransactionStatus] = None                    # Phase 4A: decision, signing, agreement execution, completion: four independent facets, code-written
+    corrections: list[CorrectionRecord] = Field(default_factory=list)  # Phase 4A: original record / what the client said / the advisor's correction, code-written
+    answer: Optional[AnswerBlock] = None                               # Phase 4A: the question-answering executive block, code-filled
     coverage: Optional[NarrativeCoverage] = None                       # Phase 2: window-by-window and claim-by-claim account of the verified narrative
     overview: Optional[ReportOverview] = None                          # D: code-written opening (counts and dates only); absent for a request without a chronology
     story: list[Finding] = Field(default_factory=list)                 # B6: model-written readable account, NOT verified (never origin-labelled, never in a findings section); see agents/report/semantic.py

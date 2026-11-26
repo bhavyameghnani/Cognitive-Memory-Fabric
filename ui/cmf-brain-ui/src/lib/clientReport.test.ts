@@ -183,3 +183,97 @@ test('quote share tells a written report from a quotation dump', () => {
   assert.ok(buildClientReport(result({ timeline: TLS, hc: dump })).quoteShare > 0.5);
   assert.equal(buildClientReport(result({ timeline: TLS, hc: prose })).quoteShare, 0);
 });
+
+// ---------------------------------------------------------------------------------------------------------------- Phase 4A: answer slots, facets, corrections
+const ev = (o: Record<string, unknown> = {}) => ({ claim_id: 'C1', key: 'INT-002#4', date: '2026-01-02', where: 'INT-002 turn 4', speaker: "the client's own words", role: 'first_record', kind: null, excerpt: 'Lakeshore contacted me.', ref: 'E4', ...o });
+const facet = (key: string, status: string, o: Record<string, unknown> = {}) => ({ key, label: key, status, statement: `${key} statement`, as_of: null, evidence: [], documents: [], ...o });
+const txn = () => ({ decision: facet('decision', 'established'), signing: facet('signing', 'negative'), agreement: facet('agreement', 'referenced'), completion: facet('completion', 'unavailable'), record_through: '2026-06-30' });
+const part = (role: string, status: string, o: Record<string, unknown> = {}) => ({ role, status, label: role, evidence: ev({ role }), note: null, ...o });
+
+function with4a(extra: Record<string, unknown>): any {
+  const r = result({ timeline: TL, coverage: cov(), hc: [] });
+  Object.assign(r.report, extra);
+  return r;
+}
+
+test('the answer block keeps its five slots in order, with the status the backend gave each', () => {
+  const answer = { origin: 'code', subject_terms: ['sale'], not_applicable: [], slots: [
+    { key: 'beginning', label: 'How it began', status: 'filled', reason: null, items: [{ label: 'first', status: 'filled', sentences: [{ text: 'On 2 January, Rebecca said x.', sources: ['INT-002#4'] }], evidence: [ev()], note: null }] },
+    { key: 'acceptance', label: 'Accepted?', status: 'unavailable', reason: 'No retrieved turn records it.', items: [{ label: 'Accepted', status: 'unavailable', sentences: [], evidence: [], note: 'No retrieved turn records the client accepting the offer.' }] },
+  ] };
+  const r = buildClientReport(with4a({ answer }));
+  assert.deepEqual(r.answer!.slots.map((s) => [s.key, s.status]), [['beginning', 'filled'], ['acceptance', 'unavailable']]);
+  assert.deepEqual(r.answer!.slots[0].items[0].sentences, [{ text: 'On 2 January, Rebecca said x.', refs: ['E4'] }]);
+  assert.match(r.answer!.slots[1].statusLabel, /no retrieved evidence/);                              // unavailable is worded as an absence of evidence, never as a negative finding
+});
+
+test('an unavailable slot and a negative slot are labelled differently', () => {
+  const mk = (status: string) => ({ origin: 'code', subject_terms: [], not_applicable: [], slots: [{ key: 'acceptance', label: 't', status, reason: null, items: [] }] });
+  assert.notEqual(buildClientReport(with4a({ answer: mk('negative') })).answer!.slots[0].statusLabel, buildClientReport(with4a({ answer: mk('unavailable') })).answer!.slots[0].statusLabel);
+});
+
+test('the four facets are shown separately, in a fixed order, each with its own status label', () => {
+  const r = buildClientReport(with4a({ transaction: txn() }));
+  assert.deepEqual(r.transaction!.map((f) => [f.key, f.status]), [['decision', 'established'], ['signing', 'negative'], ['agreement', 'referenced'], ['completion', 'unavailable']]);
+  assert.match(r.transaction![2].statusLabel, /not established/);                                   // a document called signed only in a request is never "established"
+  assert.match(r.transaction![3].statusLabel, /no retrieved evidence/);
+});
+
+test('a report without the Phase 4A fields still builds (older reports)', () => {
+  const r = buildClientReport(result({ timeline: TL, coverage: cov(), hc: [] }));
+  assert.equal(r.answer, null);
+  assert.equal(r.transaction, null);
+  assert.deepEqual(r.correctionRecords, []);
+});
+
+test('correction records keep the original record, what the client said and the advisor correction as three separate parts', () => {
+  const rec = { date: '2026-03-24', basis: 'shared_wording', phrase: 'you had accepted the lakeshore offer',
+    original: part('original', 'described', { label: 'The earlier record was not retrieved; the advisor’s later description of it', note: 'This is the advisor’s own account.', evidence: ev({ role: 'original', excerpt: 'my earlier note that you had accepted the Lakeshore offer was wrong', where: 'INT-058 turn 13', key: 'INT-058#13' }) }),
+    client_said: part('client_said', 'retrieved', { evidence: ev({ role: 'client_said', excerpt: "No. I said I was inclined to accept.", where: 'INT-058 turn 4', key: 'INT-058#4', claim_id: 'C20' }) }),
+    check: part('check', 'retrieved', { evidence: ev({ role: 'check', excerpt: 'my note says you had accepted. Is that correct?', where: 'INT-058 turn 3', key: 'INT-058#3', claim_id: 'C19' }) }),
+    acknowledgement: null,
+    correction: part('correction', 'retrieved', { evidence: ev({ role: 'correction', excerpt: 'I corrected my own record.', where: 'INT-058 turn 13', key: 'INT-058#13', claim_id: 'C21' }) }),
+    missing: 'The earlier record itself was not among the retrieved evidence.' };
+  const r = buildClientReport(with4a({ corrections: [rec] }));
+  const x = r.correctionRecords[0];
+  assert.equal(x.original.status, 'described');
+  assert.notEqual(x.original.evidence!.excerpt, x.check!.evidence!.excerpt, 'the advisor’s question is never presented as the original record');
+  assert.equal(x.client_said!.evidence!.role, 'client_said');
+  assert.equal(x.correction.evidence!.role, 'correction');
+  assert.match(x.missing ?? '', /not among the retrieved evidence/);
+});
+
+test('a correction shown inside a correction record is not listed again as an unlinked "worded as a correction" statement', () => {
+  const tl = [...TL, claim({ claim_id: 'C30', modality: 'correction', interaction_id: 'INT-058', turn_index: 5, event_date: '2026-03-24', evidence_refs: ['E46'], speaker: 'Advisor', statement_kind: 'advisor_interpretation' })];
+  const rec = { date: '2026-03-24', basis: 'shared_wording', phrase: 'p', original: part('original', 'unavailable'), client_said: null, check: null,
+    acknowledgement: part('acknowledgement', 'retrieved', { evidence: ev({ claim_id: 'C30', role: 'acknowledgement', key: 'INT-058#5' }) }), correction: part('correction', 'retrieved'), missing: null };
+  const r = result({ timeline: tl, coverage: cov(), hc: [] });
+  r.report.corrections = [rec];
+  assert.deepEqual(buildClientReport(r).wordedCorrections.map((w) => w.where), []);
+  const r2 = result({ timeline: tl, coverage: cov(), hc: [] });
+  assert.deepEqual(buildClientReport(r2).wordedCorrections.map((w) => w.where), ['INT-058 turn 5']);   // without the record it IS listed
+});
+
+test('a finding that something had not happened is labelled with its date, and the transaction slot never says "had not happened" as a whole', () => {
+  const t = txn();
+  (t.signing as any).as_of = '2026-03-24';
+  (t.completion as any).status = 'pending';
+  (t.completion as any).as_of = '2026-06-11';
+  const answer = { origin: 'code', subject_terms: [], not_applicable: [], slots: [{ key: 'transaction', label: 'Signing, agreement execution and completion', status: 'negative', reason: null, items: [] }, { key: 'acceptance', label: 'a', status: 'negative', reason: null, items: [] }] };
+  const r = buildClientReport(with4a({ transaction: t, answer }));
+  assert.match(r.transaction![1].statusLabel, /not having happened as of 2026-03-24/);
+  assert.match(r.transaction![3].statusLabel, /still to come as of 2026-06-11/);
+  assert.doesNotMatch(r.answer!.slots[0].statusLabel, /had not happened/);
+  assert.match(r.answer!.slots[1].statusLabel, /as of the dates shown/);
+});
+
+test('the focused "subject" slot carries the turns themselves, each with its speaker, exact wording and a promise note', () => {
+  const answer = { origin: 'code', subject_terms: ['accountant'], not_applicable: ['acceptance', 'transaction'], slots: [{ key: 'subject', label: 'What the retrieved turns establish about the question', status: 'filled', reason: null, items: [
+    { label: '9 April · INT-070 turn 3 · Advisor (the advisor’s interpretation or recommendation)', status: 'filled', sentences: [], evidence: [ev({ where: 'INT-070 turn 3', excerpt: 'Your accountant and I should speak before any agreement is final.', role: 'mention' })], note: null },
+    { label: '9 April · INT-070 turn 11 · Advisor (the advisor’s interpretation or recommendation)', status: 'filled', sentences: [], evidence: [ev({ where: 'INT-070 turn 11', excerpt: 'From my side, I’ll arrange a call with your accountant Mei Lin Chu.', role: 'mention' })], note: 'This is what the speaker says they WILL do (a promise or a plan); no retrieved turn is cited here as showing that it was done.' }] }] };
+  const r = buildClientReport(with4a({ answer }));
+  assert.deepEqual(r.answer!.slots.map((s) => s.key), ['subject']);
+  assert.deepEqual(r.answer!.notApplicable, ['acceptance', 'transaction']);
+  assert.match(r.answer!.slots[0].items[1].note ?? '', /WILL do/);
+  assert.equal(r.answer!.slots[0].items[0].evidence[0].excerpt, 'Your accountant and I should speak before any agreement is final.');
+});

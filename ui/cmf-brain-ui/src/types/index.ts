@@ -177,6 +177,21 @@ export interface OutcomeStatement {
   mentions: { claim_id: string; date: string | null; where: string; speaker: string; excerpt: string; kind: 'event' | 'hedged' | 'pending'; ref: string | null }[];
 }
 
+/** Phase 4A: one retrieved source turn (or one sentence of it) that a status, a slot or a correction rests on: exact wording, speaker, place. */
+export interface StatusEvidence { claim_id: string; key: string; date: string | null; where: string; speaker: string; role: string; kind?: string | null; excerpt: string; ref: string | null }
+export type FacetStatus = 'established' | 'partial' | 'referenced' | 'pending' | 'negative' | 'unavailable';
+/** One INDEPENDENT fact: the client's decision, signing, execution of an agreement, completion. `unavailable` = no retrieved turn addresses it (absence of evidence, not a finding that it did not happen). */
+export interface StatusFacet { key: 'decision' | 'signing' | 'agreement' | 'completion'; label: string; status: FacetStatus; statement: string; as_of?: string | null; evidence: StatusEvidence[]; documents: { document: string; status: FacetStatus; statement: string; keys: string[] }[] }
+export interface TransactionStatus { decision: StatusFacet; signing: StatusFacet; agreement: StatusFacet; completion: StatusFacet; record_through?: string | null }
+export interface CorrectionPart { role: 'original' | 'client_said' | 'check' | 'acknowledgement' | 'correction'; status: 'retrieved' | 'described' | 'unavailable'; label: string; evidence?: StatusEvidence | null; note?: string | null }
+/** What was recorded wrongly, what the client actually said, and how the advisor corrected it: three different things. */
+export interface CorrectionRecord { date: string | null; basis: string; phrase?: string | null; original: CorrectionPart; client_said?: CorrectionPart | null; check?: CorrectionPart | null; acknowledgement?: CorrectionPart | null; correction: CorrectionPart; missing?: string | null }
+export type SlotStatus = 'filled' | 'partial' | 'negative' | 'unavailable';
+export interface SlotItem { label: string; status: SlotStatus; sentences: { text: string; sources: string[] }[]; evidence: StatusEvidence[]; note?: string | null }
+export interface ExecutiveSlot { key: 'beginning' | 'acceptance' | 'corrections' | 'decision' | 'transaction' | 'subject'; label: string; status: SlotStatus; items: SlotItem[]; reason?: string | null }
+/** The question-answering executive block: slots filled by code from validated propositions and retrieved turns, by relevance to the subject. */
+export interface AnswerBlock { origin: 'code'; subject_terms: string[]; slots: ExecutiveSlot[]; not_applicable: string[] }
+
 export interface NarrativeWindow {
   index: number; first_date?: string | null; last_date?: string | null; claim_ids: string[]; context_ids: string[];
   status: 'ok' | 'partial' | 'empty' | 'failed' | 'skipped'; attempts: number; sentences_returned: number; sentences_accepted: number;
@@ -188,6 +203,8 @@ export interface NarrativeCoverage {
   window_size: number; relevant: number; narrated: string[]; rejected: string[]; not_cited: string[]; window_failed: string[]; memory_only: string[]; unresolved: string[];
   /** a verified sentence was written, then withheld by a later safeguard (unverified memory evidence, the evidence verifier) */
   withheld?: string[]; withheld_reasons?: Record<string, string>;
+  /** significant lines left out of the write-up because they are empty acknowledgements or agenda replies */
+  uninformative?: string[];
   model_calls: number; windows: NarrativeWindow[];
 }
 
@@ -221,6 +238,12 @@ export interface AdvisorReport {
   coverage?: NarrativeCoverage | null;
   /** Phase 3: what the record does and does not establish about signing and completion (code-written). */
   outcome?: OutcomeStatement | null;
+  /** Phase 4A: the client's decision, signing, agreement execution and completion as four independent facets (code-written). */
+  transaction?: TransactionStatus | null;
+  /** Phase 4A: for each correction, the original record, what the client said and the advisor's correction (code-written). */
+  corrections?: CorrectionRecord[];
+  /** Phase 4A: the question-answering executive block (code-filled slots). */
+  answer?: AnswerBlock | null;
   validation: Record<string, unknown> & { mode?: string; model_error?: string; narrative?: NarrativeStatus; story?: NarrativeStatus; summary_replaced?: string | null };
 }
 

@@ -167,8 +167,8 @@ class Building(Base):
         self.assertEqual((f, [r["problems"] for r in rej]), ([], [["chronology_reversed"]]))
 
     def test_a_risky_line_is_split_from_its_clean_neighbours_in_the_same_meeting(self):
-        a, b = mk(1, 5, 3, wording="Mei Lin Chu sent three years of statements and a draft valuation."), mk(2, 5, 3, wording="Fine. Net proceeds and the people side of a sale first, and nothing else for now.")
-        f, rej = SY.build_lines(lines(("C1", "Rebecca said that Mei Lin Chu sent three years of statements and a draft valuation."), ("C2", "Rebecca said fine, net proceeds and the people side of a sale first.")),
+        a, b = mk(1, 5, 3, wording="Mei Lin Chu sent three years of statements and a draft valuation."), mk(2, 5, 3, wording="I want net proceeds and the people side of a sale first, and nothing else for now.")
+        f, rej = SY.build_lines(lines(("C1", "Rebecca said that Mei Lin Chu sent three years of statements and a draft valuation."), ("C2", "Rebecca said that she wanted net proceeds and the people side of a sale first.")),
                                 [a, b], ["Rebecca"], risky={"E2"})
         self.assertEqual((len(f), rej), (2, []))
         self.assertEqual([bool(set(g.refs) & {"E2"}) for g in f], [False, True])
@@ -234,7 +234,9 @@ class AgentSynthesis(Base):
         cov = rep.coverage
         self.assertEqual(sorted(cov.narrated), ["C1", "C4", "C9"])
         self.assertEqual(rep.validation["narrative"]["mode"], "synthesis")
-        self.assertEqual(rep.validation["narrative"]["executive"], {"attempted": True, "selected": len(prose[0].narrative), "model_call": False})
+        ex = rep.validation["narrative"]["executive"]                                                        # Phase 4A: the executive block is filled by code from relevance-selected slots, not by position
+        self.assertEqual((ex["attempted"], ex["model_call"], ex["sentences"]), (True, False, len(prose[0].narrative)))
+        self.assertEqual(set(ex["slots"]), {"beginning", "corrections", "decision"})
         self.assertIsNotNone(rep.outcome)
 
     def test_the_independent_verifier_accepts_what_the_agent_accepted(self):
@@ -303,19 +305,6 @@ class AfterTheLiveRun(Base):
         self.assertIn("use only words, names and numbers that appear in this line", h)
         self.assertIn("Rebecca said that", h)
         self.assertEqual(SY.repair_hints([], ["Rebecca"]), "restate only what this line says, in your own plain words")
-
-    def test_the_executive_summary_is_selected_from_accepted_propositions_by_code(self):
-        f, rej = SY.build_lines(lines(*GOOD.items()), self.tl, ["Kenji"])
-        kept: list = []
-        SY.build_lines(lines(*GOOD.items()), self.tl, ["Kenji"], kept=kept)
-        ex = SY.select_executive(kept, self.tl, ["Kenji"])
-        self.assertIsNotNone(ex)
-        self.assertEqual((ex.window, ex.origin), (-1, "synthesis_checked"))
-        texts = [s.text for s in ex.narrative]
-        self.assertTrue(set(texts) <= {s.text for g in f for s in g.narrative} | {SY.prepare_sentence(self.by_id[c], GOOD[c], ["Kenji"], dated=True) for c in GOOD})      # nothing but validated sentences
-        self.assertEqual(SY.check_synthesis_finding(ex, self.tl, ["Kenji"]), [])
-        self.assertIsNone(SY.select_executive([], self.tl, ["Kenji"]))
-        self.assertIsNone(SY.select_executive([(c, g, True) for c, g, _ in kept], self.tl, ["Kenji"]))          # a risky (authority-withheld) line is never promoted into the summary
 
     def test_a_repair_call_runs_for_a_window_with_three_or_more_rejected_lines_and_merges_in_record_order(self):
         ids = ["C1", "C4", "C5", "C9"]

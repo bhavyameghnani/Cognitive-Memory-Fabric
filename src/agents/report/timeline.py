@@ -23,6 +23,7 @@ import re
 from typing import Optional
 
 from agents.memory import attribution, rules, support
+from agents.report.status import link_decisions
 from schemas.report import EvidenceItem, Finding, TimelineClaim, is_source_turn
 
 KIND = {attribution.CLIENT_DIRECT: "client_statement", attribution.ADVISOR_REPORTED: "advisor_reported", attribution.ADVISOR_INTERPRETATION: "advisor_interpretation"}
@@ -185,6 +186,7 @@ def build_timeline(evidence: list[EvidenceItem], topics=None) -> list[TimelineCl
     claims.sort(key=_order)
     for i, c in enumerate(claims, 1):
         c.claim_id = f"C{i}"
+    link_decisions(claims)                                   # Phase 4A: a decision the advisor restated and the client explicitly confirmed (adjacent retrieved turns of one meeting)
     _relate(claims, memories)
     link_wording_corrections(claims)
     return claims
@@ -241,8 +243,8 @@ def _relate(claims: list[TimelineClaim], memories: list[EvidenceItem]) -> None:
         live = [c for c in items if c.modality in DECISIVE and c.statement_kind in ("client_statement", "advisor_reported") and c.temporal_status not in ("corrected", "superseded", "disputed")]
         if live:
             last = live[-1]
-            if last.confirmed_client_decision:
-                last.temporal_status = "current"
+            if last.confirmed_client_decision or (last.decision_link or {}).get("role") in ("decision", "restatement"):
+                last.temporal_status = "current"             # a verified confirmed memory, OR the client's explicit confirmation of the advisor's restatement in the retrieved turns (status.link_decisions)
             else:
                 last.temporal_status = "unresolved"
                 last.notes.append("the latest decision-like claim is not a verified, confirmed client decision, so no current position is established")

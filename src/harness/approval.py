@@ -41,7 +41,7 @@ SUITABILITY_Q = re.compile(r"\b(should|recommend\w*|suitab\w*|appropriate for|ad
 # A PROHIBITION of advice ("do not make investment recommendations, suitability judgments or forecasts", "without any recommendation") is not a request for advice.  Only this closed shape is
 # removed before the keyword test: a negator, an optional giving-verb, then a list made ONLY of advice nouns (with their adjectives).  "Don't hesitate to recommend a sale", "do not
 # recommend X" (a verb), "should I sell" and any sentence that merely contains a negation all keep their trigger words and still need approval.
-_ADVICE_ITEM = (r"(?:(?:investment|trading|trade|transaction|suitability|financial|portfolio|tax|legal|specific|personal)\s+)*"
+_ADVICE_ITEM = (r"(?:(?:investment|trading|trade|transaction|suitability|financial|portfolio|tax|legal|specific|personal|forward-looking|forward looking|future|future-looking|formal|explicit|definitive|firm|final|new|any|such)\s+)*"
                 r"(?:recommendations?|advice|judg(?:e)?ments?|decisions?|conclusions?|forecasts?|predictions?|projections?|opinions?|suggestions?|assessments?)")
 _ADVICE_LIST = rf"{_ADVICE_ITEM}(?:(?:\s*,\s*(?:and\s+|or\s+)?|\s+(?:and|or)\s+){_ADVICE_ITEM})*"
 _PROHIBITION = re.compile(rf"\b(?:(?:please\s+)?(?:do not|don't|never|must not|mustn't)\s+(?:make|give|provide|offer|include|draw|reach|render|issue|state|express|add)\s+(?:any\s+)?"
@@ -52,9 +52,58 @@ def without_prohibitions(text: str) -> str:
     return _PROHIBITION.sub(" ", text or "")
 
 
+# REPORTED HISTORY is not advice.  "What did Daniel and Rebecca agree SHOULD happen ...?", "Did the advisor say she should sell?" and "What did the advisor recommend about selling?" ask what was SAID in a
+# past conversation; the trigger word sits inside the reported clause, not in the question the user is asking.  Only this closed shape is removed before the keyword test: a PAST auxiliary (did / was /
+# were / had) followed, in the same clause, by a reporting verb (say, agree, decide, propose, recommend, record ...), or "who / what / which" + a past reporting verb ("who proposed ..."); the removed span
+# runs to the end of that clause only, so it stops at a comma, a sentence end, or a conjunction that opens a NEW question ("... and should she sell?").  A clause that asks for a JUDGEMENT about the past
+# ("was the advisor right to recommend selling?") keeps its trigger words, and so does anything in the present tense ("what do you recommend", "should she sell") or a clause outside the frame.
+_BASE = (r"(?:say|agree|decide|propose|suggest|recommend|advise|record|correct|state|discuss|mention|ask|tell|conclude|promise|plan|intend|want|expect|think|note)")      # after "did": a verb for certain
+_PAST = (r"(?:said|agreed|decided|proposed|suggested|recommended|advised|recorded|corrected|stated|discussed|mentioned|asked|told|concluded|promised|planned|intended|wanted|expected|thought|noted)")  # after "was / were / had"
+_PAST_REPORT = re.compile(rf"\b(?:did|didn't)\b[^?.!;,]{{0,80}}?\b{_BASE}\b|\b(?:was|were|had|has|have)\b[^?.!;,]{{0,80}}?\b{_PAST}\b|\b(?:who|what|which)\s+{_PAST}\b", re.I)
+_NEW_QUESTION = re.compile(r"[?.!;,]|\b(?:and|but|or|also|then|so)\s+(?:should|do|does|would|could|can|is|are|what|whether|please|tell|recommend|advise|suggest)\b", re.I)
+_JUDGEMENT = re.compile(r"\b(?:right|wise|safe|correct|appropriate|suitable|good|bad|better|best|worth|sound|advisable|reasonable|fair|ideal|smart|mistake|wrong|sensible|prudent)\b", re.I)
+
+
+# A NOUN that names something already decided or offered ("Rebecca's decision to sell", "the plan to sell", "her intention to sell", "the offer to buy") describes the record, not a request for advice.  Only this
+# closed noun-to-verb shape is removed, and only from a clause that asks no JUDGEMENT ("was the decision to sell wise?" keeps its trigger word); "should she sell", "recommend a sale" are untouched.
+_DECIDED_NOUN = re.compile(r"\b(?:decisions?|plans?|intentions?|intents?|wish(?:es)?|desires?|offers?|proposals?|choices?|agreements?|willingness|reluctance)\s+to\s+(?:sell|buy|switch|invest in)\b", re.I)
+
+
+def without_decided_nouns(text: str) -> str:
+    out, pos = [], 0
+    for m in _DECIDED_NOUN.finditer(text or ""):
+        stop = _NEW_QUESTION.search(text, m.end())
+        start = max(text.rfind(c, 0, m.start()) for c in (".", "?", "!", ";", "\n")) + 1
+        if _JUDGEMENT.search(text[start:(stop.start() if stop else len(text))]):
+            continue
+        out.append(text[pos:m.start()])
+        pos = m.end()
+    out.append((text or "")[pos:])
+    return " ".join(out)
+
+
+def without_reported_history(text: str) -> str:
+    return _without_past_reports(without_decided_nouns(text))
+
+
+def _without_past_reports(text: str) -> str:
+    out, pos = [], 0
+    for m in _PAST_REPORT.finditer(text or ""):
+        if m.start() < pos:
+            continue
+        stop = _NEW_QUESTION.search(text, m.end())
+        end = stop.start() if stop else len(text)
+        if _JUDGEMENT.search(text[m.start():end]):
+            continue
+        out.append(text[pos:m.start()])
+        pos = end
+    out.append((text or "")[pos:])
+    return " ".join(out)
+
+
 def asks_for_advice(request_text: str) -> bool:
-    """Does the REQUEST ask for an advice-type answer?  Keyword test on the request with explicit prohibitions of advice removed."""
-    return bool(SUITABILITY_Q.search(without_prohibitions(request_text)))
+    """Does the REQUEST ask for an advice-type answer?  Keyword test on the request with explicit prohibitions of advice and reported history ("what did X agree should happen") removed."""
+    return bool(SUITABILITY_Q.search(without_reported_history(without_prohibitions(request_text))))
 
 
 @dataclass(frozen=True)
